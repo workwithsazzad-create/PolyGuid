@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/src/lib/utils';
 
-// When deploying to Vercel, files in the /public folder are mapped to the root URL (/)
-// Using the direct string path is the standard way to reference public assets in Vite/Vercel.
-const logoDarkUrl = '/logo-dark.png';
-const logoLightUrl = '/logo-light.png';
+// We must use explicit imports so Vite's bundler guarantees the files are included in the dist folder for Vercel.
+import logoDarkUrl from '/public/logo-dark.png';
+import logoLightUrl from '/public/logo-light.png';
 
 interface LogoProps {
   className?: string;
