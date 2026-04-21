@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { Send, User, ChevronLeft } from 'lucide-react';
+import { Send, User, ChevronLeft, BadgeCheck } from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import { useSearchParams } from 'react-router-dom';
 
@@ -93,7 +93,8 @@ export default function Messages() {
             lastMessage: msg.content,
             timestamp: msg.created_at,
             full_name: 'Student', // Default placeholder
-            avatar_url: null
+            avatar_url: null,
+            unread: msg.receiver_id === currentUserId && !msg.read
           });
         }
       });
@@ -107,7 +108,8 @@ export default function Messages() {
             lastMessage: 'Start a conversation...',
             timestamp: new Date().toISOString(),
             full_name: 'Student',
-            avatar_url: null
+            avatar_url: null,
+            unread: false
           });
         }
       }
@@ -116,7 +118,7 @@ export default function Messages() {
       if (otherUserIds.size > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url')
+          .select('id, full_name, avatar_url, role')
           .in('id', Array.from(otherUserIds));
           
         if (!profilesError && profilesData) {
@@ -125,6 +127,7 @@ export default function Messages() {
               const u = uniqueUsersMap.get(p.id);
               u.full_name = p.full_name || 'Student';
               u.avatar_url = p.avatar_url;
+              u.is_admin = p.role === 'admin';
             }
           });
         }
@@ -291,8 +294,14 @@ export default function Messages() {
                     )}
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <h4 className="font-bold text-[var(--text)] text-sm truncate">{conv.full_name}</h4>
-                    <p className="text-xs text-gray-500 truncate">{conv.lastMessage}</p>
+                    <div className="flex justify-between items-center gap-1">
+                       <h4 className={`text-sm truncate flex items-center gap-1 ${conv.unread ? 'font-black text-[var(--text)]' : 'font-semibold text-gray-600 dark:text-gray-300'}`}>
+                          {conv.full_name}
+                          {conv.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                       </h4>
+                       {conv.unread && <div className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full shrink-0"></div>}
+                    </div>
+                    <p className={`text-xs truncate ${conv.unread ? 'font-bold text-[var(--primary)]' : 'text-gray-500'}`}>{conv.lastMessage}</p>
                   </div>
                 </div>
               ))
@@ -319,7 +328,10 @@ export default function Messages() {
                     <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={20} /></div>
                   )}
                 </div>
-                <h3 className="font-bold text-[var(--text)]">{selectedUser.full_name}</h3>
+                <div className="flex items-center gap-1">
+                  <h3 className="font-bold text-[var(--text)]">{selectedUser.full_name}</h3>
+                  {selectedUser.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">

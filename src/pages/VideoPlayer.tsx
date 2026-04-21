@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ChevronLeft, Send, Trash2, User, MessageSquare, X } from 'lucide-react';
+import { ChevronLeft, Send, Trash2, User, MessageSquare, X, BadgeCheck } from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import { supabase } from '../lib/supabase';
 import { getEmbedUrl } from '../lib/utils';
@@ -62,7 +62,7 @@ export default function VideoPlayer() {
       const userIds = [...new Set(commentsData.map(c => c.user_id))];
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, polytechnic_name')
+        .select('id, full_name, avatar_url, polytechnic_name, role')
         .in('id', userIds);
         
       const profilesMap: any = {};
@@ -210,12 +210,15 @@ export default function VideoPlayer() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span 
-                        className={`font-bold text-[var(--text)] text-sm ${comment.user_id !== user?.id ? 'cursor-pointer hover:underline' : ''}`}
-                        onClick={() => comment.user_id !== user?.id && setSelectedProfile({ ...profile, id: comment.user_id })}
-                      >
-                        {displayName}
-                      </span>
+                       <div className="flex items-center gap-1">
+                          <span 
+                            className={`font-bold text-[var(--text)] text-sm ${comment.user_id !== user?.id ? 'cursor-pointer hover:underline' : ''}`}
+                            onClick={() => comment.user_id !== user?.id && setSelectedProfile({ ...profile, id: comment.user_id })}
+                          >
+                            {displayName}
+                          </span>
+                          {profile?.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                       </div>
                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                         {new Date(comment.created_at).toLocaleDateString()}
                       </span>
@@ -264,7 +267,10 @@ export default function VideoPlayer() {
                 )}
               </div>
               <div className="text-center">
-                <h3 className="text-xl font-bold text-[var(--text)]">{selectedProfile.full_name || 'Student'}</h3>
+                <h3 className="text-xl font-bold text-[var(--text)] flex items-center justify-center gap-1">
+                  {selectedProfile.full_name || 'Student'}
+                  {selectedProfile.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={18} />}
+                </h3>
                 {selectedProfile.polytechnic_name && (
                   <p className="text-sm text-gray-500 mt-1">{selectedProfile.polytechnic_name}</p>
                 )}

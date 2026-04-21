@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '@/src/lib/supabase';
-import { User, Mail, Phone, MapPin, Building2, Camera, Loader2, Edit2, Check, X } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Building2, Camera, Loader2, Edit2, Check, X, BadgeCheck } from 'lucide-react';
 import GlassmorphicCard from '@/src/components/ui/GlassmorphicCard';
 
 interface UserProfile {
@@ -10,6 +10,7 @@ interface UserProfile {
   address: string | null;
   polytechnic_name: string | null;
   avatar_url: string | null;
+  role?: string | null;
 }
 
 export default function Profile() {
@@ -220,8 +221,9 @@ export default function Profile() {
                 placeholder="Full Name"
               />
             ) : (
-              <h2 className="text-xl font-bold text-[var(--text)] text-center">
+              <h2 className="text-xl font-bold text-[var(--text)] text-center flex items-center justify-center gap-1">
                 {profile?.full_name || 'Student'}
+                {profile?.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={18} />}
               </h2>
             )}
           </div>
