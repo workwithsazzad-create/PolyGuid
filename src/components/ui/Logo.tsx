@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/src/lib/utils';
-
-// Using the standard direct string path for public assets in Vite
-// Updated file names to reflect the manual uploads in Github
-const logoDarkUrl = '/logo.dark.png';
-const logoLightUrl = '/logo.light.png';
+import { logoDarkB64, logoLightB64 } from './logo-data';
 
 interface LogoProps {
   className?: string;
@@ -14,7 +10,7 @@ interface LogoProps {
 
 export default function Logo({ className, showText = true, theme = 'dark' }: LogoProps) {
   const [imgError, setImgError] = useState(false);
-  const logoSrc = theme === 'light' ? logoDarkUrl : logoLightUrl;
+  const logoSrc = theme === 'light' ? logoDarkB64 : logoLightB64;
 
   // Reset error state if theme changes
   useEffect(() => {
@@ -28,6 +24,7 @@ export default function Logo({ className, showText = true, theme = 'dark' }: Log
           <img 
             src={logoSrc} 
             alt="PolyGuid Logo" 
+            referrerPolicy="no-referrer"
             className="h-full w-auto object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
             onError={() => setImgError(true)}
           />
