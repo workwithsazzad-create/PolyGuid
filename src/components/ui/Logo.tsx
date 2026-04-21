@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/src/lib/utils';
 
-// We must use explicit imports so Vite's bundler guarantees the files are included in the dist folder for Vercel.
-import logoDarkUrl from '@/public/logo-dark.png?url';
-import logoLightUrl from '@/public/logo-light.png?url';
+// Using the standard direct string path for public assets in Vite
+// Updated file names to reflect the manual uploads in Github
+const logoDarkUrl = '/logo.dark.png';
+const logoLightUrl = '/logo.light.png';
 
 interface LogoProps {
   className?: string;
