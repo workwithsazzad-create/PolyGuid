@@ -9,10 +9,12 @@ import Home from './pages/Home';
 import CourseDetails from './pages/CourseDetails';
 import VideoPlayer from './pages/VideoPlayer';
 import PdfViewer from './pages/PdfViewer';
+import SemesterCourses from './pages/SemesterCourses';
 import Sidebar from './components/ui/Sidebar';
 import { Loader2 } from 'lucide-react';
 
-import { ThemeProvider } from './components/ThemeProvider';
+import { ThemeProvider, useTheme } from './components/ThemeProvider';
+import Logo from './components/ui/Logo';
 
 import { Menu, X } from 'lucide-react';
 
@@ -21,6 +23,7 @@ import Messages from './pages/Messages';
 // Layout for authenticated pages
 function AppLayout({ isAdmin }: { isAdmin: boolean }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { theme } = useTheme();
 
   return (
     <div className="flex min-h-screen">
@@ -28,11 +31,13 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 glass z-40 flex items-center px-4 border-b border-[var(--glass-border)]">
         <button 
           onClick={() => setIsSidebarOpen(true)}
-          className="p-2 rounded-lg text-[var(--text)] hover:bg-white/10"
+          className="p-2 rounded-lg text-[var(--text)] hover:bg-black/5 dark:hover:bg-white/10 shrink-0"
         >
           <Menu size={24} />
         </button>
-        <span className="ml-4 font-bold text-lg text-[var(--text)]">PolyGuid</span>
+        <div className="ml-2 flex flex-1 items-center h-full justify-start overflow-hidden">
+          <Logo theme={theme} showText={false} className="origin-left mt-1" />
+        </div>
       </div>
 
       {/* Overlay for mobile */}
@@ -129,6 +134,7 @@ function AppContent() {
         
         <Route element={session ? <AppLayout isAdmin={isAdmin} /> : <Navigate to="/login" replace />}>
           <Route path="/home" element={<Home />} />
+          <Route path="/semester/:semesterName" element={<SemesterCourses />} />
           <Route path="/course/:id" element={<CourseDetails />} />
           <Route path="/play/:contentId" element={<VideoPlayer />} />
           <Route path="/pdf/:contentId" element={<PdfViewer />} />

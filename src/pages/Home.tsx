@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, BookOpen, Calculator, FileText, List, Users,
 import GlassmorphicCard from '@/src/components/ui/GlassmorphicCard';
 import CourseCard from '@/src/components/ui/CourseCard';
 import { supabase } from '@/src/lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 const AnimatedCounter = ({ value, suffix = "" }: { value: number, suffix?: string }) => {
   const nodeRef = useRef<HTMLSpanElement>(null);
@@ -88,6 +89,7 @@ const SEMESTERS = [
 const DEFAULT_BANNER = "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1200&auto=format&fit=crop";
 
 export default function Home() {
+  const navigate = useNavigate();
   const coursesRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [bannerUrl, setBannerUrl] = useState<string>(DEFAULT_BANNER);
@@ -97,51 +99,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  const fetchInitialData = async () => {
-    setIsLoading(true);
-    try {
-      // Fetch Courses
-      const { data: coursesData } = await supabase
-        .from('courses')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (coursesData) {
-        setAllCourses(coursesData.map(c => ({
-          id: c.id,
-          title: c.title,
-          description: c.description,
-          price: c.price,
-          originalPrice: c.original_price,
-          thumbnail: c.thumbnail_url || "https://placehold.co/600x400/1a1a1a/32CD32?text=New+Course",
-          classes: c.classes_count,
-          categories: c.categories || []
-        })));
-      }
-
-      // Fetch User's Enrollments (Mock user for now if session is null)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data: enrollmentsData } = await supabase
-          .from('enrollments')
-          .select('course_id')
-          .eq('user_id', session.user.id);
-        
-        if (enrollmentsData) {
-          setEnrollments(enrollmentsData);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching initial data:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const displayCourses = selectedSemester 
     ? allCourses.filter(c => c.categories?.includes(selectedSemester) || c.title.includes(selectedSemester))
@@ -159,26 +116,90 @@ export default function Home() {
 
   useEffect(() => {
     let subscription: any = null;
+    let isMounted = true;
 
-    const fetchData = async () => {
+    const loadAllData = async () => {
+      if (isMounted) setIsLoading(true);
+      
       try {
-        // Fetch Banner
-        const { data: bannerData } = await supabase
+        // 1. Fetch Courses
+        const coursesPromise = supabase
+          .from('courses')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        // 2. Fetch User's Enrollments
+        const sessionPromise = supabase.auth.getSession();
+
+        // 3. Fetch Banner
+        const bannerPromise = supabase
           .from('site_settings')
           .select('value')
           .eq('key', 'home_banner')
           .maybeSingle();
-        
-        if (bannerData?.value) {
-          setBannerUrl(bannerData.value);
-        }
 
-        // Fetch Stats
-        const { data: statsData } = await supabase
+        // 4. Fetch Stats
+        const statsPromise = supabase
           .from('site_settings')
           .select('key, value')
           .in('key', ['stat_courses', 'stat_students', 'stat_polytechnics', 'donation_number']);
 
+        // 5. Fetch Donations
+        const fetchDonations = async () => {
+          const { data: donationsData } = await supabase
+            .from('donations')
+            .select('*')
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false });
+          if (isMounted && donationsData) {
+            setApprovedDonations(donationsData);
+          }
+        };
+
+        const [
+          { data: coursesData },
+          { data: { session } },
+          { data: bannerData },
+          { data: statsData }
+        ] = await Promise.all([coursesPromise, sessionPromise, bannerPromise, statsPromise]);
+
+        if (!isMounted) return;
+
+        // Process Courses
+        if (coursesData) {
+          setAllCourses(coursesData.map(c => ({
+            id: c.id,
+            title: c.title,
+            description: c.description,
+            price: c.price,
+            originalPrice: c.original_price,
+            thumbnail: c.thumbnail_url || "https://placehold.co/600x400/1a1a1a/32CD32?text=New+Course",
+            classes: c.classes_count,
+            categories: c.categories || [],
+            pinned_position: c.pinned_position || null
+          })));
+        }
+
+        // Process Enrollments
+        if (session) {
+          const { data: enrollmentsData } = await supabase
+            .from('enrollments')
+            .select('course_id')
+            .eq('user_id', session.user.id);
+          
+          if (enrollmentsData) {
+            setEnrollments(enrollmentsData);
+          }
+        }
+
+        // Process Banner
+        let currentBannerUrl = DEFAULT_BANNER;
+        if (bannerData?.value) {
+          currentBannerUrl = bannerData.value;
+          setBannerUrl(bannerData.value);
+        }
+
+        // Process Stats
         if (statsData) {
           const newStats = { courses: 150, students: 20000, polytechnics: 49 };
           statsData.forEach(item => {
@@ -190,19 +211,31 @@ export default function Home() {
           setStats(newStats);
         }
 
-        // Fetch Approved Donations
-        const fetchDonations = async () => {
-          const { data: donationsData } = await supabase
-            .from('donations')
-            .select('*')
-            .eq('status', 'approved')
-            .order('created_at', { ascending: false });
-            
-          if (donationsData) {
-            setApprovedDonations(donationsData);
-          }
-        };
         await fetchDonations();
+
+        // Preload banner image to prevent flicker
+        if (currentBannerUrl) {
+          await new Promise((resolve) => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = resolve; // Continue even if image fails to load
+            img.src = currentBannerUrl;
+          });
+        }
+
+        // Preload first few course thumbnails
+        if (coursesData && coursesData.length > 0) {
+           const preloadPromises = coursesData.slice(0, 4).map(c => {
+             const url = c.thumbnail_url || "https://placehold.co/600x400/1a1a1a/32CD32?text=New+Course";
+             return new Promise((resolve) => {
+               const img = new Image();
+               img.onload = resolve;
+               img.onerror = resolve;
+               img.src = url;
+             });
+           });
+           await Promise.all(preloadPromises);
+        }
 
         // Realtime subscription for donations
         subscription = supabase
@@ -215,12 +248,19 @@ export default function Home() {
       } catch (err) {
         console.error('Error fetching data from DB:', err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          // Add a small delay to ensure React commits DOM before hiding loader
+          setTimeout(() => {
+            if (isMounted) setIsLoading(false);
+          }, 100);
+        }
       }
     };
-    fetchData();
+    
+    loadAllData();
 
     return () => {
+      isMounted = false;
       if (subscription) {
         supabase.removeChannel(subscription);
       }
@@ -355,6 +395,27 @@ export default function Home() {
         </motion.div>
       </div>
 
+      {/* Analytics Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        {[
+          { title: 'Total Courses', value: stats.courses, icon: PlayCircle, color: 'text-blue-500' },
+          { title: 'Students Joined', value: stats.students, icon: Users, color: 'text-green-500' },
+          { title: 'Polytechnics', value: stats.polytechnics, icon: Building2, color: 'text-purple-500' },
+        ].map((stat, i) => (
+          <GlassmorphicCard key={i} className="p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
+            <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 ${stat.color}`}>
+              <stat.icon className="w-6 h-6 sm:w-8 sm:h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl sm:text-3xl font-bold text-[var(--text)]">
+                <AnimatedCounter value={stat.value} suffix="+" />
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">{stat.title}</p>
+            </div>
+          </GlassmorphicCard>
+        ))}
+      </div>
+
       {/* Donation Greeting Section */}
       <div className="flex flex-col sm:flex-row gap-4 items-stretch">
         <GlassmorphicCard className="flex-1 p-4 sm:p-6 flex items-center justify-between overflow-hidden relative">
@@ -407,27 +468,6 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Analytics Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        {[
-          { title: 'Total Courses', value: stats.courses, icon: PlayCircle, color: 'text-blue-500' },
-          { title: 'Students Joined', value: stats.students, icon: Users, color: 'text-green-500' },
-          { title: 'Polytechnics', value: stats.polytechnics, icon: Building2, color: 'text-purple-500' },
-        ].map((stat, i) => (
-          <GlassmorphicCard key={i} className="p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
-            <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 ${stat.color}`}>
-              <stat.icon className="w-6 h-6 sm:w-8 sm:h-8" />
-            </div>
-            <div>
-              <h3 className="text-xl sm:text-3xl font-bold text-[var(--text)]">
-                <AnimatedCounter value={stat.value} suffix="+" />
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">{stat.title}</p>
-            </div>
-          </GlassmorphicCard>
-        ))}
-      </div>
-
       {/* Department-wise Courses (Semesters) - Moved UP */}
       <section className="flex flex-col gap-4 sm:gap-6">
         <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] text-center mb-2 sm:mb-4">ক্লাস অনুযায়ী কোর্স দেখুন</h2>
@@ -437,12 +477,9 @@ export default function Home() {
               key={i} 
               hoverEffect 
               onClick={() => {
-                setSelectedSemester(selectedSemester === semester ? null : semester);
-                coursesRef.current?.scrollIntoView({ behavior: 'smooth' });
+                navigate(`/semester/${encodeURIComponent(semester)}`);
               }}
-              className={`p-3 sm:p-4 flex items-center justify-center cursor-pointer text-center transition-colors ${
-                selectedSemester === semester ? 'border-[var(--primary)] bg-[var(--primary)]/10' : ''
-              } ${i === SEMESTERS.length - 1 && SEMESTERS.length % 2 !== 0 ? 'col-span-2' : ''}`}
+              className={`p-3 sm:p-4 flex items-center justify-center cursor-pointer text-center transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:border-[var(--primary)]/50 ${i === SEMESTERS.length - 1 && SEMESTERS.length % 2 !== 0 ? 'col-span-2' : ''}`}
             >
               <span className="font-bold text-[var(--text)] text-sm sm:text-lg">{semester}</span>
             </GlassmorphicCard>
@@ -450,41 +487,28 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Popular Courses - Moved DOWN */}
+      {/* Popular Courses (Pinned) */}
       <section ref={coursesRef} className="flex flex-col gap-4 sm:gap-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)]">জনপ্রিয় কোর্স সমূহ</h2>
-          <button 
-            onClick={() => setIsViewAllCourses(!isViewAllCourses)}
-            className="text-sm sm:text-base text-[var(--primary)] hover:underline flex items-center gap-1"
-          >
-            {isViewAllCourses ? 'Show Less' : 'View All'} <ChevronRight size={16} className={isViewAllCourses ? "rotate-90 transition-transform" : "transition-transform"} />
-          </button>
         </div>
         
-        {isViewAllCourses ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {displayCourses.map((course, i) => (
-              <CourseCard 
-                key={i} 
-                {...course} 
-                isEnrolled={enrollments.some(e => e.course_id === course.id)}
-              />
-            ))}
-          </div>
-        ) : (
+        {allCourses.filter(c => c.pinned_position > 0).length > 0 ? (
           <div className="relative group">
             <div 
               ref={scrollContainerRef} 
               className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 snap-x hide-scrollbar scroll-smooth"
             >
-              {displayCourses.map((course, i) => (
-                <div key={i} className="min-w-[200px] sm:min-w-[240px] md:min-w-[260px] max-w-[300px] snap-start">
-                  <CourseCard 
-                    {...course} 
-                    isEnrolled={enrollments.some(e => e.course_id === course.id)}
-                  />
-                </div>
+              {allCourses
+                .filter(c => c.pinned_position > 0)
+                .sort((a, b) => a.pinned_position - b.pinned_position)
+                .map((course, i) => (
+                  <div key={i} className="min-w-[200px] sm:min-w-[240px] md:min-w-[260px] max-w-[300px] snap-start">
+                    <CourseCard 
+                      {...course} 
+                      isEnrolled={enrollments.some(e => e.course_id === course.id)}
+                    />
+                  </div>
               ))}
             </div>
             {/* Navigation Buttons for Desktop */}
@@ -507,16 +531,10 @@ export default function Home() {
                </button>
             </div>
           </div>
-        )}
-        
-        {!isViewAllCourses && displayCourses.length > 4 && (
-          <div className="flex justify-center mt-6">
-            <button 
-              onClick={() => setIsViewAllCourses(true)}
-              className="bg-[#1a237e] text-white px-8 py-2.5 rounded-lg font-bold text-sm hover:bg-[#121858] transition-all shadow-lg"
-            >
-              SEE ALL
-            </button>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 text-center space-y-4 opacity-50 select-none">
+            <BookOpen size={48} className="text-gray-500" strokeWidth={1} />
+            <h2 className="text-lg font-light text-gray-400 tracking-wider">এখনো কোনো জনপ্রিয় কোর্স পিন করা হয়নি</h2>
           </div>
         )}
       </section>

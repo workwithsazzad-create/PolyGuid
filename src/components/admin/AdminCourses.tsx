@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Edit2, Trash2, Eye, Video, FileText, ChevronLeft, Save, X, Paperclip } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Video, FileText, ChevronLeft, Save, X, Paperclip, Pin, PinOff } from 'lucide-react';
 import GlassmorphicCard from '../ui/GlassmorphicCard';
 import { supabase } from '../../lib/supabase';
 import { getDirectLink, getEmbedUrl } from '../../lib/utils';
@@ -343,11 +343,60 @@ export default function AdminCourses() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState<any>(null);
 
+  // Pin State
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [courseToPin, setCourseToPin] = useState<any>(null);
+  const [pinPosition, setPinPosition] = useState<number>(1);
+
   useEffect(() => {
     if (selectedCourse) {
       fetchContents(selectedCourse.id).then(setCourseContents);
     }
   }, [selectedCourse]);
+
+  const handlePinCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!courseToPin) return;
+
+    // Check if position is already taken
+    const existingPinned = courses.find((c: any) => c.pinned_position === pinPosition);
+    if (existingPinned && existingPinned.id !== courseToPin.id) {
+       alert(`এই নম্বরটিতে বর্তমানে "${existingPinned.title}" কোর্সটি পিন করা আছে। দয়া করে আগে সেটি আনপিন করুন, অথবা অন্য নম্বর সিলেক্ট করুন।`);
+       return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ pinned_position: pinPosition })
+        .eq('id', courseToPin.id);
+
+      if (error) throw error;
+      
+      setCourses(courses.map(c => c.id === courseToPin.id ? { ...c, pinned_position: pinPosition } : c));
+      setIsPinModalOpen(false);
+      setCourseToPin(null);
+    } catch (err) {
+      console.error('Error pinning course:', err);
+      alert('Error pinning course');
+    }
+  };
+
+  const handleUnpinCourse = async (courseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ pinned_position: null })
+        .eq('id', courseId);
+
+      if (error) throw error;
+      
+      setCourses(courses.map(c => c.id === courseId ? { ...c, pinned_position: null } : c));
+    } catch (err) {
+      console.error('Error unpinning course:', err);
+      alert('Error unpinning course');
+    }
+  };
 
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -760,6 +809,24 @@ export default function AdminCourses() {
               </div>
 
               <div className="flex items-center gap-2">
+                {course.pinned_position ? (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleUnpinCourse(course.id); }}
+                    className="flex items-center gap-1 bg-yellow-500/10 text-yellow-600 px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-yellow-500 hover:text-white transition-all border border-yellow-500/20"
+                    title={`Pinned at position ${course.pinned_position}`}
+                  >
+                    <PinOff size={14} /> Unpin ({course.pinned_position})
+                  </button>
+                ) : (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setCourseToPin(course); setIsPinModalOpen(true); }}
+                    className="p-2.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-600/10 rounded-xl transition-all"
+                    title="Pin Course to Popular"
+                  >
+                    <Pin size={20} />
+                  </button>
+                )}
+                
                 <button 
                   onClick={() => setSelectedCourse(course)}
                   className="flex items-center gap-2 bg-[var(--primary)]/10 text-[var(--primary)] px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all"
@@ -802,6 +869,44 @@ export default function AdminCourses() {
           </div>
         )}
       </div>
+      
+      {/* Pin Modal */}
+      {isPinModalOpen && courseToPin && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-sm bg-white dark:bg-[#1a1a1a] shadow-xl rounded-xl border border-black/10 p-6"
+          >
+            <h3 className="text-xl font-bold dark:text-white mb-4">Pin Course</h3>
+            <p className="text-sm text-gray-500 mb-6">Select a serial number from 1 to 10 to pin "{courseToPin.title}" on the home page.</p>
+            
+            <form onSubmit={handlePinCourse}>
+              <div className="flex flex-col gap-2 mb-6">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Serial Number</label>
+                <select 
+                  value={pinPosition}
+                  onChange={(e) => setPinPosition(Number(e.target.value))}
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-gray-700 dark:text-white text-lg font-bold"
+                >
+                  {[...Array(10)].map((_, i) => (
+                    <option key={i+1} value={i+1}>{i+1}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="submit" className="bg-yellow-500 text-white font-bold py-2 px-6 rounded-md hover:bg-yellow-600 transition-colors">
+                  Pin Course
+                </button>
+                <button type="button" onClick={() => setIsPinModalOpen(false)} className="bg-gray-200 text-gray-800 dark:bg-white/10 dark:text-white font-medium py-2 px-6 rounded-md hover:bg-gray-300 dark:hover:bg-white/20 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,15 +17,26 @@ export default function Logo({ className, showText = true, theme = 'dark' }: Log
     setImgError(false);
   }, [theme]);
 
+  // Adjust Logo image wrapper class based on text presence and use CSS object-position to hide the text
+  const imgWrapperClassName = cn(
+    "relative flex items-center justify-start overflow-hidden",
+    showText ? "h-24 sm:h-28 justify-center" : "h-[30px] w-[125px]" 
+  );
+
+  const imgClassName = cn(
+    "h-[51px] max-w-none w-auto drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] object-contain origin-top-left absolute top-[-12px] left-[-0px] pr-0",
+    showText ? "relative top-0 left-0 h-full max-w-full" : ""
+  );
+
   return (
     <div className={cn("flex flex-col items-center", className)}>
-      <div className="relative h-24 sm:h-28 flex items-center justify-center">
+      <div className={imgWrapperClassName}>
         {!imgError ? (
           <img 
             src={logoSrc} 
             alt="PolyGuid Logo" 
             referrerPolicy="no-referrer"
-            className="h-full w-auto object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
+            className={imgClassName}
             onError={() => setImgError(true)}
           />
         ) : (
@@ -57,7 +68,7 @@ export default function Logo({ className, showText = true, theme = 'dark' }: Log
       </div>
       {!imgError && showText && (
         <p className={cn(
-          "font-bold text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.2em] uppercase mt-[-22px] whitespace-nowrap",
+          "font-bold text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.2em] uppercase mt-[-10px] sm:mt-[-22px] whitespace-nowrap",
           theme === 'light' ? "text-[#4a4a4a]" : "text-gray-400"
         )}>
           Your learning partner
