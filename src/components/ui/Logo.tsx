@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/src/lib/utils';
+import logoDarkUrl from '/logo-dark.png?url';
+import logoLightUrl from '/logo-light.png?url';
 
 interface LogoProps {
   className?: string;
@@ -9,7 +11,7 @@ interface LogoProps {
 
 export default function Logo({ className, showText = true, theme = 'dark' }: LogoProps) {
   const [imgError, setImgError] = useState(false);
-  const logoSrc = theme === 'light' ? '/logo-dark.png' : '/logo-light.png';
+  const logoSrc = theme === 'light' ? logoDarkUrl : logoLightUrl;
 
   // Reset error state if theme changes
   useEffect(() => {
