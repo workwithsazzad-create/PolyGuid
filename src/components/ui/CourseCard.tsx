@@ -8,6 +8,7 @@ import { getDirectLink } from '@/src/lib/utils';
 interface CourseCardProps {
   id?: string;
   title: string;
+  description?: string;
   price: number;
   originalPrice?: number;
   thumbnail: string;
@@ -17,8 +18,8 @@ interface CourseCardProps {
 
 import { Link } from 'react-router-dom';
 
-export default function CourseCard({ id, title, price, originalPrice, thumbnail, classes = 12, isEnrolled = false }: CourseCardProps) {
-  const hasDiscount = originalPrice && originalPrice > price;
+export default function CourseCard({ id, title, description, price, originalPrice, thumbnail, classes = 12, isEnrolled = false }: CourseCardProps) {
+  const hasDiscount = Boolean(originalPrice && originalPrice > price);
   const discountPercent = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
   return (
@@ -47,9 +48,15 @@ export default function CourseCard({ id, title, price, originalPrice, thumbnail,
         </div>
         
         <div className="flex flex-col gap-2 p-1">
-          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-snug min-h-[40px]">
+          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 line-clamp-1 leading-snug">
             {title}
           </h3>
+          
+          {description && (
+            <p className="text-[10px] text-gray-500 line-clamp-2 -mt-1">
+              {description}
+            </p>
+          )}
           
           <div className="flex items-center gap-1 mt-auto">
             <span className="text-lg font-black text-[#1a237e] dark:text-indigo-400">

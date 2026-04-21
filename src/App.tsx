@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Home from './pages/Home';
 import CourseDetails from './pages/CourseDetails';
 import VideoPlayer from './pages/VideoPlayer';
+import PdfViewer from './pages/PdfViewer';
 import Sidebar from './components/ui/Sidebar';
 import { Loader2 } from 'lucide-react';
 
@@ -130,6 +131,7 @@ function AppContent() {
           <Route path="/home" element={<Home />} />
           <Route path="/course/:id" element={<CourseDetails />} />
           <Route path="/play/:contentId" element={<VideoPlayer />} />
+          <Route path="/pdf/:contentId" element={<PdfViewer />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />} />
           <Route path="/profile" element={<Profile />} />

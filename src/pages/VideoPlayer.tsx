@@ -16,6 +16,8 @@ export default function VideoPlayer() {
   const [user, setUser] = useState<any>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   useEffect(() => {
     fetchContentAndComments();
@@ -78,16 +80,18 @@ export default function VideoPlayer() {
     }
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim() || !user) return;
+  const handleAddComment = async (e: React.FormEvent, parentId: string | null = null) => {
+    if (e) e.preventDefault();
+    const text = parentId ? replyText : newComment;
+    if (!text.trim() || !user) return;
 
     const { data, error } = await supabase
       .from('comments')
       .insert([{
         content_id: contentId,
         user_id: user.id,
-        text: newComment
+        text: text,
+        parent_id: parentId // Assuming parent_id exists or will be added
       }])
       .select('*');
 
@@ -100,23 +104,45 @@ export default function VideoPlayer() {
         profiles: currentUserProfile
       };
       setComments(prev => [...prev, newCommentData]);
-      setNewComment('');
+      if (parentId) {
+        setReplyText('');
+        setReplyingTo(null);
+      } else {
+        setNewComment('');
+      }
     }
   };
 
   const handleDeleteComment = async (id: string) => {
-    if (!window.confirm('Delete this comment?')) return;
-    
-    const { error } = await supabase
+    // Attempt to delete replies first to avoid FK constraint errors if cascade is missing
+    const { error: replyError } = await supabase
       .from('comments')
       .delete()
-      .eq('id', id);
+      .eq('parent_id', id);
 
-    if (error) {
-      console.error('Error deleting comment:', error);
-    } else {
-      setComments(prev => prev.filter(c => c.id !== id));
+    if (replyError) {
+      console.warn('Could not cleanly delete replies:', replyError);
     }
+
+    // Use .select() to verify if the row was actually deleted
+    const { data, error: commentError } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', id)
+      .select();
+
+    if (commentError) {
+      console.error('Error deleting comment:', commentError);
+      return;
+    } 
+    
+    if (!data || data.length === 0) {
+      console.error('Delete failed: Database blocked the action (0 rows deleted). Please ensure RLS policies are correct and you have permission.');
+      return;
+    }
+
+    // Success, update UI
+    setComments(prev => prev.filter(c => c.id !== id && c.parent_id !== id));
   };
 
   if (!content) {
@@ -154,8 +180,7 @@ export default function VideoPlayer() {
             {new Date(content.created_at).toLocaleDateString()} • {content.type}
           </div>
           {content.description && (
-            <div className="mt-4 bg-black/5 dark:bg-white/5 p-4 rounded-xl text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-              <h3 className="font-bold mb-1 uppercase text-[10px] tracking-widest text-gray-400">Description</h3>
+            <div className="mt-2 text-gray-600 dark:text-gray-300 leading-relaxed">
               {content.description}
             </div>
           )}
@@ -192,25 +217,28 @@ export default function VideoPlayer() {
         </form>
 
         <div className="flex flex-col gap-6">
-          {comments.map((comment) => {
+          {comments.filter(c => !c.parent_id).map((comment) => {
             const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : (comment.profiles || {});
             const displayName = comment.user_id === user?.id ? 'You' : (profile?.full_name || 'Student');
+            const commentReplies = comments.filter(r => r.parent_id === comment.id);
+
             return (
-              <div key={comment.id} className="flex gap-4 group">
-                <div 
-                  className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 text-gray-500 overflow-hidden cursor-pointer"
-                  onClick={() => comment.user_id !== user?.id && setSelectedProfile({ ...profile, id: comment.user_id })}
-                >
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <User size={20} />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                       <div className="flex items-center gap-1">
+              <div key={comment.id} className="flex flex-col gap-4">
+                <div className="flex gap-4 group">
+                  <div 
+                    className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 text-gray-500 overflow-hidden cursor-pointer"
+                    onClick={() => comment.user_id !== user?.id && setSelectedProfile({ ...profile, id: comment.user_id })}
+                  >
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={20} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <span 
                             className={`font-bold text-[var(--text)] text-sm ${comment.user_id !== user?.id ? 'cursor-pointer hover:underline' : ''}`}
                             onClick={() => comment.user_id !== user?.id && setSelectedProfile({ ...profile, id: comment.user_id })}
@@ -218,21 +246,133 @@ export default function VideoPlayer() {
                             {displayName}
                           </span>
                           {profile?.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
-                       </div>
-                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                        {new Date(comment.created_at).toLocaleDateString()}
-                      </span>
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                    {(isAdmin || comment.user_id === user?.id) && (
+                    <p className="text-[var(--text)] mt-1 text-sm leading-relaxed break-words">{comment.text}</p>
+                    
+                    <div className="flex flex-wrap items-center gap-1 mt-2">
+                      {comment.user_id !== user?.id && (
+                        <button 
+                          onClick={() => navigate(`/messages?userId=${comment.user_id}`)}
+                          className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-black/5 dark:hover:bg-white/5 text-gray-500 hover:text-[var(--primary)] rounded-full transition-all text-[10px] font-bold uppercase tracking-tight"
+                          title="Send Message"
+                        >
+                          <MessageSquare size={12} /> <span className="hidden sm:inline">Send Msg</span>
+                        </button>
+                      )}
+                      
                       <button 
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-red-500/10 rounded-md"
+                        onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                        className={`flex items-center gap-1.5 px-2 py-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all text-[10px] font-bold uppercase tracking-tight ${replyingTo === comment.id ? 'text-[var(--primary)]' : 'text-gray-500'}`}
                       >
-                        <Trash2 size={16} />
+                        Reply
                       </button>
+
+                      {(isAdmin || comment.user_id === user?.id) && (
+                        <button 
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-full transition-all text-[10px] font-bold uppercase tracking-tight"
+                          title="Delete"
+                        >
+                          <Trash2 size={12} /> <span className="hidden sm:inline">Delete</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {replyingTo === comment.id && (
+                      <div className="mt-3 flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
+                          <User size={14} className="text-gray-400" />
+                        </div>
+                        <div className="flex-1 flex flex-col gap-2">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Add a reply..."
+                            className="w-full bg-transparent border-b border-black/10 dark:border-white/10 focus:border-[var(--primary)] p-1 text-sm text-[var(--text)] focus:outline-none transition-all placeholder:text-gray-400"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                              className="px-3 py-1 text-[10px] font-bold text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 rounded-full uppercase transition-all"
+                            >
+                              Cancel
+                            </button>
+                            <button 
+                              onClick={() => handleAddComment(null as any, comment.id)}
+                              disabled={!replyText.trim()}
+                              className="bg-[var(--primary)] hover:bg-[#28a428] text-white px-3 py-1 rounded-full text-[10px] font-bold transition-all disabled:opacity-50 uppercase tracking-tighter shadow-sm"
+                            >
+                              Reply
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Replies */}
+                    {commentReplies.length > 0 && (
+                      <div className="mt-4 flex flex-col gap-4 pl-4 sm:pl-12 border-l border-black/5 dark:border-white/5">
+                        {commentReplies.map(reply => {
+                           const rProfile = Array.isArray(reply.profiles) ? reply.profiles[0] : (reply.profiles || {});
+                           const rDisplayName = reply.user_id === user?.id ? 'You' : (rProfile?.full_name || 'Student');
+                           return (
+                             <div key={reply.id} className="flex gap-3 group">
+                               <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 text-gray-500 overflow-hidden">
+                                 {rProfile?.avatar_url ? (
+                                   <img src={rProfile.avatar_url} alt={rDisplayName} className="w-full h-full object-cover" />
+                                 ) : (
+                                   <User size={16} />
+                                 )}
+                               </div>
+                               <div className="flex-1">
+                                 <div className="flex items-center gap-2">
+                                    <span className="font-bold text-[var(--text)] text-xs">{rDisplayName}</span>
+                                    {rProfile?.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-3.5 h-3.5" size={14} />}
+                                    <span className="text-[10px] text-gray-400">{new Date(reply.created_at).toLocaleDateString()}</span>
+                                 </div>
+                                 <p className="text-[var(--text)] mt-0.5 text-xs leading-relaxed break-words">{reply.text}</p>
+                                 <div className="flex flex-wrap items-center gap-1 mt-1">
+                                    {reply.user_id !== user?.id && (
+                                      <button 
+                                        onClick={() => navigate(`/messages?userId=${reply.user_id}`)}
+                                        className="flex items-center gap-1 px-1.5 py-1 hover:bg-black/5 dark:hover:bg-white/5 text-gray-500 hover:text-[var(--primary)] rounded-full transition-all text-[9px] font-bold uppercase tracking-tight"
+                                        title="Send Message"
+                                      >
+                                        <MessageSquare size={10} /> <span className="hidden sm:inline">Msg</span>
+                                      </button>
+                                    )}
+                                    
+                                    <button 
+                                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                      className="px-2 py-1 hover:bg-black/5 dark:hover:bg-white/5 text-gray-500 hover:text-[var(--primary)] rounded-full transition-all text-[9px] font-bold uppercase tracking-tight"
+                                    >
+                                      Reply
+                                    </button>
+
+                                    {(isAdmin || reply.user_id === user?.id) && (
+                                      <button 
+                                        onClick={() => handleDeleteComment(reply.id)}
+                                        className="flex items-center p-1.5 hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-full transition-all"
+                                        title="Delete"
+                                      >
+                                        <Trash2 size={10} />
+                                      </button>
+                                    )}
+                                 </div>
+                               </div>
+                             </div>
+                           );
+                        })}
+                      </div>
                     )}
                   </div>
-                  <p className="text-[var(--text)] mt-1 text-sm leading-relaxed">{comment.text}</p>
                 </div>
               </div>
             );

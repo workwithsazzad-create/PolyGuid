@@ -202,17 +202,7 @@ const ContentModal = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="relative pt-2">
-                    <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 transition-all">Classes Count*</label>
-                    <input 
-                      required
-                      type="number" 
-                      value={courseForm.classes}
-                      onChange={(e) => setCourseForm({...courseForm, classes: parseInt(e.target.value) || 0})}
-                      className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="flex bg-gray-100 dark:bg-white/5 rounded-md p-1 border border-gray-200 dark:border-white/10 w-full">
                       <button type="button" onClick={() => setCourseForm({...courseForm, isFree: true})} className={`flex-1 px-4 py-2 text-xs font-bold rounded-sm transition-all ${courseForm.isFree ? 'bg-white dark:bg-[#1a1a1a] text-blue-600 shadow-sm' : 'text-gray-400'}`}>FREE</button>
@@ -290,7 +280,6 @@ export default function AdminCourses() {
   const [courseForm, setCourseForm] = useState({
     title: '',
     thumbnail: '',
-    classes: 0,
     isFree: true,
     originalPrice: 0,
     price: 0,
@@ -367,7 +356,6 @@ export default function AdminCourses() {
     const courseData = {
       title: courseForm.title,
       thumbnail_url: courseForm.thumbnail,
-      classes_count: courseForm.classes,
       is_free: courseForm.isFree,
       original_price: courseForm.originalPrice,
       price: courseForm.price,
@@ -388,7 +376,7 @@ export default function AdminCourses() {
         setCourses(prev => prev.map(c => c.id === editingCourseId ? { ...c, ...courseData } : c));
         setIsAddingCourse(false);
         setEditingCourseId(null);
-        setCourseForm({ title: '', thumbnail: '', classes: 0, isFree: true, originalPrice: 0, price: 0, categories: [], description: '' });
+        setCourseForm({ title: '', thumbnail: '', isFree: true, originalPrice: 0, price: 0, categories: [], description: '' });
       }
     } else {
       const { data, error } = await supabase
@@ -402,7 +390,7 @@ export default function AdminCourses() {
       } else {
         setCourses(prev => [data[0], ...prev]);
         setIsAddingCourse(false);
-        setCourseForm({ title: '', thumbnail: '', classes: 0, isFree: true, originalPrice: 0, price: 0, categories: [], description: '' });
+        setCourseForm({ title: '', thumbnail: '', isFree: true, originalPrice: 0, price: 0, categories: [], description: '' });
       }
     }
     setLoading(false);
@@ -422,6 +410,24 @@ export default function AdminCourses() {
       setCourses(prev => prev.filter(c => c.id !== id));
       if (selectedCourse?.id === id) setSelectedCourse(null);
     }
+  };
+
+  const updateCourseClassCount = async (courseId: string) => {
+    const { data: contents } = await supabase
+      .from('course_content')
+      .select('type')
+      .eq('course_id', courseId)
+      .eq('type', 'video');
+    
+    const count = contents?.length || 0;
+    
+    await supabase
+      .from('courses')
+      .update({ classes_count: count })
+      .eq('id', courseId);
+    
+    // Refresh courses list to show updated count
+    fetchCourses();
   };
 
   const handleCreateContent = async (e: React.FormEvent) => {
@@ -452,6 +458,7 @@ export default function AdminCourses() {
         alert('Error updating content.');
       } else {
         setCourseContents(prev => prev.map(c => c.id === editingContentId ? { ...c, ...contentData } : c));
+        if (contentData.type === 'video') await updateCourseClassCount(selectedCourse.id);
         setIsAddingContent(false);
         setEditingContentId(null);
         setContentForm({ type: 'video', title: '', available_from: new Date().toISOString().slice(0, 16), is_paid: true, source: 'youtube', url: '', download_link: '', description: '' });
@@ -467,6 +474,7 @@ export default function AdminCourses() {
         alert('Error creating content.');
       } else {
         setCourseContents(prev => [...prev, data[0]]);
+        if (contentData.type === 'video') await updateCourseClassCount(selectedCourse.id);
         setIsAddingContent(false);
         setContentForm({ type: 'video', title: '', available_from: new Date().toISOString().slice(0, 16), is_paid: true, source: 'youtube', url: '', download_link: '', description: '' });
       }
@@ -477,6 +485,7 @@ export default function AdminCourses() {
   const handleDeleteContent = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this content?')) return;
     
+    const contentToDelete = courseContents.find(c => c.id === id);
     const { error } = await supabase
       .from('course_content')
       .delete()
@@ -486,6 +495,7 @@ export default function AdminCourses() {
       console.error('Error deleting content:', error);
     } else {
       setCourseContents(prev => prev.filter(c => c.id !== id));
+      if (contentToDelete?.type === 'video') await updateCourseClassCount(selectedCourse.id);
     }
   };
 
@@ -763,7 +773,6 @@ export default function AdminCourses() {
                     setCourseForm({
                       title: course.title,
                       thumbnail: course.thumbnail_url,
-                      classes: course.classes_count,
                       isFree: course.is_free,
                       originalPrice: course.original_price || 0,
                       price: course.price || 0,

@@ -8,6 +8,7 @@ import { supabase } from '@/src/lib/supabase';
 const DEMO_COURSES = [
   {
     title: "কম্পিউটার টেকনোলজি ১ম পর্ব",
+    description: "ডিপ্লোমা ইন কম্পিউটার ইঞ্জিনিয়ারিং এর ১ম পর্বের প্রোফেশনাল কোর্স।",
     price: 500,
     thumbnail: "https://placehold.co/600x400/1a1a1a/32CD32?text=CT+1st",
     classes: 24,
@@ -15,6 +16,7 @@ const DEMO_COURSES = [
   },
   {
     title: "সিভিল টেকনোলজি ৩য় পর্ব",
+    description: "সিভিল ইঞ্জিনিয়ারিং এর ৩য় পর্বের সকল গুরুত্বপূর্ণ বিষয় নিয়ে সাজানো এই কোর্স।",
     price: 700,
     thumbnail: "https://placehold.co/600x400/1a1a1a/32CD32?text=Civil+3rd",
     classes: 30,
@@ -22,6 +24,7 @@ const DEMO_COURSES = [
   },
   {
     title: "ইলেকট্রিক্যাল টেকনোলজি (ফ্রি কোর্স)",
+    description: "ইলেকট্রিক্যাল বেসিক নলেজ এবং টেকনিক্যাল স্কিল বৃদ্ধিতে এই ফ্রি কোর্স।",
     price: 0,
     thumbnail: "https://placehold.co/600x400/1a1a1a/32CD32?text=Electrical+Free",
     classes: 15,
@@ -29,6 +32,7 @@ const DEMO_COURSES = [
   },
   {
     title: "মেকানিক্যাল ইঞ্জিনিয়ারিং বেসিকস",
+    description: "মেকানিক্যাল ইঞ্জিনিয়ারিং এর ফান্ডামেন্টাল কনসেপ্ট শিখুন খুব সহজে।",
     price: 0,
     thumbnail: "https://placehold.co/600x400/1a1a1a/32CD32?text=Mechanical",
     classes: 12,

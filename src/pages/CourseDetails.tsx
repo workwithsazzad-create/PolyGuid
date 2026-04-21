@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ChevronLeft, PlayCircle, FileText, Lock, Eye, X } from 'lucide-react';
+import { ChevronLeft, PlayCircle, FileText, Lock, Eye, X, Video as VideoIcon } from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import { supabase } from '../lib/supabase';
 import { getDirectLink } from '../lib/utils';
@@ -12,7 +12,6 @@ export default function CourseDetails() {
   const [course, setCourse] = useState<any>(null);
   const [contents, setContents] = useState<any[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,23 +22,6 @@ export default function CourseDetails() {
     if (!id) return;
     setLoading(true);
     try {
-      // Course
-      const { data: courseData } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (courseData) {
-        setCourse({
-          ...courseData,
-          price: courseData.price,
-          originalPrice: courseData.original_price,
-          classes: courseData.classes_count,
-          thumbnail: courseData.thumbnail_url
-        });
-      }
-
       // Contents
       const { data: contentsData } = await supabase
         .from('course_content')
@@ -49,6 +31,24 @@ export default function CourseDetails() {
       
       if (contentsData) {
         setContents(contentsData);
+      }
+
+      // Course
+      const { data: courseData } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (courseData) {
+        const videoCount = contentsData?.filter(c => c.type === 'video').length || 0;
+        setCourse({
+          ...courseData,
+          price: courseData.price,
+          originalPrice: courseData.original_price,
+          classes: videoCount,
+          thumbnail: courseData.thumbnail_url
+        });
       }
 
       // Enrollment
@@ -137,7 +137,7 @@ export default function CourseDetails() {
           </div>
           
           {course.description && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed bg-black/5 dark:bg-white/5 p-4 rounded-xl italic">
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-normal">
               {course.description}
             </p>
           )}
@@ -161,11 +161,11 @@ export default function CourseDetails() {
             <GlassmorphicCard key={content.id} className="p-4 flex items-center justify-between hover:border-[var(--primary)]/30 transition-colors">
               <div className="flex items-center gap-4">
                 <div className={`p-2 rounded-lg ${content.type === 'video' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>
-                  {content.type === 'video' ? <PlayCircle size={20} /> : <FileText size={20} />}
+                  {content.type === 'video' ? <VideoIcon size={20} /> : <FileText size={20} />}
                 </div>
                 <div>
                   <h4 className="font-bold text-[var(--text)]">{i + 1}. {content.title}</h4>
-                  <p className="text-xs text-gray-500 capitalize">{content.type}</p>
+                  <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">{content.type}</p>
                 </div>
               </div>
               
@@ -175,7 +175,7 @@ export default function CourseDetails() {
                     if (content.type === 'video') {
                       navigate(`/play/${content.id}`);
                     } else {
-                      setSelectedPdf(content.url);
+                      navigate(`/pdf/${content.id}`);
                     }
                   }}
                   className="p-2 text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-lg transition-colors flex items-center gap-2 text-sm font-bold"
@@ -194,30 +194,6 @@ export default function CourseDetails() {
           )}
         </div>
       </div>
-
-      {/* PDF Viewer Popup */}
-      {selectedPdf && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-4xl h-[80vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-white/10">
-            <div className="flex items-center justify-between p-4 border-b border-black/10 dark:border-white/10">
-              <h3 className="font-bold text-[var(--text)]">PDF Viewer</h3>
-              <button 
-                onClick={() => setSelectedPdf(null)}
-                className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 w-full bg-gray-100 dark:bg-black/50">
-              <iframe 
-                src={selectedPdf} 
-                className="w-full h-full border-none"
-                title="PDF Viewer"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 }
