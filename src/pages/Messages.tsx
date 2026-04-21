@@ -200,6 +200,12 @@ export default function Messages() {
 
   const markAsRead = async (senderId: string) => {
     if (!user) return;
+    
+    // Optimistically update the UI to remove the unread indicator instantly
+    setConversations(prev => prev.map(conv => 
+      conv.id === senderId ? { ...conv, unread: false } : conv
+    ));
+
     try {
       await supabase
         .from('messages')
