@@ -176,6 +176,18 @@ export default function Messages() {
                 markAsRead(selectedUser.id);
             }
         })
+        .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `sender_id=eq.${user.id}` 
+        }, payload => {
+            // Update messages list for messages WE send
+            if (payload.new.receiver_id === selectedUser.id) {
+                setMessages(prev => [...prev, payload.new]);
+                scrollToBottom();
+            }
+        })
         .subscribe();
     }
     return () => {
@@ -225,18 +237,7 @@ export default function Messages() {
     if (!newMessage.trim() || !selectedUser || !user) return;
 
     const msg = newMessage;
-    setNewMessage(''); // optimistic clear
-    
-    // Optimistic UI update
-    const tempMsg = {
-      id: Date.now().toString(),
-      sender_id: user.id,
-      receiver_id: selectedUser.id,
-      content: msg,
-      created_at: new Date().toISOString()
-    };
-    setMessages(prev => [...prev, tempMsg]);
-    scrollToBottom();
+    setNewMessage(''); 
 
     const { error } = await supabase
       .from('messages')
