@@ -44,35 +44,27 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       
-      const { count } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', session.user.id)
-        .eq('read', false);
-        
-      setUnreadCount(count || 0);
+      const fetchCount = async () => {
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('receiver_id', session.user.id)
+            .eq('read', false);
+            
+          setUnreadCount(count || 0);
+      };
+
+      await fetchCount();
 
       channel = supabase
         .channel(`sidebar_messages_${session.user.id}_${Math.random().toString(36).substring(7)}`)
         .on('postgres_changes', { 
-            event: 'INSERT', 
+            event: '*', 
             schema: 'public', 
             table: 'messages',
             filter: `receiver_id=eq.${session.user.id}` 
         }, payload => {
-            if (!payload.new.read) {
-              setUnreadCount(prev => prev + 1);
-            }
-        })
-        .on('postgres_changes', { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'messages',
-            filter: `receiver_id=eq.${session.user.id}` 
-        }, payload => {
-            if (payload.new.read) {
-              setUnreadCount(prev => Math.max(0, prev - 1));
-            }
+            fetchCount();
         })
         .subscribe();
     };

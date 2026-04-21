@@ -19,14 +19,48 @@ export default function Messages() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    checkUser();
+    let globalChannel: any;
+
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUser(session.user);
+        fetchConversations(session.user.id);
+        
+        globalChannel = supabase
+          .channel(`global_messages_${session.user.id}_${Math.random().toString(36).substring(7)}`)
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `receiver_id=eq.${session.user.id}`
+          }, () => {
+             fetchConversations(session.user.id);
+          })
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `sender_id=eq.${session.user.id}`
+          }, () => {
+             fetchConversations(session.user.id);
+          })
+          .subscribe();
+      }
+    };
+
+    init();
+
+    return () => {
+      if (globalChannel) supabase.removeChannel(globalChannel);
+    };
   }, []);
 
   const checkUser = async () => {
+    // Kept to avoid undefined, but we moved logic to init
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       setUser(session.user);
-      fetchConversations(session.user.id);
     }
   };
 
@@ -103,11 +137,11 @@ export default function Messages() {
 
       setConversations(convList);
       
-      if (initialUserId) {
+      // WhatsApp style: do not auto-select the first conversation. 
+      // Only select if there is a specific initialUserId in the URL and we haven't selected one yet.
+      if (initialUserId && !selectedUser) {
         const target = convList.find(c => c.id === initialUserId);
         if (target) setSelectedUser(target);
-      } else if (convList.length > 0) {
-        setSelectedUser(convList[0]);
       }
       
       setLoading(false);
@@ -118,16 +152,14 @@ export default function Messages() {
   };
 
   useEffect(() => {
+    let channel: any;
     if (selectedUser && user) {
       fetchMessages(selectedUser.id);
       
       // Mark messages from this user to me as read
       markAsRead(selectedUser.id);
       
-      let initialLoadDone = false;
-
-      // Subscribe to all inserts to catch messages from others, but specifically append if it's from the selected user
-      const channel = supabase
+      channel = supabase
         .channel(`messages_${user.id}_${selectedUser.id}_${Math.random().toString(36).substring(7)}`)
         .on('postgres_changes', { 
             event: 'INSERT', 
@@ -143,20 +175,12 @@ export default function Messages() {
                 // Automatically mark it as read since the chat is open
                 markAsRead(selectedUser.id);
             }
-            
-            // Refresh conversation list to show new message preview/order
-            if (initialLoadDone) {
-              fetchConversations(user.id);
-            }
         })
-        .subscribe(() => {
-          initialLoadDone = true;
-        });
-        
-      return () => {
-        supabase.removeChannel(channel);
-      };
+        .subscribe();
     }
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [selectedUser, user]);
 
   const markAsRead = async (senderId: string) => {
