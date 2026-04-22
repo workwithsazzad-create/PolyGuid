@@ -56,4 +56,17 @@ export const supabase = createClient(
  * create policy "Only admins can modify courses." on courses for all using (
  *   exists (select 1 from profiles where id = auth.uid() and role = 'admin')
  * );
+ * 
+ * -- Saved Items table
+ * create table saved_items (
+ *   id uuid default uuid_generate_v4() primary key,
+ *   user_id uuid references auth.users on delete cascade,
+ *   content_id uuid references course_content(id) on delete cascade,
+ *   item_type text check (item_type in ('video', 'pdf')),
+ *   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+ *   unique(user_id, content_id)
+ * );
+ * 
+ * alter table saved_items enable row level security;
+ * create policy "Users can manage own saved items" on saved_items for all using (auth.uid() = user_id);
  */

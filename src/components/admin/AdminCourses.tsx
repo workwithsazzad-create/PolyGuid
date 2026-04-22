@@ -58,8 +58,8 @@ const ContentModal = ({
                     className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none bg-no-repeat bg-[right_1rem_center]"
                     style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundSize: '1em' }}
                   >
-                    <option value="video">video</option>
-                    <option value="pdf">pdf</option>
+                    <option value="video" className="text-black dark:text-white dark:bg-[#1a1a1a]">video</option>
+                    <option value="pdf" className="text-black dark:text-white dark:bg-[#1a1a1a]">pdf</option>
                   </select>
                 </div>
 
@@ -86,18 +86,6 @@ const ContentModal = ({
                     className="flex-1 bg-transparent p-2 text-sm text-gray-600 dark:text-white focus:outline-none"
                   />
                 </div>
-                <div className="flex items-center gap-2 cursor-pointer select-none">
-                  <div className="relative">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={contentForm.is_paid}
-                      onChange={(e) => setContentForm({...contentForm, is_paid: e.target.checked})}
-                    />
-                    <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 shadow-inner"></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-500">Paid</span>
-                </div>
               </div>
 
               <div className="border-t border-gray-100 dark:border-white/5 pt-4">
@@ -111,8 +99,8 @@ const ContentModal = ({
                         className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none bg-no-repeat bg-[right_1rem_center]"
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundSize: '1em' }}
                       >
-                        <option value="youtube">youtube</option>
-                        <option value="facebook">facebook</option>
+                        <option value="youtube" className="text-black dark:text-white dark:bg-[#1a1a1a]">youtube</option>
+                        <option value="facebook" className="text-black dark:text-white dark:bg-[#1a1a1a]">facebook</option>
                       </select>
                     </div>
                   )}
@@ -551,17 +539,17 @@ export default function AdminCourses() {
   if (selectedCourse) {
     return (
       <div className="flex flex-col gap-6">
-        <div className="flex bg-white dark:bg-[#1a1a1a] p-5 rounded-2xl border border-black/10 dark:border-white/10 shadow-sm relative overflow-hidden h-[100px] items-center">
-          <div className="flex items-center gap-4 z-10">
+        <div className="flex bg-white dark:bg-[#1a1a1a] p-4 sm:p-5 rounded-2xl border border-black/10 dark:border-white/10 shadow-sm relative overflow-hidden h-[100px] items-center">
+          <div className="flex items-center gap-3 sm:gap-4 z-10 flex-1">
             <button 
               onClick={() => setSelectedCourse(null)}
-              className="p-2.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-gray-400 transition-colors"
+              className="p-1.5 sm:p-2.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-gray-400 transition-colors shrink-0"
             >
               <ChevronLeft size={24} />
             </button>
-            <div className="flex flex-col">
-              <h2 className="text-xl font-bold text-[var(--text)] tracking-tight">{selectedCourse.title}</h2>
-              <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest">Studio Workspace</span>
+            <div className="flex flex-col flex-1 min-w-0">
+              <h2 className="text-sm sm:text-xl md:text-2xl font-bold text-[var(--text)] tracking-tight truncate">{selectedCourse.title}</h2>
+              <span className="text-[9px] sm:text-[10px] uppercase font-black text-gray-400 tracking-widest truncate">Studio Workspace</span>
             </div>
           </div>
           <button 
@@ -579,9 +567,9 @@ export default function AdminCourses() {
               });
               setIsAddingContent(true);
             }}
-            className="ml-auto flex items-center justify-center gap-2 bg-[var(--primary)] text-white px-8 py-3.5 rounded-xl hover:bg-[#28a428] transition-all font-bold shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-[0.98] z-10"
+            className="ml-2 sm:ml-auto flex items-center justify-center gap-1 sm:gap-2 bg-[var(--primary)] text-white px-3 sm:px-8 py-2 sm:py-3.5 rounded-xl hover:bg-[#28a428] transition-all font-bold shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-[0.98] z-10 text-xs sm:text-base shrink-0"
           >
-            <Plus size={20} className="stroke-[3]" /> Add Content
+            <Plus size={16} className="sm:w-5 sm:h-5 stroke-[3]" /> <span className="hidden sm:inline">Add Content</span><span className="sm:hidden">Add</span>
           </button>
         </div>
 
@@ -633,8 +621,7 @@ export default function AdminCourses() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setPreviewContent(content);
-                      setIsPreviewModalOpen(true);
+                      window.open(content.type === 'video' ? `/play/${content.id}` : `/pdf/${content.id}`, '_blank');
                     }}
                     className="p-2.5 text-gray-400 hover:text-[var(--primary)] hover:bg-white dark:hover:bg-white/10 rounded-xl transition-all"
                   >

@@ -48,35 +48,35 @@ export default function CourseCard({ id, title, description, price, originalPric
         </div>
         
         <div className="flex flex-col gap-2 p-1">
-          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 line-clamp-1 leading-snug">
+          <h3 className="text-[11px] sm:text-sm font-bold text-gray-800 dark:text-gray-200 line-clamp-1 leading-snug">
             {title}
           </h3>
           
           {description && (
-            <p className="text-[10px] text-gray-500 line-clamp-2 -mt-1">
+            <p className="text-[9px] sm:text-[10px] text-gray-500 line-clamp-2 -mt-1 hidden sm:block">
               {description}
             </p>
           )}
           
           <div className="flex items-center gap-1 mt-auto">
-            <span className="text-lg font-black text-[#1a237e] dark:text-indigo-400">
+            <span className="text-sm sm:text-lg font-black text-[#1a237e] dark:text-indigo-400">
               ৳{price}
             </span>
             {hasDiscount && (
-              <span className="text-[11px] text-gray-400 line-through">
+              <span className="text-[9px] sm:text-[11px] text-gray-400 line-through">
                 ৳{originalPrice}
               </span>
             )}
           </div>
           
           <div 
-            className={`w-full py-2.5 rounded-lg font-black text-xs uppercase tracking-wider text-center transition-all shadow-sm ${
+            className={`w-full py-1.5 sm:py-2.5 rounded-lg font-black text-[9px] sm:text-xs uppercase tracking-wider text-center transition-all shadow-sm ${
               isEnrolled 
                 ? 'bg-gray-100 text-gray-400 border border-gray-200' 
                 : 'bg-[#1a237e] text-white'
             }`}
           >
-            {isEnrolled ? 'Enrolled' : 'Enroll Now'}
+            {isEnrolled ? 'Enrolled' : 'Enroll'}
           </div>
         </div>
       </GlassmorphicCard>

@@ -222,21 +222,23 @@ export default function Admin() {
       className="flex flex-col gap-6 pb-12"
     >
       {/* Tab Navigation */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-4 hide-scrollbar border-b border-black/10 dark:border-white/10 -mx-2 px-2 scroll-smooth touch-pan-x snap-x">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as AdminTab)}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap snap-start ${
-              activeTab === tab.id 
-                ? "bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/25 scale-105 z-10" 
-                : "text-gray-500 hover:text-[var(--text)] hover:bg-black/5 dark:hover:bg-white/5"
-            }`}
-          >
-            <tab.icon size={16} />
-            {tab.label}
-          </button>
-        ))}
+      <div className="w-full relative">
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 hide-scrollbar border-b border-black/10 dark:border-white/10 -mx-4 px-4 sm:-mx-0 sm:px-0 scroll-smooth touch-pan-x snap-x">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as AdminTab)}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap snap-start shrink-0 ${
+                activeTab === tab.id 
+                  ? "bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/25 scale-100 sm:scale-105 z-10" 
+                  : "text-gray-500 hover:text-[var(--text)] hover:bg-black/5 dark:hover:bg-white/5"
+              }`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <AnimatePresence mode="wait">

@@ -10,11 +10,13 @@ import CourseDetails from './pages/CourseDetails';
 import VideoPlayer from './pages/VideoPlayer';
 import PdfViewer from './pages/PdfViewer';
 import SemesterCourses from './pages/SemesterCourses';
+import SavedItems from './pages/SavedItems';
 import Sidebar from './components/ui/Sidebar';
 import { Loader2 } from 'lucide-react';
 
 import { ThemeProvider, useTheme } from './components/ThemeProvider';
 import Logo from './components/ui/Logo';
+import { cn } from './lib/utils';
 
 import { Menu, X } from 'lucide-react';
 
@@ -35,8 +37,16 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
         >
           <Menu size={24} />
         </button>
-        <div className="ml-2 flex flex-1 items-center h-full justify-start overflow-hidden">
-          <Logo theme={theme} showText={false} className="origin-left mt-1" />
+        <div className={cn(
+          "ml-3 flex flex-1 items-center h-full justify-start overflow-hidden transition-opacity duration-300",
+          isSidebarOpen ? "opacity-0 invisible" : "opacity-100 visible"
+        )}>
+          <span className="text-xl font-bold tracking-tight font-sans">
+            <span className="text-[#32CD32]">P</span>
+            <span className="text-[var(--text)]">oly</span>
+            <span className="text-[#32CD32]">G</span>
+            <span className="text-[var(--text)]">uid</span>
+          </span>
         </div>
       </div>
 
@@ -139,6 +149,7 @@ function AppContent() {
           <Route path="/play/:contentId" element={<VideoPlayer />} />
           <Route path="/pdf/:contentId" element={<PdfViewer />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/saved-items" element={<SavedItems />} />
           <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />} />
           <Route path="/profile" element={<Profile />} />
           

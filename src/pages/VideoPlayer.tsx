@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ChevronLeft, Send, Trash2, User, MessageSquare, X, BadgeCheck } from 'lucide-react';
+import { ChevronLeft, Send, Trash2, User, MessageSquare, X, BadgeCheck, Star, BookmarkCheck } from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import { supabase } from '../lib/supabase';
 import { getEmbedUrl } from '../lib/utils';
@@ -18,6 +18,8 @@ export default function VideoPlayer() {
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetchContentAndComments();
@@ -25,58 +27,105 @@ export default function VideoPlayer() {
   }, [contentId]);
 
   const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setUser(session.user);
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-      
-      if (profile) {
-        setCurrentUserProfile(profile);
-        if (profile.role === 'admin') setIsAdmin(true);
+    try {
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      if (authError) return;
+      if (session) {
+        setUser(session.user);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (profile) {
+          setCurrentUserProfile(profile);
+          if (profile.role === 'admin') setIsAdmin(true);
+        }
+
+        // Check if already saved
+        const { data: saved } = await supabase
+          .from('saved_items')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('content_id', contentId)
+          .maybeSingle();
+        
+        if (saved) setIsSaved(true);
       }
+    } catch (e) {
+      console.error('checkUser fetch error:', e);
+    }
+  };
+
+  const toggleSave = async () => {
+    if (!user || !content) return;
+    setIsSaving(true);
+    try {
+      if (isSaved) {
+        await supabase
+          .from('saved_items')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('content_id', contentId);
+        setIsSaved(false);
+      } else {
+        await supabase
+          .from('saved_items')
+          .insert([{
+            user_id: user.id,
+            content_id: contentId,
+            item_type: 'video'
+          }]);
+        setIsSaved(true);
+      }
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const fetchContentAndComments = async () => {
     if (!contentId) return;
     
-    // Content
-    const { data: contentData } = await supabase
-      .from('course_content')
-      .select('*')
-      .eq('id', contentId)
-      .single();
-    
-    if (contentData) setContent(contentData);
-
-    // Comments without join (fixes PGRST200 foreign key error)
-    const { data: commentsData } = await supabase
-      .from('comments')
-      .select('*')
-      .eq('content_id', contentId)
-      .order('created_at', { ascending: true });
-    
-    if (commentsData && commentsData.length > 0) {
-      const userIds = [...new Set(commentsData.map(c => c.user_id))];
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, polytechnic_name, role')
-        .in('id', userIds);
-        
-      const profilesMap: any = {};
-      profilesData?.forEach(p => { profilesMap[p.id] = p; });
+    try {
+      // Content
+      const { data: contentData } = await supabase
+        .from('course_content')
+        .select('*')
+        .eq('id', contentId)
+        .single();
       
-      const mergedComments = commentsData.map(c => ({
-        ...c,
-        profiles: profilesMap[c.user_id]
-      }));
-      setComments(mergedComments);
-    } else {
-      setComments([]);
+      if (contentData) setContent(contentData);
+
+      // Comments without join (fixes PGRST200 foreign key error)
+      const { data: commentsData } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('content_id', contentId)
+        .order('created_at', { ascending: true });
+      
+      if (commentsData && commentsData.length > 0) {
+        const userIds = [...new Set(commentsData.map(c => c.user_id))];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, polytechnic_name, role')
+          .in('id', userIds);
+          
+        const profilesMap: any = {};
+        profilesData?.forEach(p => { profilesMap[p.id] = p; });
+        
+        const mergedComments = commentsData.map(c => ({
+          ...c,
+          profiles: profilesMap[c.user_id]
+        }));
+        setComments(mergedComments);
+      } else {
+        setComments([]);
+      }
+    } catch (e) {
+      console.error('fetchContentAndComments error:', e);
     }
   };
 
@@ -175,7 +224,17 @@ export default function VideoPlayer() {
         </div>
         
         <div className="flex flex-col gap-2 px-2">
-          <h1 className="text-2xl font-bold text-[var(--text)]">{content.title}</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text)] line-clamp-2 md:line-clamp-none">{content.title}</h1>
+            <button 
+              onClick={toggleSave}
+              disabled={isSaving}
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl transition-all font-bold text-[10px] sm:text-sm shrink-0 shadow-sm ${isSaved ? 'bg-[var(--primary)] text-white' : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:text-[var(--primary)]'}`}
+            >
+              {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" /> : <Star className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" />}
+              <span>{isSaved ? 'Saved' : 'Save for later'}</span>
+            </button>
+          </div>
           <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest">
             {new Date(content.created_at).toLocaleDateString()} • {content.type}
           </div>
@@ -188,14 +247,14 @@ export default function VideoPlayer() {
       </div>
 
       {/* Comments Section */}
-      <GlassmorphicCard className="p-6 mt-4">
-        <h2 className="text-xl font-bold text-[var(--text)] mb-6">
+      <GlassmorphicCard className="p-4 sm:p-6 mt-4 flex flex-col max-h-[600px] sm:max-h-[800px]">
+        <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] mb-4 sm:mb-6 shrink-0">
           {comments.length} Comments
         </h2>
         
-        <form onSubmit={handleAddComment} className="flex gap-4 mb-8">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 text-white shadow-lg">
-            <User size={20} />
+        <form onSubmit={handleAddComment} className="flex gap-3 sm:gap-4 mb-6 sm:mb-8 shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 text-white shadow-lg">
+            <User size={16} sm:size={20} />
           </div>
           <div className="flex-1 flex flex-col gap-2">
             <input
@@ -203,12 +262,12 @@ export default function VideoPlayer() {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Add a comment..."
-              className="w-full bg-transparent border-b border-black/10 dark:border-white/10 focus:border-[var(--primary)] p-2 text-[var(--text)] focus:outline-none transition-all placeholder:text-gray-400"
+              className="w-full bg-transparent border-b border-black/10 dark:border-white/10 focus:border-[var(--primary)] p-2 text-sm sm:text-base text-[var(--text)] focus:outline-none transition-all placeholder:text-gray-400"
             />
             <div className={`flex justify-end transition-all ${newComment ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <button 
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-bold transition-all shadow-md active:scale-95"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95"
               >
                 Comment
               </button>
@@ -216,7 +275,7 @@ export default function VideoPlayer() {
           </div>
         </form>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
           {comments.filter(c => !c.parent_id).map((comment) => {
             const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : (comment.profiles || {});
             const displayName = comment.user_id === user?.id ? 'You' : (profile?.full_name || 'Student');

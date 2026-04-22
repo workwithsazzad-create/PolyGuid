@@ -353,11 +353,11 @@ export default function Home() {
           { name: 'Book PDF', icon: FileText, color: 'text-red-500', bg: 'bg-red-500/10' },
           { name: 'Book List', icon: List, color: 'text-orange-500', bg: 'bg-orange-500/10' },
         ].map((item, i) => (
-          <GlassmorphicCard key={i} hoverEffect className="p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer text-center">
-            <div className={`p-2 sm:p-3 rounded-xl ${item.bg} ${item.color}`}>
-              <item.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+          <GlassmorphicCard key={i} hoverEffect className="p-2 sm:p-4 flex flex-row sm:flex-col items-center justify-start sm:justify-center gap-2 sm:gap-3 cursor-pointer text-left sm:text-center min-h-0">
+            <div className={`p-1.5 sm:p-3 rounded-lg sm:rounded-xl ${item.bg} ${item.color} shrink-0`}>
+              <item.icon className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <span className="font-semibold text-[var(--text)] text-xs sm:text-sm">{item.name}</span>
+            <span className="font-semibold text-[var(--text)] text-[11px] sm:text-sm leading-tight">{item.name}</span>
           </GlassmorphicCard>
         ))}
       </div>
@@ -462,9 +462,9 @@ export default function Home() {
         
         <button 
           onClick={() => setShowDonateModal(true)}
-          className="shrink-0 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold px-6 py-4 sm:py-6 rounded-2xl shadow-lg shadow-red-500/30 transition-all flex items-center justify-center gap-2 hover:scale-105"
+          className="shrink-0 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold px-6 py-3 sm:py-6 rounded-xl sm:rounded-2xl shadow-lg shadow-red-500/30 transition-all flex items-center justify-center gap-2 hover:scale-105 text-sm sm:text-base whitespace-nowrap"
         >
-          <Heart className="w-5 h-5 fill-white" /> Donate Now
+          <Heart className="w-4 h-4 sm:w-5 sm:h-5 fill-white" /> Donate Now
         </button>
       </div>
 
@@ -479,9 +479,9 @@ export default function Home() {
               onClick={() => {
                 navigate(`/semester/${encodeURIComponent(semester)}`);
               }}
-              className={`p-3 sm:p-4 flex items-center justify-center cursor-pointer text-center transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:border-[var(--primary)]/50 ${i === SEMESTERS.length - 1 && SEMESTERS.length % 2 !== 0 ? 'col-span-2' : ''}`}
+              className={`p-2 sm:p-4 flex items-center justify-center cursor-pointer text-center transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:border-[var(--primary)]/50 ${i === SEMESTERS.length - 1 && SEMESTERS.length % 2 !== 0 ? 'col-span-2' : ''}`}
             >
-              <span className="font-bold text-[var(--text)] text-sm sm:text-lg">{semester}</span>
+              <span className="font-bold text-[var(--text)] text-xs sm:text-lg leading-tight">{semester}</span>
             </GlassmorphicCard>
           ))}
         </div>

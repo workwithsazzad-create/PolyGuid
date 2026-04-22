@@ -164,7 +164,7 @@ export default function CourseDetails() {
                   {content.type === 'video' ? <VideoIcon size={20} /> : <FileText size={20} />}
                 </div>
                 <div>
-                  <h4 className="font-bold text-[var(--text)]">{i + 1}. {content.title}</h4>
+                  <h4 className="font-bold text-[var(--text)]">{content.title}</h4>
                   <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">{content.type}</p>
                 </div>
               </div>
