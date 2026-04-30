@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, animate, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, BookOpen, Calculator, FileText, List, Users, Building2, PlayCircle, Heart, Copy, Check, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Calculator, FileText, List, Users, Building2, PlayCircle, Heart, Copy, Check, X, Search, FileCheck } from 'lucide-react';
 import GlassmorphicCard from '@/src/components/ui/GlassmorphicCard';
 import CourseCard from '@/src/components/ui/CourseCard';
 import { supabase } from '@/src/lib/supabase';
@@ -348,12 +348,17 @@ export default function Home() {
       {/* Top Options */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { name: 'Book Buy/Sell', icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-          { name: 'CGPA Calculator', icon: Calculator, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-          { name: 'Book PDF', icon: FileText, color: 'text-red-500', bg: 'bg-red-500/10' },
-          { name: 'Book List', icon: List, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+          { name: 'Book Buy/Sell', icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-500/10', path: '/marketplace' },
+          { name: 'Check Result', icon: FileCheck, color: 'text-purple-500', bg: 'bg-purple-500/10', path: '/results' },
+          { name: 'Book PDF', icon: FileText, color: 'text-red-500', bg: 'bg-red-500/10', path: '/saved' },
+          { name: 'Book List', icon: List, color: 'text-orange-500', bg: 'bg-orange-500/10', path: '/courses' },
         ].map((item, i) => (
-          <GlassmorphicCard key={i} hoverEffect className="p-2 sm:p-4 flex flex-row sm:flex-col items-center justify-start sm:justify-center gap-2 sm:gap-3 cursor-pointer text-left sm:text-center min-h-0">
+          <GlassmorphicCard 
+            key={i} 
+            hoverEffect 
+            onClick={() => item.path && navigate(item.path)}
+            className="p-2 sm:p-4 flex flex-row sm:flex-col items-center justify-start sm:justify-center gap-2 sm:gap-3 cursor-pointer text-left sm:text-center min-h-0"
+          >
             <div className={`p-1.5 sm:p-3 rounded-lg sm:rounded-xl ${item.bg} ${item.color} shrink-0`}>
               <item.icon className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
@@ -361,6 +366,7 @@ export default function Home() {
           </GlassmorphicCard>
         ))}
       </div>
+
 
       {/* Hero Banner */}
       <div className="relative w-full rounded-3xl overflow-hidden group bg-[#1a1a1a]">

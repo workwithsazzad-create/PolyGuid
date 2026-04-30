@@ -11,6 +11,7 @@ import VideoPlayer from './pages/VideoPlayer';
 import PdfViewer from './pages/PdfViewer';
 import SemesterCourses from './pages/SemesterCourses';
 import SavedItems from './pages/SavedItems';
+import ResultViewer from './pages/ResultViewer';
 import Sidebar from './components/ui/Sidebar';
 import { Loader2 } from 'lucide-react';
 
@@ -150,6 +151,7 @@ function AppContent() {
           <Route path="/pdf/:contentId" element={<PdfViewer />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/saved-items" element={<SavedItems />} />
+          <Route path="/results" element={<ResultViewer />} />
           <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />} />
           <Route path="/profile" element={<Profile />} />
           
