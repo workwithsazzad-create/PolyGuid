@@ -670,7 +670,7 @@ export default function Admin() {
     >
       {/* Tab Navigation */}
       <div className="w-full relative">
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 hide-scrollbar border-b border-black/10 dark:border-white/10 -mx-4 px-4 sm:-mx-0 sm:px-0 scroll-smooth touch-pan-x snap-x">
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 -mx-4 px-4 sm:-mx-0 sm:px-0 scroll-smooth touch-pan-x snap-x hide-scrollbar border-b border-black/10 dark:border-white/10">
           {tabs.map((tab) => (
             <button
               key={tab.id}

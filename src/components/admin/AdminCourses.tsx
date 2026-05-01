@@ -766,36 +766,36 @@ export default function AdminCourses() {
         {courses.map(course => (
           <GlassmorphicCard 
             key={course.id} 
-            className="group flex items-center justify-between p-4 cursor-pointer hover:border-[var(--primary)]/50 hover:bg-[var(--primary)]/5 transition-all border-2" 
+            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer hover:border-[var(--primary)]/50 hover:bg-[var(--primary)]/5 transition-all border-2 gap-4" 
             onClick={() => setSelectedCourse(course)}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-[var(--primary)] group-hover:scale-110 transition-transform">
-                <Video size={24} />
+            <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-[var(--primary)] group-hover:scale-110 transition-transform shrink-0">
+                <Video className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div className="flex flex-col">
-                <h3 className="font-bold text-[var(--text)] text-lg line-clamp-1">{course.title}</h3>
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col min-w-0">
+                <h3 className="font-bold text-[var(--text)] text-sm sm:text-lg line-clamp-1">{course.title}</h3>
+                <div className="flex items-center gap-2 flex-wrap">
                   {course.categories?.map((cat: string) => (
-                    <span key={cat} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{cat}</span>
+                    <span key={cat} className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest">{cat}</span>
                   ))}
-                  <span className="text-[10px] text-gray-300">•</span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{course.classes_count} Modules</span>
+                  <span className="text-[10px] text-gray-300 hidden sm:inline">•</span>
+                  <span className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{course.classes_count} Modules</span>
                 </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-6">
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-[10px] uppercase font-black text-gray-400 tracking-tighter">Investment</span>
+            <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 border-t sm:border-t-0 pt-3 sm:pt-0 border-black/5 dark:border-white/5">
+              <div className="flex flex-col items-start sm:items-end">
+                <span className="text-[8px] sm:text-[10px] uppercase font-black text-gray-400 tracking-tighter">Investment</span>
                 {course.is_free ? (
-                  <span className="text-sm font-black text-green-500 uppercase">Free</span>
+                  <span className="text-[11px] sm:text-sm font-black text-green-500 uppercase">Free</span>
                 ) : (
-                  <span className="text-sm font-black text-[var(--primary)] tracking-tighter">৳{course.price}</span>
+                  <span className="text-[11px] sm:text-sm font-black text-[var(--primary)] tracking-tighter">৳{course.price}</span>
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 {course.pinned_position ? (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleUnpinCourse(course.id); }}
