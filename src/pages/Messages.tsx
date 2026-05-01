@@ -367,16 +367,16 @@ export default function Messages() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col h-[calc(100dvh-110px)] md:h-[calc(100vh-140px)] max-w-6xl mx-auto"
+      className="flex flex-col h-[calc(100dvh-5rem)] md:h-[calc(100vh-140px)] max-w-6xl mx-auto overflow-hidden bg-white dark:bg-[#1a1a1a] md:bg-transparent"
     >
-      <div className="flex bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl border border-black/10 dark:border-white/10 flex-1 relative">
+      <div className="flex bg-white dark:bg-[#1a1a1a] md:rounded-2xl md:shadow-2xl md:border border-black/10 dark:border-white/10 flex-1 relative overflow-hidden">
         
         {/* Sidebar Contacts List */}
         <div className={`w-full md:w-80 border-r border-black/10 dark:border-white/10 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-4 border-b border-black/10 dark:border-white/10 bg-gray-50 dark:bg-black/20 flex justify-between items-center">
+          <div className="p-4 border-b border-black/10 dark:border-white/10 bg-gray-50 dark:bg-black/20 flex justify-between items-center shrink-0">
             <h2 className="text-xl font-bold text-[var(--text)]">Messages</h2>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overscroll-contain">
             {conversations.length === 0 ? (
               <div className="p-8 text-center text-gray-500 text-sm">No conversations yet.</div>
             ) : (
@@ -414,11 +414,11 @@ export default function Messages() {
         </div>
 
         {/* Chat Area */}
-        <div className={`flex-1 flex flex-col bg-gray-50 dark:bg-[#141414] ${!selectedUser ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 flex flex-col bg-gray-50 dark:bg-[#141414] ${!selectedUser ? 'hidden md:flex' : 'flex'} relative overflow-hidden`}>
           {selectedUser ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center justify-between gap-3 shadow-sm">
+              <div className="sticky top-0 z-20 p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center justify-between gap-3 shadow-sm shrink-0">
                 <div className="flex items-center gap-3">
                   <button 
                     className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[var(--primary)]"
@@ -462,7 +462,7 @@ export default function Messages() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3">
                 {messages.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-500 text-sm">
                     Send a message to start the conversation
@@ -492,7 +492,7 @@ export default function Messages() {
               </div>
 
               {/* Input Area */}
-              <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-black/10 dark:border-white/10">
+              <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-black/10 dark:border-white/10 sticky bottom-0 z-20 shrink-0">
                 {blockedByMe || blockedByOther ? (
                     <div className="text-center p-3 text-sm font-medium text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
                         {blockedByMe ? 'You have blocked this conversation.' : 'You have been blocked by this user.'}
