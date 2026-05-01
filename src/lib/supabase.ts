@@ -69,4 +69,41 @@ export const supabase = createClient(
  * 
  * alter table saved_items enable row level security;
  * create policy "Users can manage own saved items" on saved_items for all using (auth.uid() = user_id);
+ * 
+ * -- Messages table
+ * create table messages (
+ *   id uuid default uuid_generate_v4() primary key,
+ *   sender_id uuid references auth.users on delete cascade,
+ *   receiver_id uuid references auth.users on delete cascade,
+ *   content text not null,
+ *   read boolean default false,
+ *   created_at timestamp with time zone default timezone('utc'::text, now()) not null
+ * );
+ * 
+ * alter table messages enable row level security;
+ * create policy "Users can see messages they sent or received." on messages for select using (auth.uid() = sender_id or auth.uid() = receiver_id);
+ * create policy "Users can send messages if not blocked." on messages for insert with check (
+ *   auth.uid() = sender_id AND 
+ *   NOT EXISTS (
+ *     SELECT 1 FROM blocks 
+ *     WHERE (blocker_id = sender_id AND blocked_id = receiver_id) 
+ *     OR (blocker_id = receiver_id AND blocked_id = sender_id)
+ *   )
+ * );
+ * create policy "Users can mark messages as read." on messages for update using (auth.uid() = receiver_id);
+ * create policy "Users can delete their own messages." on messages for delete using (auth.uid() = sender_id or auth.uid() = receiver_id);
+ * 
+ * -- Blocks table
+ * create table blocks (
+ *   id uuid default uuid_generate_v4() primary key,
+ *   blocker_id uuid references auth.users on delete cascade,
+ *   blocked_id uuid references auth.users on delete cascade,
+ *   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+ *   unique(blocker_id, blocked_id)
+ * );
+ * 
+ * alter table blocks enable row level security;
+ * create policy "Users can see who they blocked." on blocks for select using (auth.uid() = blocker_id or auth.uid() = blocked_id);
+ * create policy "Users can block others." on blocks for insert with check (auth.uid() = blocker_id);
+ * create policy "Users can unblock others." on blocks for delete using (auth.uid() = blocker_id);
  */

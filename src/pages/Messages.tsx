@@ -235,47 +235,79 @@ export default function Messages() {
     }
   };
 
+  const [blockedByMe, setBlockedByMe] = useState(false);
+  const [blockedByOther, setBlockedByOther] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const scrollToBottom = () => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   };
-
-  const [isBlocked, setIsBlocked] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
   
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      // Very basic click outside, optimally would use a ref, but simple enough for this UI
-      setShowDropdown(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
     };
     if (showDropdown) {
-        // slight delay to prevent immediate toggle off on the click that opened it
-        setTimeout(() => document.addEventListener('click', handleClickOutside), 10);
+        document.addEventListener('mousedown', handleClickOutside);
     }
-    return () => document.removeEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDropdown]);
   
   // Need to check for blocks when component mounts or user switches
   useEffect(() => {
+    let blockChannel: any;
     if (selectedUser && user) {
         checkBlockStatus(selectedUser.id);
+
+        // Real-time subscription to block status changes
+        blockChannel = supabase
+          .channel(`blocks_status_${user.id}_${selectedUser.id}`)
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'blocks'
+          }, (payload: any) => {
+            const { blocker_id, blocked_id } = payload.new || payload.old;
+            // Only update if it involves the current chat pair
+            if (
+              (blocker_id === user.id && blocked_id === selectedUser.id) ||
+              (blocker_id === selectedUser.id && blocked_id === user.id)
+            ) {
+              checkBlockStatus(selectedUser.id);
+            }
+          })
+          .subscribe();
     }
+    return () => {
+      if (blockChannel) supabase.removeChannel(blockChannel);
+    };
   }, [selectedUser, user]);
 
   const checkBlockStatus = async (otherUserId: string) => {
-    const { data } = await supabase
+    const { data: blocksByMe } = await supabase
       .from('blocks')
       .select('id')
-      .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${otherUserId}),and(blocker_id.eq.${otherUserId},blocked_id.eq.${user.id})`);
+      .eq('blocker_id', user.id)
+      .eq('blocked_id', otherUserId);
       
-    setIsBlocked(!!data && data.length > 0);
+    const { data: blocksByOther } = await supabase
+      .from('blocks')
+      .select('id')
+      .eq('blocker_id', otherUserId)
+      .eq('blocked_id', user.id);
+      
+    setBlockedByMe(!!blocksByMe && blocksByMe.length > 0);
+    setBlockedByOther(!!blocksByOther && blocksByOther.length > 0);
   };
   
   const toggleBlock = async (otherUserId: string) => {
-     if (!isBlocked) {
-        if (!window.confirm('Are you sure you want to block this user?')) return;
+     if (!blockedByMe) {
         await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: otherUserId });
      } else {
         await supabase.from('blocks').delete().eq('blocker_id', user.id).eq('blocked_id', otherUserId);
@@ -284,7 +316,7 @@ export default function Messages() {
   };
 
   const deleteConversation = async (otherUserId: string) => {
-    if (!user || !window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) return;
+    if (!user) return;
     try {
       const { error } = await supabase
         .from('messages')
@@ -333,11 +365,11 @@ export default function Messages() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col h-[100dvh] max-w-6xl mx-auto"
+      className="flex flex-col h-[calc(100dvh-110px)] md:h-[calc(100vh-140px)] max-w-6xl mx-auto"
     >
-      <div className="flex bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl border border-black/10 dark:border-white/10 flex-1 my-2">
+      <div className="flex bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl border border-black/10 dark:border-white/10 flex-1 relative">
         
         {/* Sidebar Contacts List */}
         <div className={`w-full md:w-80 border-r border-black/10 dark:border-white/10 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
@@ -406,24 +438,24 @@ export default function Messages() {
                     {selectedUser.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
                   </div>
                 </div>
-                <div className="relative">
-                  <button onClick={() => setShowDropdown(!showDropdown)} className="p-2 text-gray-500 hover:text-black dark:hover:text-white">
+                <div className="relative" ref={dropdownRef}>
+                  <button onClick={() => setShowDropdown(!showDropdown)} className="p-2 text-gray-500 hover:text-black dark:hover:text-white transition-colors">
                       <MoreVertical size={20} />
                   </button>
                   {showDropdown && (
-                      <div className="absolute right-0 top-full mt-2 w-36 bg-white dark:bg-[#2a2a2a] shadow-lg rounded-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden">
+                      <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-[#2a2a2a] shadow-xl rounded-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden">
                           <button onClick={() => {
                             deleteConversation(selectedUser.id);
                             setShowDropdown(false);
-                          }} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
+                          }} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors">
                               Delete Chat
                           </button>
-                          <div className="h-[1px] w-full bg-black/10 dark:bg-white/10" />
+                          <div className="h-[1px] w-full bg-black/5 dark:bg-white/5" />
                           <button onClick={() => {
                             toggleBlock(selectedUser.id);
                             setShowDropdown(false);
-                          }} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
-                              {isBlocked ? 'Unblock' : 'Block'}
+                          }} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors">
+                              {blockedByMe ? 'Unblock user' : 'Block user'}
                           </button>
                       </div>
                   )}
@@ -461,9 +493,9 @@ export default function Messages() {
 
               {/* Input Area */}
               <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-black/10 dark:border-white/10">
-                {isBlocked ? (
-                    <div className="text-center p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
-                        You have blocked this conversation.
+                {blockedByMe || blockedByOther ? (
+                    <div className="text-center p-3 text-sm font-medium text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
+                        {blockedByMe ? 'You have blocked this conversation.' : 'You have been blocked by this user.'}
                     </div>
                 ) : (
                     <form onSubmit={sendMessage} className="flex gap-2 relative">
