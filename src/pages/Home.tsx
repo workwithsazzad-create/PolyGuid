@@ -220,36 +220,38 @@ export default function Home() {
       className="flex flex-col gap-10 sm:gap-20 pb-0"
     >
       {/* 1. Hero Banner */}
-      <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden group bg-[#1a1a1a] shadow-xl">
-        <motion.div
-          key={bannerUrl}
-          initial={{ opacity: 0.8, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative w-full"
-        >
-          <img 
-            src={getDirectLink(bannerUrl)} 
-            alt="Banner" 
-            className="w-full h-auto block transition-transform duration-700 group-hover:scale-105 relative z-0"
-            onError={() => bannerUrl !== DEFAULT_BANNER && setBannerUrl(DEFAULT_BANNER)}
-          />
-          <div className="absolute inset-x-0 bottom-0 top-0 bg-gradient-to-t from-black/70 via-transparent to-transparent z-10 pointer-events-none" />
-          
-          <div className="absolute bottom-[5%] left-[4%] sm:bottom-8 sm:left-12 md:bottom-10 md:left-16 z-20">
-            <button 
-              onClick={scrollToCourses}
-              className="w-fit bg-[var(--primary)] text-white font-black h-5 xs:h-7 sm:h-11 px-3 xs:px-5 sm:px-8 rounded-md sm:rounded-2xl transition-all hover:bg-[#28a428] shadow-[0_4px_12px_rgba(50,205,50,0.4)] hover:shadow-[0_8px_25px_rgba(50,205,50,0.6)] flex items-center justify-center gap-1.5 sm:gap-3 text-[7px] xs:text-[10px] sm:text-lg whitespace-nowrap active:scale-90"
-            >
-              Explore Courses <ChevronRight className="w-2.5 h-2.5 xs:w-3.5 sm:w-6 sm:h-6" />
-            </button>
-          </div>
-        </motion.div>
+      <div className="max-w-5xl mx-auto w-full px-4">
+        <div className="relative w-full rounded-2xl sm:rounded-[32px] overflow-hidden group bg-[#1a1a1a] shadow-2xl">
+          <motion.div
+            key={bannerUrl}
+            initial={{ opacity: 0.8, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="relative w-full"
+          >
+            <img 
+              src={getDirectLink(bannerUrl)} 
+              alt="Banner" 
+              className="w-full h-auto block transition-transform duration-700 group-hover:scale-105 relative z-0"
+              onError={() => bannerUrl !== DEFAULT_BANNER && setBannerUrl(DEFAULT_BANNER)}
+            />
+            <div className="absolute inset-x-0 bottom-0 top-0 bg-gradient-to-t from-black/70 via-transparent to-transparent z-10 pointer-events-none" />
+            
+            <div className="absolute bottom-[8%] left-[6%] sm:bottom-8 sm:left-12 md:bottom-10 md:left-16 z-20">
+              <button 
+                onClick={scrollToCourses}
+                className="w-fit bg-[var(--primary)] text-white font-black h-5 xs:h-7 sm:h-11 px-3 xs:px-5 sm:px-8 rounded-md sm:rounded-2xl transition-all hover:bg-[#28a428] shadow-[0_4px_12px_rgba(50,205,50,0.4)] hover:shadow-[0_8px_25px_rgba(50,205,50,0.6)] flex items-center justify-center gap-1.5 sm:gap-3 text-[7px] xs:text-[10px] sm:text-lg whitespace-nowrap active:scale-90"
+              >
+                Explore Courses <ChevronRight className="w-2.5 h-2.5 xs:w-3.5 sm:w-6 sm:h-6" />
+              </button>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       {/* 2. Analytics Section - Minimal Design */}
-      <div className="max-w-5xl mx-auto w-full px-4 mt-[-40px] sm:mt-[-60px] relative z-20">
-        <div className="flex items-center justify-between p-3 sm:p-5 bg-white/70 dark:bg-black/50 backdrop-blur-md rounded-[20px] sm:rounded-[32px] border border-black/5 dark:border-white/10 shadow-xl px-4 sm:px-16">
+      <div className="max-w-5xl mx-auto w-full px-4 mt-[-20px] sm:mt-[-40px] relative z-20">
+        <div className="flex items-center justify-between p-3 sm:p-5 bg-white/80 dark:bg-black/60 backdrop-blur-md rounded-[20px] sm:rounded-[32px] border border-black/5 dark:border-white/10 shadow-xl px-4 sm:px-16">
           {[
             { title: 'Total Courses', value: stats.courses, icon: PlayCircle, color: 'text-blue-500' },
             { title: 'Students Joined', value: stats.students, icon: Users, color: 'text-green-500' },
