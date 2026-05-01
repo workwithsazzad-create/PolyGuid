@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { Send, User, ChevronLeft, BadgeCheck } from 'lucide-react';
+import { Send, User, ChevronLeft, BadgeCheck, MoreVertical } from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import { useSearchParams } from 'react-router-dom';
 
@@ -241,6 +241,68 @@ export default function Messages() {
     }, 100);
   };
 
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // Very basic click outside, optimally would use a ref, but simple enough for this UI
+      setShowDropdown(false);
+    };
+    if (showDropdown) {
+        // slight delay to prevent immediate toggle off on the click that opened it
+        setTimeout(() => document.addEventListener('click', handleClickOutside), 10);
+    }
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showDropdown]);
+  
+  // Need to check for blocks when component mounts or user switches
+  useEffect(() => {
+    if (selectedUser && user) {
+        checkBlockStatus(selectedUser.id);
+    }
+  }, [selectedUser, user]);
+
+  const checkBlockStatus = async (otherUserId: string) => {
+    const { data } = await supabase
+      .from('blocks')
+      .select('id')
+      .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${otherUserId}),and(blocker_id.eq.${otherUserId},blocked_id.eq.${user.id})`);
+      
+    setIsBlocked(!!data && data.length > 0);
+  };
+  
+  const toggleBlock = async (otherUserId: string) => {
+     if (!isBlocked) {
+        if (!window.confirm('Are you sure you want to block this user?')) return;
+        await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: otherUserId });
+     } else {
+        await supabase.from('blocks').delete().eq('blocker_id', user.id).eq('blocked_id', otherUserId);
+     }
+     checkBlockStatus(otherUserId);
+  };
+
+  const deleteConversation = async (otherUserId: string) => {
+    if (!user || !window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) return;
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`);
+
+      if (error) throw error;
+      fetchConversations(user.id);
+      if (selectedUser?.id === otherUserId) {
+        setSelectedUser(null);
+        setMessages([]);
+      }
+    } catch (err) {
+      console.error('Error deleting conversation:', err);
+      alert('Failed to delete conversation');
+    }
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser || !user) return;
@@ -273,13 +335,13 @@ export default function Messages() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col h-[calc(100vh-100px)] max-w-6xl mx-auto"
+      className="flex flex-col h-[100dvh] max-w-6xl mx-auto"
     >
-      <div className="flex bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl border border-black/10 dark:border-white/10 flex-1">
+      <div className="flex bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl border border-black/10 dark:border-white/10 flex-1 my-2">
         
         {/* Sidebar Contacts List */}
         <div className={`w-full md:w-80 border-r border-black/10 dark:border-white/10 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-4 border-b border-black/10 dark:border-white/10 bg-gray-50 dark:bg-black/20">
+          <div className="p-4 border-b border-black/10 dark:border-white/10 bg-gray-50 dark:bg-black/20 flex justify-between items-center">
             <h2 className="text-xl font-bold text-[var(--text)]">Messages</h2>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -289,25 +351,29 @@ export default function Messages() {
               conversations.map(conv => (
                 <div 
                   key={conv.id}
-                  onClick={() => setSelectedUser(conv)}
-                  className={`flex items-center gap-3 p-4 cursor-pointer transition-colors border-b border-black/5 dark:border-white/5 ${selectedUser?.id === conv.id ? 'bg-[var(--primary)]/10 border-l-4 border-l-[var(--primary)]' : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-4 border-l-transparent'}`}
+                  className={`flex flex-col border-b border-black/5 dark:border-white/5 ${selectedUser?.id === conv.id ? 'bg-[var(--primary)]/10 border-l-4 border-l-[var(--primary)]' : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-4 border-l-transparent'}`}
                 >
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 shrink-0">
-                    {conv.avatar_url ? (
-                      <img src={conv.avatar_url} alt={conv.full_name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={24} /></div>
-                    )}
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <div className="flex justify-between items-center gap-1">
-                       <h4 className={`text-sm truncate flex items-center gap-1 ${conv.unread ? 'font-black text-[var(--text)]' : 'font-semibold text-gray-600 dark:text-gray-300'}`}>
-                          {conv.full_name}
-                          {conv.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
-                       </h4>
-                       {conv.unread && <div className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full shrink-0"></div>}
+                  <div 
+                    onClick={() => setSelectedUser(conv)}
+                    className="flex items-center gap-3 p-4 cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 shrink-0">
+                      {conv.avatar_url ? (
+                        <img src={conv.avatar_url} alt={conv.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={24} /></div>
+                      )}
                     </div>
-                    <p className={`text-xs truncate ${conv.unread ? 'font-bold text-[var(--primary)]' : 'text-gray-500'}`}>{conv.lastMessage}</p>
+                    <div className="flex-1 overflow-hidden">
+                      <div className="flex justify-between items-center gap-1">
+                        <h4 className={`text-sm truncate flex items-center gap-1 ${conv.unread ? 'font-black text-[var(--text)]' : 'font-semibold text-gray-600 dark:text-gray-300'}`}>
+                            {conv.full_name}
+                            {conv.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                        </h4>
+                        {conv.unread && <div className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full shrink-0"></div>}
+                      </div>
+                      <p className={`text-xs truncate ${conv.unread ? 'font-bold text-[var(--primary)]' : 'text-gray-500'}`}>{conv.lastMessage}</p>
+                    </div>
                   </div>
                 </div>
               ))
@@ -320,23 +386,47 @@ export default function Messages() {
           {selectedUser ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center gap-3 shadow-sm">
-                <button 
-                  className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[var(--primary)]"
-                  onClick={() => setSelectedUser(null)}
-                >
-                  <ChevronLeft size={24} />
-                </button>
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-                  {selectedUser.avatar_url ? (
-                    <img src={selectedUser.avatar_url} alt={selectedUser.full_name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={20} /></div>
-                  )}
+              <div className="p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <button 
+                    className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[var(--primary)]"
+                    onClick={() => setSelectedUser(null)}
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                    {selectedUser.avatar_url ? (
+                      <img src={selectedUser.avatar_url} alt={selectedUser.full_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={20} /></div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <h3 className="font-bold text-[var(--text)]">{selectedUser.full_name}</h3>
+                    {selectedUser.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <h3 className="font-bold text-[var(--text)]">{selectedUser.full_name}</h3>
-                  {selectedUser.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                <div className="relative">
+                  <button onClick={() => setShowDropdown(!showDropdown)} className="p-2 text-gray-500 hover:text-black dark:hover:text-white">
+                      <MoreVertical size={20} />
+                  </button>
+                  {showDropdown && (
+                      <div className="absolute right-0 top-full mt-2 w-36 bg-white dark:bg-[#2a2a2a] shadow-lg rounded-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden">
+                          <button onClick={() => {
+                            deleteConversation(selectedUser.id);
+                            setShowDropdown(false);
+                          }} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
+                              Delete Chat
+                          </button>
+                          <div className="h-[1px] w-full bg-black/10 dark:bg-white/10" />
+                          <button onClick={() => {
+                            toggleBlock(selectedUser.id);
+                            setShowDropdown(false);
+                          }} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
+                              {isBlocked ? 'Unblock' : 'Block'}
+                          </button>
+                      </div>
+                  )}
                 </div>
               </div>
 
@@ -371,22 +461,28 @@ export default function Messages() {
 
               {/* Input Area */}
               <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-black/10 dark:border-white/10">
-                <form onSubmit={sendMessage} className="flex gap-2 relative">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 bg-gray-100 dark:bg-black/20 border border-transparent focus:border-[var(--primary)]/30 rounded-full px-6 py-3 pr-12 text-sm text-[var(--text)] focus:outline-none transition-all"
-                  />
-                  <button 
-                    type="submit"
-                    disabled={!newMessage.trim()}
-                    className="absolute right-2 top-1 bottom-1 aspect-square bg-[var(--primary)] hover:bg-[#28a428] text-white rounded-full flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-[var(--primary)] shadow-sm"
-                  >
-                    <Send size={16} className="-ml-0.5" />
-                  </button>
-                </form>
+                {isBlocked ? (
+                    <div className="text-center p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
+                        You have blocked this conversation.
+                    </div>
+                ) : (
+                    <form onSubmit={sendMessage} className="flex gap-2 relative">
+                    <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Type a message..."
+                        className="flex-1 bg-gray-100 dark:bg-black/20 border border-transparent focus:border-[var(--primary)]/30 rounded-full px-6 py-3 pr-12 text-sm text-[var(--text)] focus:outline-none transition-all"
+                    />
+                    <button 
+                        type="submit"
+                        disabled={!newMessage.trim()}
+                        className="absolute right-2 top-1 bottom-1 aspect-square bg-[var(--primary)] hover:bg-[#28a428] text-white rounded-full flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-[var(--primary)] shadow-sm"
+                    >
+                        <Send size={16} className="-ml-0.5" />
+                    </button>
+                    </form>
+                )}
               </div>
             </>
           ) : (
