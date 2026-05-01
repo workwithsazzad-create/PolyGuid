@@ -273,11 +273,16 @@ export default function Messages() {
             schema: 'public', 
             table: 'blocks'
           }, (payload: any) => {
-            const { blocker_id, blocked_id } = payload.new || payload.old;
-            // Only update if it involves the current chat pair
+            const row = payload.new && Object.keys(payload.new).length > 0 ? payload.new : payload.old || {};
+            const blockerId = row.blocker_id;
+            const blockedId = row.blocked_id;
+            
+            // If we don't get the full row info (e.g. from a DELETE event without replica identity full)
+            // Or if it matches our active conversation
             if (
-              (blocker_id === user.id && blocked_id === selectedUser.id) ||
-              (blocker_id === selectedUser.id && blocked_id === user.id)
+              (!blockerId || !blockedId) || 
+              (blockerId === user.id && blockedId === selectedUser.id) ||
+              (blockerId === selectedUser.id && blockedId === user.id)
             ) {
               checkBlockStatus(selectedUser.id);
             }
