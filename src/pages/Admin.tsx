@@ -22,6 +22,7 @@ import {
   Loader2,
   AlertCircle,
   FileUp,
+  Paperclip,
   Database,
 } from "lucide-react";
 import { supabase } from "@/src/lib/supabase";
