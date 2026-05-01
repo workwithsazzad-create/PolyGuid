@@ -220,7 +220,7 @@ export default function Home() {
       className="flex flex-col gap-10 sm:gap-20 pb-0"
     >
       {/* 1. Hero Banner */}
-      <div className="max-w-5xl mx-auto w-full px-4">
+      <div className="max-w-7xl mx-auto w-full px-4">
         <div className="relative w-full rounded-2xl sm:rounded-[32px] overflow-hidden group bg-[#1a1a1a] shadow-2xl">
           <motion.div
             key={bannerUrl}
@@ -250,7 +250,7 @@ export default function Home() {
       </div>
 
       {/* 2. Analytics Section - Minimal Design */}
-      <div className="max-w-5xl mx-auto w-full px-4 mt-[-20px] sm:mt-[-40px] relative z-20">
+      <div className="max-w-7xl mx-auto w-full px-4 mt-[-20px] sm:mt-[-40px] relative z-20">
         <div className="flex items-center justify-between p-3 sm:p-5 bg-white/80 dark:bg-black/60 backdrop-blur-md rounded-[20px] sm:rounded-[32px] border border-black/5 dark:border-white/10 shadow-xl px-4 sm:px-16">
           {[
             { title: 'Total Courses', value: stats.courses, icon: PlayCircle, color: 'text-blue-500' },
@@ -273,7 +273,7 @@ export default function Home() {
       </div>
 
       {/* 3. Quick Access Buttons - Balanced Design */}
-      <div className="grid grid-cols-4 gap-2 sm:gap-6 max-w-5xl mx-auto w-full px-4">
+      <div className="grid grid-cols-4 gap-2 sm:gap-6 max-w-7xl mx-auto w-full px-4">
         {[
           { name: 'Book Buy/Sell', icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-500/5', path: '/marketplace' },
           { name: 'Check Result', icon: FileCheck, color: 'text-purple-500', bg: 'bg-purple-500/5', path: '/results' },
@@ -300,7 +300,7 @@ export default function Home() {
           <h2 className="text-lg sm:text-2xl font-bold text-[var(--text)] text-center tracking-tight">আপনার সেমিস্টার সিলেক্ট করুন</h2>
           <div className="w-10 sm:w-16 h-1 bg-[var(--primary)] rounded-full opacity-20" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 max-w-5xl mx-auto w-full">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 max-w-7xl mx-auto w-full">
           {SEMESTERS.map((semester, i) => (
             <GlassmorphicCard 
               key={i} 
@@ -315,7 +315,7 @@ export default function Home() {
       </section>
 
       {/* 5. Popular Courses Section - Responsive Layout */}
-      <section ref={coursesRef} className="flex flex-col gap-3 sm:gap-5 px-4 max-w-5xl mx-auto w-full">
+      <section ref={coursesRef} className="flex flex-col gap-3 sm:gap-5 px-4 max-w-7xl mx-auto w-full">
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-2xl font-bold text-[var(--text)] tracking-tight">জনপ্রিয় কোর্স সমূহ</h2>
           <button 
@@ -370,7 +370,7 @@ export default function Home() {
       </section>
 
       {/* 6. Words for Students (Description) - Full Width Compact */}
-      <section className="px-4 max-w-5xl mx-auto w-full">
+      <section className="px-4 max-w-7xl mx-auto w-full">
         <div className="bg-black/5 dark:bg-white/10 rounded-[20px] sm:rounded-[32px] p-5 sm:p-8 md:p-10">
           <div className="flex flex-col gap-4 sm:gap-6">
             <div className="flex items-center gap-3">
@@ -396,7 +396,7 @@ export default function Home() {
       </section>
 
       {/* 7. Donation Section - Compact */}
-      <section className="flex flex-col gap-6 px-4 max-w-5xl mx-auto w-full">
+      <section className="flex flex-col gap-6 px-4 max-w-7xl mx-auto w-full">
         <div className="flex flex-col sm:flex-row gap-3 items-stretch">
           <div className="flex-1 p-3 sm:p-4 flex items-center justify-between overflow-hidden bg-white/40 dark:bg-black/20 rounded-[16px] sm:rounded-[24px] shadow-sm min-h-[70px] border border-black/5 dark:border-white/5">
             <div className="flex items-center gap-4 z-10 w-full">
