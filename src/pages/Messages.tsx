@@ -308,9 +308,17 @@ export default function Messages() {
   
   const toggleBlock = async (otherUserId: string) => {
      if (!blockedByMe) {
-        await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: otherUserId });
+        const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: otherUserId });
+        if (error) {
+          console.error("Failed to block user:", error);
+          alert("Failed to block. Admin permissions or RLS policy issue.");
+        }
      } else {
-        await supabase.from('blocks').delete().eq('blocker_id', user.id).eq('blocked_id', otherUserId);
+        const { error } = await supabase.from('blocks').delete().eq('blocker_id', user.id).eq('blocked_id', otherUserId);
+        if (error) {
+          console.error("Failed to unblock user:", error);
+          alert("Failed to unblock. Admin permissions or RLS policy issue.");
+        }
      }
      checkBlockStatus(otherUserId);
   };
