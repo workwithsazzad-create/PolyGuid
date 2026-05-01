@@ -172,8 +172,11 @@ export default function Messages() {
         }, payload => {
             // Update messages list if it's from the current open thread
             if (payload.new.sender_id === selectedUser.id) {
-                setMessages(prev => [...prev, payload.new]);
-                scrollToBottom();
+                setMessages(prev => {
+                   if (prev.some(m => m.id === payload.new.id)) return prev;
+                   return [...prev, payload.new];
+                });
+                setTimeout(scrollToBottom, 50);
                 
                 // Automatically mark it as read since the chat is open
                 markAsRead(selectedUser.id);
@@ -187,8 +190,11 @@ export default function Messages() {
         }, payload => {
             // Update messages list for messages WE send
             if (payload.new.receiver_id === selectedUser.id) {
-                setMessages(prev => [...prev, payload.new]);
-                scrollToBottom();
+                setMessages(prev => {
+                   if (prev.some(m => m.id === payload.new.id)) return prev;
+                   return [...prev, payload.new];
+                });
+                setTimeout(scrollToBottom, 50);
             }
         })
         .subscribe();
@@ -273,19 +279,9 @@ export default function Messages() {
             schema: 'public', 
             table: 'blocks'
           }, (payload: any) => {
-            const row = payload.new && Object.keys(payload.new).length > 0 ? payload.new : payload.old || {};
-            const blockerId = row.blocker_id;
-            const blockedId = row.blocked_id;
-            
-            // If we don't get the full row info (e.g. from a DELETE event without replica identity full)
-            // Or if it matches our active conversation
-            if (
-              (!blockerId || !blockedId) || 
-              (blockerId === user.id && blockedId === selectedUser.id) ||
-              (blockerId === selectedUser.id && blockedId === user.id)
-            ) {
-              checkBlockStatus(selectedUser.id);
-            }
+            // Unblock (DELETE) doesn't reliably include blocked_id without replica identity full,
+            // so we just re-verify block status dynamically on *any* block change.
+            checkBlockStatus(selectedUser.id);
           })
           .subscribe();
     }
@@ -362,8 +358,10 @@ export default function Messages() {
         sender_id: user.id,
         receiver_id: selectedUser.id,
         content: msg,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        read: false
     };
+    // @ts-ignore
     setMessages(prev => [...prev, optimisticMsg]);
     setTimeout(scrollToBottom, 50);
 
@@ -384,8 +382,9 @@ export default function Messages() {
       alert("Failed to send message: " + error.message);
     } else {
       // Replace optimistic msg with real one to get correct ID and timestamp
-      setMessages(prev => prev.map(m => m.id === tempId ? data : m));
-      // Re-fetch conversations to update last message
+      if (data) {
+          setMessages(prev => prev.map(m => m.id === tempId ? data : m));
+      }
       fetchConversations(user.id);
     }
   };
