@@ -26,9 +26,9 @@ export default function CourseCard({ id, title, description, price, originalPric
     <Link to={`/course/${id}`} className="block h-full no-underline">
       <GlassmorphicCard 
         hoverEffect 
-        className="flex flex-col gap-2 p-2 sm:p-3 h-full cursor-pointer bg-white dark:bg-[#1a1a1a] border-none shadow-md hover:shadow-xl transition-all"
+        className="flex flex-col gap-1.5 p-1.5 sm:p-2.5 h-full cursor-pointer bg-white dark:bg-[#1a1a1a] border-none shadow-sm hover:shadow-md transition-all rounded-xl"
       >
-        <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-gray-100">
+        <div className="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100">
           <img 
             src={getDirectLink(thumbnail)} 
             alt={title} 
@@ -40,40 +40,34 @@ export default function CourseCard({ id, title, description, price, originalPric
               {discountPercent}% OFF
             </CourseBadge>
           )}
-          <div className="absolute top-2 right-2">
-             <div className="w-8 h-8 rounded-full bg-white/90 backdrop-blur shadow-sm flex items-center justify-center text-gray-400">
-                <BookOpen size={14} />
+          <div className="absolute top-1.5 right-1.5">
+             <div className="w-6 h-6 rounded-full bg-white/90 backdrop-blur shadow-sm flex items-center justify-center text-gray-400">
+                <BookOpen size={12} />
              </div>
           </div>
         </div>
         
-        <div className="flex flex-col gap-2 p-1">
-          <h3 className="text-[11px] sm:text-sm font-bold text-gray-800 dark:text-gray-200 line-clamp-1 leading-snug">
+        <div className="flex flex-col gap-0.5 p-0.5">
+          <h3 className="text-[9px] sm:text-[11px] font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight h-[2.5em]">
             {title}
           </h3>
           
-          {description && (
-            <p className="text-[9px] sm:text-[10px] text-gray-500 line-clamp-2 -mt-1 hidden sm:block">
-              {description}
-            </p>
-          )}
-          
           <div className="flex items-center gap-1 mt-auto">
-            <span className="text-sm sm:text-lg font-black text-[#1a237e] dark:text-indigo-400">
+            <span className="text-[10px] sm:text-xs font-black text-[var(--primary)]">
               ৳{price}
             </span>
             {hasDiscount && (
-              <span className="text-[9px] sm:text-[11px] text-gray-400 line-through">
+              <span className="text-[7px] sm:text-[9px] text-gray-400 line-through">
                 ৳{originalPrice}
               </span>
             )}
           </div>
           
           <div 
-            className={`w-full py-1.5 sm:py-2.5 rounded-lg font-black text-[9px] sm:text-xs uppercase tracking-wider text-center transition-all shadow-sm ${
+            className={`w-full py-1 sm:py-1.5 rounded-md font-black text-[8px] sm:text-[10px] uppercase tracking-wider text-center transition-all shadow-none ${
               isEnrolled 
-                ? 'bg-gray-100 text-gray-400 border border-gray-200' 
-                : 'bg-[#1a237e] text-white'
+                ? 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10' 
+                : 'bg-[var(--primary)] text-white'
             }`}
           >
             {isEnrolled ? 'Enrolled' : 'Enroll'}
@@ -85,7 +79,7 @@ export default function CourseCard({ id, title, description, price, originalPric
 }
 
 const CourseBadge = ({ children }: { children: React.ReactNode }) => (
-  <div className="absolute bottom-2 right-2 bg-[#e8eaf6] text-[#3f51b5] text-[10px] font-bold px-2 py-1 rounded-md border border-[#c5cae9]">
+  <div className="absolute bottom-1 right-1 bg-[var(--primary)] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-sm shadow-sm">
     {children}
   </div>
 );
