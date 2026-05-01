@@ -105,13 +105,13 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
               "flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 group",
               isActive 
                 ? "bg-[var(--primary)] text-white font-semibold shadow-[0_0_20px_rgba(50,205,50,0.3)]" 
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+                : "text-gray-700 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
             )}
           >
             <div className="flex items-center gap-2 sm:gap-3">
               <item.icon size={18} className={cn(
                 "transition-colors sm:w-5 sm:h-5",
-                "group-hover:text-[var(--primary)]"
+                "group-hover:text-[var(--primary)] text-gray-500 dark:text-gray-400"
               )} />
               <span className="text-sm sm:text-base">{item.name}</span>
             </div>

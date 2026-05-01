@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import { 
   Search, 
   ChevronLeft, 
@@ -22,6 +22,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/src/lib/supabase';
 import { logoDarkB64, logoLightB64 } from '@/src/components/ui/logo-data';
+import ResultCertificate from '@/src/components/ResultCertificate';
 
 interface SemesterResult {
   index: number;
@@ -62,6 +63,7 @@ export default function ResultViewer() {
   const [downloadImage, setDownloadImage] = useState<string | null>(null);
   const [isProcessingCanvas, setIsProcessingCanvas] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const certificateRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -129,28 +131,22 @@ export default function ResultViewer() {
   };
 
   const handleDownload = async () => {
-    if (!resultRef.current || !result) return;
+    if (!certificateRef.current || !result) return;
     setIsProcessingCanvas(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
-      const canvas = await html2canvas(resultRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#1a1a1a' : '#ffffff',
+      const image = await htmlToImage.toJpeg(certificateRef.current, {
+        quality: 1.0,
+        backgroundColor: '#ffffff',
       });
       
-      const image = canvas.toDataURL("image/jpeg", 1.0);
-      setDownloadImage(image);
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `PolyGuid_Result_${result.roll_no}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      try {
-        const link = document.createElement("a");
-        link.href = image;
-        link.download = `PolyGuid_Result_${result.roll_no}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (e) {
-        console.log("Direct download failed, showing modal");
-      }
     } catch (err) {
       console.error("Error generating image", err);
       alert("Failed to generate image. Please try again.");
@@ -160,38 +156,18 @@ export default function ResultViewer() {
   };
 
   const handleShare = async () => {
-    if (!resultRef.current || !result) return;
+    if (!certificateRef.current || !result) return;
     setIsProcessingCanvas(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
-      const canvas = await html2canvas(resultRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#1a1a1a' : '#ffffff',
+      const image = await htmlToImage.toJpeg(certificateRef.current, {
+        quality: 1.0,
+        backgroundColor: '#ffffff',
       });
       
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          setIsProcessingCanvas(false);
-          return;
-        }
-        const file = new File([blob], `PolyGuid_Result_${result.roll_no}.jpg`, { type: 'image/jpeg' });
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              title: `Result for Roll #${result.roll_no}`,
-              text: `Check out my diploma result for Roll #${result.roll_no}`,
-              files: [file]
-            });
-          } catch (err) {
-            console.log("Share failed or cancelled:", err);
-          }
-        } else {
-          // Fallback to Image Modal where they can long press
-          const image = canvas.toDataURL("image/jpeg", 1.0);
-          setDownloadImage(image);
-        }
-        setIsProcessingCanvas(false);
-      }, 'image/jpeg', 1.0);
+      // Fallback to Image Modal
+      setDownloadImage(image);
+      setIsProcessingCanvas(false);
     } catch (err) {
       console.error("Error sharing image", err);
       setIsProcessingCanvas(false);
@@ -214,7 +190,7 @@ export default function ResultViewer() {
       </div>
 
       <section className="mb-8 print:hidden">
-        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/5 rounded-[24px] p-6 sm:p-8 shadow-sm max-w-2xl mx-auto">
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/5 rounded-2xl p-4 shadow-sm max-w-2xl mx-auto">
           <form onSubmit={handleSearch} className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Curriculum / Exam</label>
@@ -222,10 +198,10 @@ export default function ResultViewer() {
                 <select 
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full appearance-none bg-black/5 dark:bg-white/5 border border-transparent rounded-xl py-3 pl-4 pr-10 text-sm font-bold text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[#1b5df1] transition-all cursor-pointer"
+                  className="w-full appearance-none bg-black/5 dark:bg-white/5 border border-transparent rounded-xl py-3 pl-4 pr-10 text-sm font-bold text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[#32CD32] transition-all cursor-pointer"
                 >
                   {DEPARTMENTS.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept} value={dept} className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">{dept}</option>
                   ))}
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
@@ -240,10 +216,10 @@ export default function ResultViewer() {
                 <select 
                   value={regulation}
                   onChange={(e) => setRegulation(e.target.value)}
-                  className="w-full appearance-none bg-black/5 dark:bg-white/5 border border-transparent rounded-xl py-3 pl-4 pr-10 text-sm font-bold text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[#1b5df1] transition-all cursor-pointer"
+                  className="w-full appearance-none bg-black/5 dark:bg-white/5 border border-transparent rounded-xl py-3 pl-4 pr-10 text-sm font-bold text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[#32CD32] transition-all cursor-pointer"
                 >
                   {REGULATIONS.map(reg => (
-                    <option key={reg} value={reg}>{reg}</option>
+                    <option key={reg} value={reg} className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">{reg}</option>
                   ))}
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
@@ -295,33 +271,38 @@ export default function ResultViewer() {
             key={result.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-[#1a1a1a] rounded-[32px] border border-black/5 dark:border-white/5 shadow-xl p-6 sm:p-10 relative overflow-hidden"
+            className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-black/5 dark:border-white/5 shadow-xl p-4 relative overflow-hidden"
             ref={resultRef}
           >
             <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none" 
                  style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
-            <div className="relative z-10">
-              <div className="text-center mb-8">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <div className="relative z-10 p-4">
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="text-xl sm:text-2xl font-bold tracking-tight">
                     <span className="text-[#32CD32]">P</span>
                     <span className="text-[var(--text)]">oly</span>
                     <span className="text-[#32CD32]">G</span>
                     <span className="text-[var(--text)]">uid</span>
                   </span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-[var(--text)] mb-3">Roll No: {result.roll_no}</h2>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider mb-2">
-                  <span className="flex items-center gap-1.5 px-3 py-1 bg-[#32CD32]/10 text-[#32CD32] rounded-full drop-shadow-[0_0_2px_rgba(50,205,50,0.2)]"><BookOpen size={14} /> {result.department || 'Diploma in Engineering'}</span>
-                  <span className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 py-1 px-3 rounded-full"><Calendar size={14} /> Regulation {result.regulation}</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[var(--text)] mb-2">Roll No: {result.roll_no}</h2>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider mb-2">
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-[#32CD32]/10 text-[#32CD32] rounded-full"><BookOpen size={12} /> {result.department || 'Diploma in Engineering'}</span>
+                  <span className="flex items-center gap-1 bg-black/5 dark:bg-white/5 py-0.5 px-2 rounded-full"><Calendar size={12} /> Regulation {result.regulation}</span>
                 </div>
-                <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3 text-sm sm:text-base text-[var(--text)] font-semibold">
-                  <Building2 size={18} className="text-gray-400" /> {result.polytechnic_name}
+                <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-[var(--text)] font-semibold opacity-80">
+                  <Building2 size={14} className="text-gray-400" /> {result.polytechnic_name}
                 </div>
               </div>
+              
+              {/* Certificate for Image Generation */}
+              <div className="fixed -top-[9999px] left-0">
+                 <ResultCertificate result={result} ref={certificateRef} />
+              </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-10 print:hidden" data-html2canvas-ignore="true">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6 print:hidden" data-html2canvas-ignore="true">
                 <button onClick={handleCopy} className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-[13px] sm:text-sm font-semibold text-gray-700 dark:text-gray-200 transition-all shadow-sm">
                   {copied ? <Check size={16} className="text-[#32CD32]" /> : <Copy size={16} className="text-gray-500" />} Copy
                 </button>
@@ -333,47 +314,41 @@ export default function ResultViewer() {
                 </button>
               </div>
 
-              <div className={`mb-10 p-6 rounded-2xl text-center font-bold tracking-wide relative overflow-hidden transition-all transform hover:scale-[1.01] ${totalReferred > 0 ? 'bg-red-50 text-red-600 border-2 border-red-100 shadow-lg shadow-red-500/10' : 'bg-green-50 text-green-600 border-2 border-green-100 shadow-lg shadow-green-500/10'}`}>
+              <div className={`mb-4 p-3 rounded-xl text-center font-bold tracking-wide relative overflow-hidden transition-all transform hover:scale-[1.01] ${totalReferred > 0 ? 'bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2]' : 'bg-[#f0fdf4] text-[#16a34a] border border-[#dcfce7]'}`}>
                 {totalReferred > 0 ? (
-                  <div className="relative z-10 flex flex-col items-center gap-2">
-                    <span className="text-xl flex items-center justify-center gap-2 animate-pulse">
-                      <AlertCircle size={22} /> {totalReferred} {totalReferred === 1 ? 'Subject' : 'Subjects'} yet to pass
+                  <div className="relative z-10 flex flex-col items-center gap-0.5">
+                    <span className="text-base flex items-center justify-center gap-1.5 animate-pulse">
+                      <AlertCircle size={18} /> {totalReferred} {totalReferred === 1 ? 'Subject' : 'Subjects'} yet to pass
                     </span>
-                    <span className="text-[13px] font-bold text-red-500 mb-1">Subject Codes: {allReferredSubjects.join(', ')}</span>
-                    <span className="text-xs font-medium text-red-600/80 mt-1">
-                      আমাদের খুবই খারাপ লাগছে যে আপনার রেফার্ড এসেছে। হাল ছাড়বেন না, PolyGuid এর সাথে প্রস্তুতি নিয়ে আগামীতে ভালো কিছু করুন।
-                    </span>
+                    <span className="text-[11px] font-bold text-red-500">Subject Codes: {allReferredSubjects.join(', ')}</span>
                   </div>
                 ) : (
-                  <div className="relative z-10 flex flex-col items-center gap-1">
-                    <span className="text-xl flex items-center justify-center gap-2">
-                      <CheckCircle2 size={22} /> Status: All Passed!
-                    </span>
-                    <span className="text-xs font-medium text-green-600/80 mt-2">
-                      অভিনন্দন! আপনি সফলভাবে সকল বিষয়ে পাশ করেছেন।
+                  <div className="relative z-10 flex flex-col items-center gap-0.5">
+                    <span className="text-base flex items-center justify-center gap-1.5">
+                      <CheckCircle2 size={18} /> Status: All Passed!
                     </span>
                   </div>
                 )}
               </div>
 
-              <h3 className="text-lg font-bold text-[var(--text)] mb-6 border-b border-black/5 dark:border-white/5 pb-3">Academic History</h3>
+              <h3 className="text-lg font-bold text-[var(--text)] mb-4 border-b border-black/5 dark:border-white/5 pb-3">Academic History</h3>
 
               <div className="space-y-4">
                 {result.semesters.map((sem, idx) => {
                   return (
-                    <div key={idx} className="bg-white dark:bg-[#1a1a1a] shadow-sm border border-gray-200 dark:border-white/10 rounded-2xl p-5 transition hover:shadow-md">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-3">
-                           <div className="relative flex items-center justify-center bg-amber-400 w-8 h-8 rounded-lg shadow-sm">
-                             <BookOpen className="text-white" size={18} />
+                    <div key={idx} className="bg-white dark:bg-[#1a1a1a] shadow-sm border border-gray-200 dark:border-white/10 rounded-lg p-3 transition hover:shadow-md">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                           <div className="relative flex items-center justify-center bg-amber-400 w-6 h-6 rounded-md shadow-sm">
+                             <BookOpen className="text-white" size={12} />
                            </div>
-                           <h3 className="text-lg font-bold text-[var(--text)]">
+                           <h3 className="text-sm font-bold text-[var(--text)]">
                              {sem.index === 1 ? '1st' : sem.index === 2 ? '2nd' : sem.index === 3 ? '3rd' : `${sem.index}th`} Semester
                            </h3>
                         </div>
-                        <div className={`flex items-center gap-1.5 text-sm font-semibold ${sem.status === 'Passed' ? 'text-green-600' : 'text-red-500'}`}>
-                          {sem.status === 'Passed' ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
-                          {sem.status === 'Passed' ? 'Passed' : `${sem.referred_subjects?.length || 0} ${sem.referred_subjects?.length === 1 ? 'subject' : 'subjects'} yet to pass`}
+                        <div className={`flex items-center gap-1 text-[11px] font-semibold ${sem.status === 'Passed' ? 'text-green-600' : 'text-red-500'}`}>
+                          {sem.status === 'Passed' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                          {sem.status === 'Passed' ? 'Passed' : `${sem.referred_subjects?.length || 0} Referred`}
                         </div>
                       </div>
 
