@@ -367,9 +367,9 @@ export default function Messages() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col h-[calc(100dvh-5rem)] md:h-[calc(100vh-140px)] max-w-6xl mx-auto overflow-hidden bg-white dark:bg-[#1a1a1a] md:bg-transparent"
+      className="fixed inset-0 top-16 bottom-0 z-30 flex flex-col md:static md:h-[calc(100vh-140px)] md:max-w-6xl md:mx-auto overflow-hidden bg-white dark:bg-[#1a1a1a] md:bg-transparent md:mt-2"
     >
-      <div className="flex bg-white dark:bg-[#1a1a1a] md:rounded-2xl md:shadow-2xl md:border border-black/10 dark:border-white/10 flex-1 relative overflow-hidden">
+      <div className="flex bg-white dark:bg-[#1a1a1a] md:rounded-2xl md:shadow-2xl md:border border-black/10 dark:border-white/10 flex-1 relative overflow-hidden h-full">
         
         {/* Sidebar Contacts List */}
         <div className={`w-full md:w-80 border-r border-black/10 dark:border-white/10 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
