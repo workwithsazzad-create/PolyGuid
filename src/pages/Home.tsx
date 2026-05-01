@@ -248,22 +248,22 @@ export default function Home() {
       </div>
 
       {/* 2. Analytics Section - Minimal Design */}
-      <div className="max-w-5xl mx-auto w-full px-4 mt-[-20px] sm:mt-[-40px] relative z-20">
-        <div className="flex items-center justify-between p-3 sm:p-5 bg-white/70 dark:bg-black/50 backdrop-blur-md rounded-[20px] sm:rounded-[32px] border border-black/5 dark:border-white/10 shadow-xl px-10 sm:px-16">
+      <div className="max-w-5xl mx-auto w-full px-4 mt-[-40px] sm:mt-[-60px] relative z-20">
+        <div className="flex items-center justify-between p-3 sm:p-5 bg-white/70 dark:bg-black/50 backdrop-blur-md rounded-[20px] sm:rounded-[32px] border border-black/5 dark:border-white/10 shadow-xl px-4 sm:px-16">
           {[
             { title: 'Total Courses', value: stats.courses, icon: PlayCircle, color: 'text-blue-500' },
             { title: 'Students Joined', value: stats.students, icon: Users, color: 'text-green-500' },
             { title: 'Polytechnics', value: stats.polytechnics, icon: Building2, color: 'text-purple-500' },
           ].map((stat, i) => (
-            <div key={i} className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-4 text-center sm:text-left">
-              <div className={`p-1.5 sm:p-2.5 rounded-xl bg-black/5 dark:bg-white/5 ${stat.color} shrink-0`}>
-                <stat.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <div key={i} className="flex flex-row items-center gap-1.5 sm:gap-4 text-left">
+              <div className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-black/5 dark:bg-white/5 ${stat.color} shrink-0`}>
+                <stat.icon className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
               </div>
               <div className="flex flex-col">
                 <h3 className="text-[10px] sm:text-xl font-black text-[var(--text)] leading-tight">
                   <AnimatedCounter value={stat.value} suffix="+" />
                 </h3>
-                <p className="text-[5px] xs:text-[6px] sm:text-[10px] text-gray-500 font-black uppercase tracking-widest">{stat.title}</p>
+                <p className="text-[4px] xs:text-[5px] sm:text-[10px] text-gray-500 font-black uppercase tracking-tight sm:tracking-widest">{stat.title}</p>
               </div>
             </div>
           ))}
@@ -293,12 +293,12 @@ export default function Home() {
       </div>
 
       {/* 4. Semester-wise Section */}
-      <section className="flex flex-col gap-4 sm:gap-6">
+      <section className="flex flex-col gap-4 sm:gap-6 px-4">
         <div className="flex flex-col items-center gap-1">
           <h2 className="text-lg sm:text-2xl font-bold text-[var(--text)] text-center tracking-tight">আপনার সেমিস্টার সিলেক্ট করুন</h2>
           <div className="w-10 sm:w-16 h-1 bg-[var(--primary)] rounded-full opacity-20" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 max-w-4xl mx-auto w-full px-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 max-w-5xl mx-auto w-full">
           {SEMESTERS.map((semester, i) => (
             <GlassmorphicCard 
               key={i} 
@@ -367,32 +367,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. Words for Students (Description) - Much More Compact */}
-      <section className="bg-black/5 dark:bg-white/10 rounded-[20px] sm:rounded-[32px] p-5 sm:p-8 md:p-10 mx-4">
-        <div className="max-w-3xl mx-auto flex flex-col gap-4 sm:gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-1.5 h-8 bg-[var(--primary)] rounded-full" />
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] leading-tight">শিক্ষার্থীদের উদ্দেশ্যে কিছু কথা</h2>
-          </div>
-          <div className="space-y-4 text-xs sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed text-justify font-medium">
-            <p>
-              PolyGuid (পলিগাইড)-এর পক্ষ থেকে তোমাদের সবাইকে জানাই আন্তরিক অভিনন্দন। আমরা বিশ্বাস করি, আজকের পলিটেকনিক শিক্ষার্থীরাই আগামী দিনের দক্ষ প্রকৌশলী হিসেবে দেশকে এগিয়ে নিয়ে যাবে। তোমাদের এই কঠিন ও পরিশ্রমী শিক্ষাসফরকে কিছুটা সহজ এবং ডিজিটাল করার লক্ষ্যেই আমাদের এই বিশেষ প্ল্যাটফর্মের যাত্রা শুরু।
-            </p>
-            <p>
-              PolyGuid এমন একটি প্ল্যাটফর্ম যেখানে তোমরা তোমাদের প্রয়োজনীয় সকল স্টাডি ম্যাটেরিয়ালস, নোটস এবং বুক-পিডিএফ ফাইল এক জায়গায় খুঁজে পাবে। আমাদের মূল লক্ষ্য হলো দেশের প্রতিটি প্রান্তের পলিটেকনিক শিক্ষার্থীদের জন্য মানসম্মত শিক্ষা উপকরণ সরবরাহ করা। আমাদের এই প্ল্যাটফর্মের সিংহভাগ রিসোর্স এবং ফাইলসমূহ শিক্ষার্থীদের জন্য সম্পূর্ণ বিনামূল্যে (Free) রাখা হয়েছে, যাতে অর্থের অভাবে কারো পড়াশোনা থেমে না থাকে। তবে, আমাদের সেবার মান আরও উন্নত করা এবং প্ল্যাটফর্মের স্থায়িত্ব নিশ্চিত করার লক্ষ্যে কিছু বিশেষায়িত সার্ভিস বা কন্টেন্ট অত্যন্ত সাশ্রয়ী মূল্যে প্রিমিয়াম (Paid) ক্যাটাগরিতেও রাখা হয়েছে।
-            </p>
-            <p>
-              আমরা অত্যন্ত সততা এবং পেশাদারিত্বের সাথে তোমাদের জানাতে চাই যে, Polyguid কোনো প্রকার ‘পাইরেসি’ বা নীতিবহির্ভূত কাজে বিশ্বাস করে না। আমরা অন্য কোনো ব্যক্তি বা প্রতিষ্ঠানের বিশেষায়িত পেইড কোর্স বা প্রিমিয়াম কন্টেন্ট অবৈধভাবে শেয়ার করি না। আমাদের প্ল্যাটফর্মে যে সকল ফ্রি ম্যাটেরিয়াল দেওয়া হয়, তা মূলত ইন্টারনেটে পাবলিকলি এভেইলএবল (Publicly Available) বা উন্মুক্তভাবে পাওয়া যায় এমন তথ্যের একটি সুসংগঠিত সংস্করণ মাত্র। আমরা ডিজিটাল কপিরাইট এবং মেধাস্বত্বের প্রতি পূর্ণ সম্মান প্রদর্শন করি। অন্য কোনো প্ল্যাটফর্মের ব্যবসায়িক ক্ষতি বা তাদের প্রাইভেসিতে হস্তক্ষেপ করা আমাদের উদ্দেশ্য নয়; বরং আমরা কেবল ছড়িয়ে থাকা উন্মুক্ত রিসোর্সগুলোকে তোমাদের সুবিয়ার জন্য সহজভাবে সাজিয়ে উপস্থাপন করি।
-            </p>
-            <p>
-              আমাদের একমাত্র লক্ষ্য হলো একটি সুস্থ এবং সহযোগিতামূলক শিক্ষা ব্যবস্থা গড়ে তোলা। আমরা চাই প্রতিটি শিক্ষার্থী যেন Polyguid-কে তাদের একজন বিশ্বস্ত এবং নির্ভরযোগ্য 'লার্নিং পার্টনার' হিসেবে পাশে পায়। তোমাদের সাফল্যের প্রতিটি ধাপে আমরা আমাদের সর্বোচ্চ সহযোগিতা নিয়ে পাশে থাকতে প্রতিশ্রুতিবদ্ধ।
-            </p>
+      {/* 6. Words for Students (Description) - Full Width Compact */}
+      <section className="px-4 max-w-5xl mx-auto w-full">
+        <div className="bg-black/5 dark:bg-white/10 rounded-[20px] sm:rounded-[32px] p-5 sm:p-8 md:p-10">
+          <div className="flex flex-col gap-4 sm:gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-[var(--primary)] rounded-full" />
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] leading-tight">শিক্ষার্থীদের উদ্দেশ্যে কিছু কথা</h2>
+            </div>
+            <div className="space-y-4 text-xs sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed text-justify font-medium">
+              <p>
+                PolyGuid (পলিগাইড)-এর পক্ষ থেকে তোমাদের সবাইকে জানাই আন্তরিক অভিনন্দন। আমরা বিশ্বাস করি, আজকের পলিটেকনিক শিক্ষার্থীরাই আগামী দিনের দক্ষ প্রকৌশলী হিসেবে দেশকে এগিয়ে নিয়ে যাবে। তোমাদের এই কঠিন ও পরিশ্রমী শিক্ষাসফরকে কিছুটা সহজ এবং ডিজিটাল করার লক্ষ্যেই আমাদের এই বিশেষ প্ল্যাটফর্মের যাত্রা শুরু।
+              </p>
+              <p>
+                PolyGuid এমন একটি প্ল্যাটফর্ম যেখানে তোমরা তোমাদের প্রয়োজনীয় সকল স্টাডি ম্যাটেরিয়ালস, নোটস এবং বুক-পিডিএফ ফাইল এক জায়গায় খুঁজে পাবে। আমাদের মূল লক্ষ্য হলো দেশের প্রতিটি প্রান্তের পলিটেকনিক শিক্ষার্থীদের জন্য মানসম্মত শিক্ষা উপকরণ সরবরাহ করা। আমাদের এই প্ল্যাটফর্মের সিংহভাগ রিসোর্স এবং ফাইলসমূহ শিক্ষার্থীদের জন্য সম্পূর্ণ বিনামূল্যে (Free) রাখা হয়েছে, যাতে অর্থের অভাবে কারো পড়াশোনা থেমে না থাকে। তবে, আমাদের সেবার মান আরও উন্নত করা এবং প্ল্যাটফর্মের স্থায়িত্ব নিশ্চিত করার লক্ষ্যে কিছু বিশেষায়িত সার্ভিস বা কন্টেন্ট অত্যন্ত সাশ্রয়ী মূল্যে প্রিমিয়াম (Paid) ক্যাটাগরিতেও রাখা হয়েছে।
+              </p>
+              <p>
+                আমরা অত্যন্ত সততা এবং পেশাদারিত্বের সাথে তোমাদের জানাতে চাই যে, Polyguid কোনো প্রকার ‘পাইরেসি’ বা নীতিবহির্ভূত কাজে বিশ্বাস করে না। আমরা অন্য কোনো ব্যক্তি বা প্রতিষ্ঠানের বিশেষায়িত পেইড কোর্স বা প্রিমিয়াম কন্টেন্ট অবৈধভাবে শেয়ার করি না। আমাদের প্ল্যাটফর্মে যে সকল ফ্রি ম্যাটেরিয়াল দেওয়া হয়, তা মূলত ইন্টারনেটে পাবলিকলি এভেইলএবল (Publicly Available) বা উন্মুক্তভাবে পাওয়া যায় এমন তথ্যের একটি সুসংগঠিত সংস্করণ মাত্র। আমরা ডিজিটাল কপিরাইট এবং মেধাস্বত্বের প্রতি পূর্ণ সম্মান প্রদর্শন করি। অন্য কোনো প্ল্যাটফর্মের ব্যবসায়িক ক্ষতি বা তাদের প্রাইভেসিতে হস্তক্ষেপ করা আমাদের উদ্দেশ্য নয়; বরং আমরা কেবল ছড়িয়ে থাকা উন্মুক্ত রিসোর্সগুলোকে তোমাদের সুবিয়ার জন্য সহজভাবে সাজিয়ে উপস্থাপন করি।
+              </p>
+              <p>
+                আমাদের একমাত্র লক্ষ্য হলো একটি সুস্থ এবং সহযোগিতামূলক শিক্ষা ব্যবস্থা গড়ে তোলা। আমরা চাই প্রতিটি শিক্ষার্থী যেন Polyguid-কে তাদের একজন বিশ্বস্ত এবং নির্ভরযোগ্য 'লার্নিং পার্টনার' হিসেবে পাশে পায়। তোমাদের সাফল্যের প্রতিটি ধাপে আমরা আমাদের সর্বোচ্চ সহযোগিতা নিয়ে পাশে থাকতে প্রতিশ্রুতিবদ্ধ।
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* 7. Donation Section - Compact */}
-      <section className="flex flex-col gap-6 px-4 max-w-4xl mx-auto w-full">
+      <section className="flex flex-col gap-6 px-4 max-w-5xl mx-auto w-full">
         <div className="flex flex-col sm:flex-row gap-3 items-stretch">
           <div className="flex-1 p-3 sm:p-4 flex items-center justify-between overflow-hidden bg-white/40 dark:bg-black/20 rounded-[16px] sm:rounded-[24px] shadow-sm min-h-[70px] border border-black/5 dark:border-white/5">
             <div className="flex items-center gap-4 z-10 w-full">
