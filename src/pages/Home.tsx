@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, BookOpen, Calculator, FileText, List, Users,
 import GlassmorphicCard from '@/src/components/ui/GlassmorphicCard';
 import CourseCard from '@/src/components/ui/CourseCard';
 import { supabase } from '@/src/lib/supabase';
+import { getDirectLink } from '@/src/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
 const AnimatedCounter = ({ value, suffix = "" }: { value: number, suffix?: string }) => {
@@ -369,7 +370,7 @@ export default function Home() {
 
 
       {/* Hero Banner */}
-      <div className="relative w-full rounded-3xl overflow-hidden group bg-[#1a1a1a]">
+      <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden group bg-[#1a1a1a] shadow-xl">
         <motion.div
           key={bannerUrl} // Re-animate when bannerUrl changes
           initial={{ opacity: 0.8, scale: 0.98 }}
@@ -378,8 +379,9 @@ export default function Home() {
           className="relative w-full"
         >
           <img 
-            src={bannerUrl} 
+            src={getDirectLink(bannerUrl)} 
             alt="Banner" 
+            referrerPolicy="no-referrer"
             className="w-full h-auto block transition-transform duration-700 group-hover:scale-105 relative z-0"
             onError={(e) => {
               if (bannerUrl !== DEFAULT_BANNER) {
@@ -387,15 +389,14 @@ export default function Home() {
               }
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-[4%] sm:p-8 md:p-10 z-10">
-            <h1 className="text-[4vw] sm:text-[21px] md:text-[24px] lg:text-[28px] leading-tight font-bold text-white mb-[1.5%] sm:mb-3">
-              Your Learning Partner
-            </h1>
+          <div className="absolute inset-x-0 bottom-0 top-0 bg-gradient-to-t from-black/70 via-transparent to-transparent z-10 pointer-events-none" />
+          
+          <div className="absolute bottom-[20%] left-[6%] sm:bottom-12 sm:left-12 md:bottom-16 md:left-16 z-20">
             <button 
               onClick={scrollToCourses}
-              className="w-fit bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold py-[1%] px-[2.5%] sm:py-2.5 sm:px-6 rounded-[4px] sm:rounded-xl transition-all shadow-[0_0_20px_rgba(50,205,50,0.4)] hover:shadow-[0_0_30px_rgba(50,205,50,0.6)] flex items-center gap-[1vw] sm:gap-2 text-[2.5vw] sm:text-sm md:text-base"
+              className="w-fit bg-[var(--primary)] text-white font-black h-6 xs:h-8 sm:h-12 px-3 xs:px-5 sm:px-10 rounded-md sm:rounded-2xl transition-all hover:bg-[#28a428] shadow-[0_4px_12px_rgba(50,205,50,0.4)] hover:shadow-[0_8px_25px_rgba(50,205,50,0.6)] flex items-center justify-center gap-1 sm:gap-3 text-[8px] xs:text-[11px] sm:text-lg whitespace-nowrap active:scale-90"
             >
-              Explore Courses <ChevronRight size={10} className="w-[3vw] h-[3vw] sm:w-5 sm:h-5" />
+              Explore Courses <ChevronRight className="w-2.5 h-2.5 xs:w-3.5 sm:w-6 sm:h-6" />
             </button>
           </div>
         </motion.div>

@@ -25,6 +25,7 @@ import {
   Database,
 } from "lucide-react";
 import { supabase } from "@/src/lib/supabase";
+import { getDirectLink } from "@/src/lib/utils";
 import * as pdfjs from "pdfjs-dist";
 
 // Initialize PDF.js worker
@@ -46,7 +47,6 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<AdminTab>("courses");
   const [isPremium, setIsPremium] = useState(false);
   const [bannerUrl, setBannerUrl] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{
     type: "success" | "error";
@@ -241,55 +241,6 @@ export default function Admin() {
       });
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    setStatusMsg(null);
-    try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = async () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-
-          // Max dimensions
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 800;
-
-          if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
-          }
-          if (height > MAX_HEIGHT) {
-            width = Math.round((width * MAX_HEIGHT) / height);
-            height = MAX_HEIGHT;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, width, height);
-
-          // Compress to JPEG with 0.7 quality to save space
-          const base64String = canvas.toDataURL("image/jpeg", 0.7);
-
-          setBannerUrl(base64String); // Just set preview, don't save yet
-          setIsUploading(false);
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error("Upload error:", err);
-      setStatusMsg({ type: "error", text: "❌ Image processing failed." });
-      setIsUploading(false);
     }
   };
 
@@ -749,71 +700,54 @@ export default function Admin() {
           {activeTab === "banner" && (
             <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                  <Layout className="text-orange-500" size={18} />
+                <div className="w-10 h-10 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center">
+                  <Layout className="text-[var(--primary)]" size={22} />
                 </div>
-                <h2 className="text-lg font-bold text-[var(--text)]">
-                  Edit Home Banner
-                </h2>
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--text)]">
+                    Home Page Hero Banner
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Manage the main banner image shown to students</p>
+                </div>
               </div>
 
               <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-end">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Banner Image URL
-                    </label>
-                    <span className="text-[10px] text-[var(--primary)] font-bold">
-                      Size: 1200 x 400 px
-                    </span>
+                <div className="relative pt-2">
+                  <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 transition-all tracking-wider">Banner Image URL*</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                      <Paperclip size={18} />
+                    </div>
+                    <input
+                      required
+                      type="url"
+                      value={bannerUrl}
+                      onChange={(e) => setBannerUrl(e.target.value)}
+                      placeholder="Paste Google Drive share link or direct image URL..."
+                      className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 pl-10 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+                    />
                   </div>
-                  <input
-                    type="url"
-                    value={bannerUrl}
-                    onChange={(e) => setBannerUrl(e.target.value)}
-                    placeholder="https://example.com/banner.png"
-                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
-                  />
-                </div>
-
-                <div className="relative border-2 border-dashed border-black/10 dark:border-white/10 rounded-xl p-8 flex flex-col items-center justify-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer group">
-                  <div className="w-10 h-10 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                    {isUploading ? (
-                      <Upload
-                        className="text-[var(--primary)] animate-bounce"
-                        size={20}
-                      />
-                    ) : (
-                      <Upload className="text-gray-400" size={20} />
-                    )}
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-[var(--text)]">
-                      {isUploading
-                        ? "Processing Image..."
-                        : "Upload Banner Image"}
-                    </p>
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      Select an image from your device
-                    </p>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    disabled={isUploading || isSaving}
-                  />
+                  <p className="text-[10px] text-gray-500 mt-1.5 px-1 leading-relaxed">
+                    Recommended size: 1200 x 400 pixels. High quality Google Drive links are supported automatically.
+                  </p>
                 </div>
 
                 {bannerUrl && (
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-500 mb-2">Preview:</p>
-                    <div className="relative aspect-[3/1] rounded-lg overflow-hidden border border-black/10 dark:border-white/10">
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center justify-between px-1">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Preview</p>
+                      <span className="text-[10px] text-green-500 font-bold px-2 py-0.5 bg-green-500/10 rounded-full">Active View</span>
+                    </div>
+                    <div className="relative rounded-xl overflow-hidden border border-black/10 dark:border-white/10 flex items-center justify-center bg-black/5 dark:bg-white/5 shadow-inner">
                       <img
-                        src={bannerUrl}
+                        src={getDirectLink(bannerUrl)}
                         alt="Preview"
-                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        className="w-full h-auto"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1200&auto=format&fit=crop';
+                        }}
                       />
                     </div>
                   </div>
@@ -821,20 +755,21 @@ export default function Admin() {
 
                 {statusMsg && (
                   <div
-                    className={`p-3 rounded-lg text-sm font-medium ${statusMsg.type === "success" ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}
+                    className={`p-4 rounded-xl text-sm font-bold flex items-center gap-3 ${statusMsg.type === "success" ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"}`}
                   >
+                    <div className={`w-2 h-2 rounded-full ${statusMsg.type === "success" ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
                     {statusMsg.text}
                   </div>
                 )}
 
                 <button
                   onClick={handleBannerApply}
-                  disabled={isSaving || isUploading || !bannerUrl}
-                  className="w-full bg-[var(--primary)] text-black font-bold py-3 rounded-lg hover:bg-[#28a428] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                  disabled={isSaving || !bannerUrl}
+                  className="w-full bg-[var(--primary)] text-white font-black py-4 rounded-xl hover:bg-[#28a428] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 active:scale-[0.98]"
                 >
                   {isSaving
-                    ? "Saving to Database..."
-                    : "Save Banner to Database"}
+                    ? "Upgrading Site Server..."
+                    : "Apply Changes to Banner"}
                 </button>
               </div>
             </GlassmorphicCard>
@@ -1269,6 +1204,8 @@ export default function Admin() {
                     </p>
                     <code className="bg-black/20 p-2 rounded text-[9px] font-mono break-all text-red-400 select-all">
                       ALTER TABLE student_results DISABLE ROW LEVEL SECURITY;
+                      <br />
+                      ALTER TABLE site_settings DISABLE ROW LEVEL SECURITY;
                       <br />
                       CREATE INDEX IF NOT EXISTS idx_roll_no ON
                       student_results(roll_no);
