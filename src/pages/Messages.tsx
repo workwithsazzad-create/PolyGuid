@@ -414,11 +414,11 @@ export default function Messages() {
         </div>
 
         {/* Chat Area */}
-        <div className={`flex-1 flex flex-col bg-gray-50 dark:bg-[#141414] ${!selectedUser ? 'hidden md:flex' : 'flex'} relative overflow-hidden`}>
+        <div className={`flex-1 flex flex-col bg-gray-50 dark:bg-[#141414] ${!selectedUser ? 'hidden md:flex' : 'flex'} relative h-full overflow-hidden`}>
           {selectedUser ? (
-            <>
+            <div className="flex flex-col h-full overflow-hidden relative">
               {/* Chat Header */}
-              <div className="sticky top-0 z-20 p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center justify-between gap-3 shadow-sm shrink-0">
+              <div className="p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center justify-between gap-3 shadow-sm shrink-0 z-10">
                 <div className="flex items-center gap-3">
                   <button 
                     className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[var(--primary)]"
@@ -426,15 +426,15 @@ export default function Messages() {
                   >
                     <ChevronLeft size={24} />
                   </button>
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
                     {selectedUser.avatar_url ? (
                       <img src={selectedUser.avatar_url} alt={selectedUser.full_name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={20} /></div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <h3 className="font-bold text-[var(--text)]">{selectedUser.full_name}</h3>
+                  <div className="flex items-center gap-1 truncate">
+                    <h3 className="font-bold text-[var(--text)] truncate">{selectedUser.full_name}</h3>
                     {selectedUser.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
                   </div>
                 </div>
@@ -462,6 +462,7 @@ export default function Messages() {
                 </div>
               </div>
 
+              {/* Message List */}
               <div className="flex-1 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3">
                 {messages.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-500 text-sm">
@@ -473,7 +474,7 @@ export default function Messages() {
                     return (
                       <div key={msg.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                         <div 
-                          className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+                          className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl ${
                             isMe 
                               ? 'bg-[var(--primary)] text-white rounded-tr-sm' 
                               : 'bg-white dark:bg-[#2a2a2a] text-[var(--text)] rounded-tl-sm border border-black/5 dark:border-white/5 shadow-sm'
@@ -492,7 +493,7 @@ export default function Messages() {
               </div>
 
               {/* Input Area */}
-              <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-black/10 dark:border-white/10 sticky bottom-0 z-20 shrink-0">
+              <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-black/10 dark:border-white/10 shrink-0 z-10">
                 {blockedByMe || blockedByOther ? (
                     <div className="text-center p-3 text-sm font-medium text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
                         {blockedByMe ? 'You have blocked this conversation.' : 'You have been blocked by this user.'}
@@ -516,7 +517,7 @@ export default function Messages() {
                     </form>
                 )}
               </div>
-            </>
+            </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
               <div className="w-24 h-24 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
