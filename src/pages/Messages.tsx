@@ -355,18 +355,36 @@ export default function Messages() {
     const msg = newMessage;
     setNewMessage(''); 
 
-    const { error } = await supabase
+    // Optimistic update
+    const tempId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString();
+    const optimisticMsg = {
+        id: tempId,
+        sender_id: user.id,
+        receiver_id: selectedUser.id,
+        content: msg,
+        created_at: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    setTimeout(scrollToBottom, 50);
+
+    const { error, data } = await supabase
       .from('messages')
       .insert([{
         sender_id: user.id,
         receiver_id: selectedUser.id,
         content: msg
-      }]);
+      }])
+      .select()
+      .single();
 
     if (error) {
       console.error('Error sending message:', error);
-      // Rollback optimistic update on error would go here
+      // Rollback optimistic update on error
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      alert("Failed to send message: " + error.message);
     } else {
+      // Replace optimistic msg with real one to get correct ID and timestamp
+      setMessages(prev => prev.map(m => m.id === tempId ? data : m));
       // Re-fetch conversations to update last message
       fetchConversations(user.id);
     }
