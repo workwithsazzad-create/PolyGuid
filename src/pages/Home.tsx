@@ -272,7 +272,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 3. Quick Access Buttons - Compact 4-Column Row */}
+      {/* 3. Quick Access Buttons - Balanced Design */}
       <div className="grid grid-cols-4 gap-2 sm:gap-6 max-w-5xl mx-auto w-full px-4">
         {[
           { name: 'Book Buy/Sell', icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-500/5', path: '/marketplace' },
@@ -284,12 +284,12 @@ export default function Home() {
             key={i} 
             whileHover={{ y: -4 }}
             onClick={() => item.path && navigate(item.path)}
-            className="p-1.5 sm:p-4 flex flex-col items-center justify-center gap-1.5 sm:gap-3 cursor-pointer text-center bg-white dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl sm:rounded-3xl shadow-sm hover:shadow-xl transition-all group"
+            className="p-2 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer text-center bg-white dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl sm:rounded-3xl shadow-sm hover:shadow-xl transition-all group"
           >
             <div className={`p-2 sm:p-4 rounded-xl sm:rounded-2xl ${item.bg} ${item.color} group-hover:scale-110 transition-transform duration-300`}>
-              <item.icon className="w-4 h-4 sm:w-7 sm:h-7" />
+              <item.icon className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <span className="font-extrabold text-[7px] sm:text-[12px] text-[var(--text)] tracking-tight leading-tight line-clamp-1">{item.name}</span>
+            <span className="font-extrabold text-[8px] sm:text-[12px] text-[var(--text)] tracking-tight leading-tight line-clamp-1">{item.name}</span>
           </motion.div>
         ))}
       </div>
@@ -314,7 +314,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. Popular Courses Section - Compact Cards */}
+      {/* 5. Popular Courses Section - Responsive Layout */}
       <section ref={coursesRef} className="flex flex-col gap-3 sm:gap-5 px-4 max-w-5xl mx-auto w-full">
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-2xl font-bold text-[var(--text)] tracking-tight">জনপ্রিয় কোর্স সমূহ</h2>
@@ -343,7 +343,7 @@ export default function Home() {
                         isEnrolled={enrollments.some(e => e.course_id === course.id)}
                       />
                     </div>
-                ))}
+                  ))}
               </div>
               <div className="hidden lg:block">
                  <button 

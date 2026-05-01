@@ -47,24 +47,24 @@ export default function CourseCard({ id, title, description, price, originalPric
           </div>
         </div>
         
-        <div className="flex flex-col gap-0.5 p-0.5">
-          <h3 className="text-[9px] sm:text-[11px] font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight h-[2.5em]">
+        <div className="flex flex-col gap-1 p-1">
+          <h3 className="text-[10px] sm:text-[12px] font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight h-[2.5em]">
             {title}
           </h3>
           
           <div className="flex items-center gap-1 mt-auto">
-            <span className="text-[10px] sm:text-xs font-black text-[var(--primary)]">
+            <span className="text-[11px] sm:text-xs font-black text-[var(--primary)]">
               ৳{price}
             </span>
             {hasDiscount && (
-              <span className="text-[7px] sm:text-[9px] text-gray-400 line-through">
+              <span className="text-[8px] sm:text-[9px] text-gray-400 line-through">
                 ৳{originalPrice}
               </span>
             )}
           </div>
           
           <div 
-            className={`w-full py-1 sm:py-1.5 rounded-md font-black text-[8px] sm:text-[10px] uppercase tracking-wider text-center transition-all shadow-none ${
+            className={`w-full py-1.5 sm:py-1.5 rounded-md font-black text-[9px] sm:text-[10px] uppercase tracking-wider text-center transition-all shadow-none ${
               isEnrolled 
                 ? 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10' 
                 : 'bg-[var(--primary)] text-white'
@@ -79,7 +79,7 @@ export default function CourseCard({ id, title, description, price, originalPric
 }
 
 const CourseBadge = ({ children }: { children: React.ReactNode }) => (
-  <div className="absolute bottom-1 right-1 bg-[var(--primary)] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-sm shadow-sm">
+  <div className="absolute bottom-1.5 right-1.5 bg-[var(--primary)] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm shadow-sm">
     {children}
   </div>
 );
