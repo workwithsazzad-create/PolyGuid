@@ -13,16 +13,12 @@ const Footer = () => {
         {/* Brand Section */}
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-3">
-            <img 
-              src={logoUrl} 
-              alt="PolyGuid Logo" 
-              className="h-10 sm:h-12 w-auto object-contain dark:brightness-110"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
-            <span className="text-xl font-bold tracking-tight text-[var(--text)]">PolyGuid</span>
+            <span className="text-xl sm:text-2xl font-bold tracking-tight font-sans">
+              <span className="text-[#32CD32]">P</span>
+              <span className="text-[var(--text)]">oly</span>
+              <span className="text-[#32CD32]">G</span>
+              <span className="text-[var(--text)]">uid</span>
+            </span>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs font-medium">
             বাংলাদেশের প্রথম কমিউনিটি বেসড লার্নিং প্ল্যাটফর্ম। আমাদের লক্ষ্য দক্ষ ইঞ্জিনিয়ার তৈরি করা।

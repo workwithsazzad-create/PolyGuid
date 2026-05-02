@@ -59,7 +59,12 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
           isSidebarOpen ? "opacity-0 invisible" : "opacity-100 visible"
         )}>
           <Link to="/home">
-            <Logo theme={theme} showText={true} className="scale-[0.8] origin-left -ml-2" />
+            <span className="text-xl font-bold tracking-tight font-sans">
+              <span className="text-[#32CD32]">P</span>
+              <span className="text-[var(--text)]">oly</span>
+              <span className="text-[#32CD32]">G</span>
+              <span className="text-[var(--text)]">uid</span>
+            </span>
           </Link>
         </div>
       </div>
@@ -92,7 +97,12 @@ function InfoLayout() {
     <div className="min-h-screen bg-[var(--bg)]">
       <header className="w-full h-16 border-b border-black/5 dark:border-white/5 flex items-center px-4 sm:px-8 bg-white dark:bg-[#0a0a0a]">
         <Link to="/home" className="flex items-center gap-2 group">
-          <Logo theme={theme} showText={true} className="scale-[0.8] sm:scale-100 origin-left" />
+          <span className="text-xl sm:text-2xl font-bold tracking-tight font-sans">
+            <span className="text-[#32CD32]">P</span>
+            <span className="text-[var(--text)]">oly</span>
+            <span className="text-[#32CD32]">G</span>
+            <span className="text-[var(--text)]">uid</span>
+          </span>
         </Link>
       </header>
       <main className="w-full p-4 lg:p-12 overflow-x-hidden">

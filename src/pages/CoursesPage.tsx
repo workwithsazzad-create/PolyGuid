@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { BookOpen, Search, Filter, Book, GraduationCap, Laptop } from 'lucide-react';
+import { BookOpen, Search, Filter, Book, GraduationCap, Laptop, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 import CourseCard from '../components/ui/CourseCard';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
@@ -94,9 +94,17 @@ export default function CoursesPage() {
     <div className="flex flex-col gap-8 max-w-7xl mx-auto w-full px-4 py-8">
       {/* Header & Search */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-[var(--text)] tracking-tight">কোর্স লাইব্রেরি</h1>
-          <p className="text-gray-500 mt-1">আপনার প্রয়োজনীয় কোর্সটি খুঁজে নিন</p>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group"
+          >
+            <ArrowLeft className="text-[var(--text)] group-hover:text-[var(--primary)]" size={24} />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-[var(--text)] tracking-tight">কোর্স লাইব্রেরি</h1>
+            <p className="text-gray-500 mt-1">আপনার প্রয়োজনীয় কোর্সটি খুঁজে নিন</p>
+          </div>
         </div>
         
         <div className="relative w-full md:w-80">

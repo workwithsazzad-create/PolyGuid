@@ -29,7 +29,7 @@ export default function Logo({ className, showText = true, theme = 'dark' }: Log
   );
 
   return (
-    <div className={cn("flex flex-col items-start px-2", className)}>
+    <div className={cn("flex flex-col items-start px-1 sm:px-2", className)}>
       <div className={imgWrapperClassName}>
         {!imgError ? (
           <img 
@@ -53,7 +53,7 @@ export default function Logo({ className, showText = true, theme = 'dark' }: Log
       </div>
       {!imgError && showText && (
         <p className={cn(
-          "font-bold text-[10px] sm:text-[11px] tracking-[0.18em] uppercase mt-[-6px] sm:mt-[-12px] ml-1 opacity-80 whitespace-nowrap",
+          "font-bold text-[9px] sm:text-[11px] tracking-[0.16em] uppercase mt-[-4px] sm:mt-[-10px] ml-1 opacity-80 leading-none",
           theme === 'light' ? "text-gray-600" : "text-gray-400"
         )}>
           Your learning partner
