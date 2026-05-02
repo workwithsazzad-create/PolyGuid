@@ -10,8 +10,13 @@ import CourseDetails from './pages/CourseDetails';
 import VideoPlayer from './pages/VideoPlayer';
 import PdfViewer from './pages/PdfViewer';
 import SemesterCourses from './pages/SemesterCourses';
+import CoursesPage from './pages/CoursesPage';
 import SavedItems from './pages/SavedItems';
 import ResultViewer from './pages/ResultViewer';
+import About from './pages/info/About';
+import Privacy from './pages/info/Privacy';
+import Terms from './pages/info/Terms';
+import Refund from './pages/info/Refund';
 import Sidebar from './components/ui/Sidebar';
 import { Loader2 } from 'lucide-react';
 
@@ -22,6 +27,8 @@ import { cn } from './lib/utils';
 import { Menu, X } from 'lucide-react';
 
 import Messages from './pages/Messages';
+
+import { Link } from 'react-router-dom';
 
 // Layout for authenticated pages
 function AppLayout({ isAdmin }: { isAdmin: boolean }) {
@@ -42,12 +49,14 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
           "ml-3 flex flex-1 items-center h-full justify-start overflow-hidden transition-opacity duration-300",
           isSidebarOpen ? "opacity-0 invisible" : "opacity-100 visible"
         )}>
-          <span className="text-xl font-bold tracking-tight font-sans">
-            <span className="text-[#32CD32]">P</span>
-            <span className="text-[var(--text)]">oly</span>
-            <span className="text-[#32CD32]">G</span>
-            <span className="text-[var(--text)]">uid</span>
-          </span>
+          <Link to="/home">
+            <span className="text-xl font-bold tracking-tight font-sans">
+              <span className="text-[#32CD32]">P</span>
+              <span className="text-[var(--text)]">oly</span>
+              <span className="text-[#32CD32]">G</span>
+              <span className="text-[var(--text)]">uid</span>
+            </span>
+          </Link>
         </div>
       </div>
 
@@ -72,28 +81,69 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
   );
 }
 
+// Simple layout for info pages without sidebar
+function InfoLayout() {
+  const { theme } = useTheme();
+  return (
+    <div className="min-h-screen bg-[var(--bg)]">
+      <header className="w-full h-16 border-b border-black/5 dark:border-white/5 flex items-center px-4 sm:px-8 bg-white dark:bg-[#0a0a0a]">
+        <Link to="/home" className="flex items-center gap-2 group">
+          <span className="text-xl sm:text-2xl font-bold tracking-tight font-sans">
+            <span className="text-[#32CD32]">P</span>
+            <span className="text-[var(--text)]">oly</span>
+            <span className="text-[#32CD32]">G</span>
+            <span className="text-[var(--text)]">uid</span>
+          </span>
+        </Link>
+      </header>
+      <main className="w-full p-4 lg:p-12 overflow-x-hidden">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
 function AppContent() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) checkAdminStatus(session.user.id, session.user.email);
-      setLoading(false);
+      if (!isMounted) return;
+      
+      if (session) {
+        setSession(session);
+        checkAdminStatus(session.user.id, session.user.email).finally(() => {
+          if (isMounted) setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+      
       setSession(session);
-      if (session) checkAdminStatus(session.user.id, session.user.email);
-      else setIsAdmin(false);
-      setLoading(false);
+      if (session) {
+        checkAdminStatus(session.user.id, session.user.email).finally(() => {
+          if (isMounted) setLoading(false);
+        });
+      } else {
+        setIsAdmin(false);
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkAdminStatus = async (userId: string, email?: string) => {
@@ -145,6 +195,7 @@ function AppContent() {
         
         <Route element={session ? <AppLayout isAdmin={isAdmin} /> : <Navigate to="/login" replace />}>
           <Route path="/home" element={<Home />} />
+          <Route path="/courses" element={<CoursesPage />} />
           <Route path="/semester/:semesterName" element={<SemesterCourses />} />
           <Route path="/course/:id" element={<CourseDetails />} />
           <Route path="/play/:contentId" element={<VideoPlayer />} />
@@ -155,12 +206,24 @@ function AppContent() {
           <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />} />
           <Route path="/profile" element={<Profile />} />
           
-          {/* Placeholder routes */}
+          {/* Layer Routes (Standalone Pages) */}
+          <Route path="/marketplace" element={<div className="p-8 max-w-4xl mx-auto"><h1 className="text-3xl font-bold font-sans"><span className="text-[#32CD32]">P</span>oly<span className="text-[#00BFFF]">G</span>uid Marketplace</h1><p className="text-gray-500 mt-4 leading-relaxed">শীঘ্রই আসছে: এখান থেকে আপনি আপনার প্রয়োজনীয় ইঞ্জিনিয়ারিং বই কেনা-বেচা করতে পারবেন।</p></div>} />
+          <Route path="/books-pdf" element={<CoursesPage />} />
+          <Route path="/book-list" element={<CoursesPage />} />
+          <Route path="/my-courses" element={<Dashboard />} />
+          <Route path="/exams" element={<div className="p-8 max-w-4xl mx-auto"><h1 className="text-3xl font-bold font-sans"><span className="text-[#32CD32]">P</span>oly<span className="text-[#00BFFF]">G</span>uid Exams</h1><p className="text-gray-500 mt-4 leading-relaxed">শীঘ্রই আসছে: অনলাইনে পরীক্ষা দিন এবং আপনার মেধা যাচাই করুন।</p></div>} />
+          
           <Route path="/messages" element={<Messages />} />
-          <Route path="/my-courses" element={<div className="text-2xl font-bold text-[var(--text)]">My Courses Page (Coming Soon)</div>} />
-          <Route path="/exams" element={<div className="text-2xl font-bold text-[var(--text)]">Exams Page (Coming Soon)</div>} />
           
           <Route path="/" element={<Navigate to="/home" replace />} />
+        </Route>
+
+        {/* Info Pages (Public/Standalone) */}
+        <Route element={<InfoLayout />}>
+          <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/refund" element={<Refund />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />

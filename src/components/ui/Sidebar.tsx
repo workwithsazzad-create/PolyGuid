@@ -85,8 +85,10 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       "fixed left-0 top-0 h-screen w-60 sm:w-64 glass border-r border-[var(--glass-border)] flex flex-col p-4 sm:p-6 z-50 transition-transform duration-300",
       isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
     )}>
-      <div className="flex items-center justify-between mb-6 sm:mb-8 -mt-2 sm:-mt-6 px-1 sm:px-2">
-        <Logo theme={theme} className="scale-100 sm:scale-110 origin-left" />
+      <div className="flex items-center justify-between mb-8 sm:mb-10 -mt-2 sm:-mt-6 px-1 sm:px-2 min-h-[80px]">
+        <NavLink to="/home" className="flex items-center gap-2 group">
+          <Logo theme={theme} showText={true} className="scale-100 sm:scale-110 origin-left" />
+        </NavLink>
         <button 
           onClick={onClose}
           className="lg:hidden p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10"

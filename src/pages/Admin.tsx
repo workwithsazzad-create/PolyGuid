@@ -136,12 +136,19 @@ export default function Admin() {
   const handleSaveDonationNumber = async () => {
     setIsSavingDonationNum(true);
     try {
-      await supabase
-        .from("site_settings")
-        .upsert(
-          { key: "donation_number", value: donationNumber },
-          { onConflict: "key" },
-        );
+      // Robust save: Check if exists, then update or insert
+      const { data: existing } = await supabase.from("site_settings").select("key").eq("key", "donation_number").maybeSingle();
+      
+      let error;
+      if (existing) {
+        const { error: updateError } = await supabase.from("site_settings").update({ value: donationNumber }).eq("key", "donation_number");
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase.from("site_settings").insert({ key: "donation_number", value: donationNumber });
+        error = insertError;
+      }
+
+      if (error) throw error;
       setStatusMsg({ type: "success", text: "✅ Donation number updated!" });
     } catch (err) {
       setStatusMsg({
@@ -183,16 +190,21 @@ export default function Admin() {
     setStatsMsg(null);
     setIsSavingStats(true);
     try {
-      const { error } = await supabase.from("site_settings").upsert(
-        [
-          { key: "stat_courses", value: stats.courses },
-          { key: "stat_students", value: stats.students },
-          { key: "stat_polytechnics", value: stats.polytechnics },
-        ],
-        { onConflict: "key" },
-      );
+      const statsToSave = [
+        { key: "stat_courses", value: stats.courses },
+        { key: "stat_students", value: stats.students },
+        { key: "stat_polytechnics", value: stats.polytechnics },
+      ];
 
-      if (error) throw error;
+      for (const item of statsToSave) {
+        const { data: existing } = await supabase.from("site_settings").select("key").eq("key", item.key).maybeSingle();
+        if (existing) {
+          await supabase.from("site_settings").update({ value: item.value }).eq("key", item.key);
+        } else {
+          await supabase.from("site_settings").insert(item);
+        }
+      }
+
       setStatsMsg({
         type: "success",
         text: "✅ Analytics stats updated successfully!",
@@ -220,15 +232,19 @@ export default function Admin() {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from("site_settings")
-        .upsert(
-          { key: "home_banner", value: bannerUrl },
-          { onConflict: "key" },
-        );
+      const { data: existing } = await supabase.from("site_settings").select("key").eq("key", "home_banner").maybeSingle();
+      
+      let dbError;
+      if (existing) {
+        const { error: updateError } = await supabase.from("site_settings").update({ value: bannerUrl }).eq("key", "home_banner");
+        dbError = updateError;
+      } else {
+        const { error: insertError } = await supabase.from("site_settings").insert({ key: "home_banner", value: bannerUrl });
+        dbError = insertError;
+      }
 
-      if (error) {
-        throw error;
+      if (dbError) {
+        throw dbError;
       }
       setStatusMsg({
         type: "success",
@@ -670,7 +686,14 @@ export default function Admin() {
     >
       {/* Tab Navigation */}
       <div className="w-full relative">
-        <div className="flex items-center gap-2 overflow-x-auto pb-3 -mx-4 px-4 sm:-mx-0 sm:px-0 scroll-smooth touch-pan-x snap-x hide-scrollbar border-b border-black/10 dark:border-white/10">
+        <div 
+          onWheel={(e) => {
+            if (e.deltaY !== 0) {
+              e.currentTarget.scrollLeft += e.deltaY;
+            }
+          }}
+          className="flex items-center gap-2 overflow-x-auto pb-3 -mx-4 px-4 sm:-mx-0 sm:px-0 scroll-smooth touch-pan-x snap-x hide-scrollbar border-b border-black/10 dark:border-white/10"
+        >
           {tabs.map((tab) => (
             <button
               key={tab.id}

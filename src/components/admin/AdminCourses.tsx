@@ -224,8 +224,15 @@ const ContentModal = ({
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Semesters Selection</label>
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Semesters & Tags Selection</label>
                   <div className="grid grid-cols-2 gap-2">
+                    <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-md border transition-all ${courseForm.isFree ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-white/5 opacity-50'}`}>
+                      <input type="checkbox" className="sr-only" checked={courseForm.isFree} onChange={(e) => setCourseForm({...courseForm, isFree: e.target.checked})} />
+                      <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-all ${courseForm.isFree ? 'bg-green-600 border-green-600' : 'border-gray-400'}`}>
+                        {courseForm.isFree && <Plus size={12} className="text-white rotate-45" />}
+                      </div>
+                      <span className="text-sm font-bold text-green-600 dark:text-green-400">ফ্রি কোর্স (FREE)</span>
+                    </label>
                     {SEMESTERS.map(sem => (
                       <label key={sem} className={`flex items-center gap-3 cursor-pointer p-3 rounded-md border transition-all ${courseForm.categories.includes(sem) ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-white/5 opacity-50'}`}>
                         <input type="checkbox" className="sr-only" checked={courseForm.categories.includes(sem)} onChange={(e) => {
@@ -294,24 +301,9 @@ export default function AdminCourses() {
     description: ''
   });
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  const fetchCourses = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('courses')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching courses:', error);
-    } else {
-      setCourses(data || []);
-    }
-    setLoading(false);
-  };
+  const [courseContents, setCourseContents] = useState<any[]>([]);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewContent, setPreviewContent] = useState<any>(null);
 
   const fetchContents = async (courseId: string) => {
     const { data, error } = await supabase
@@ -327,63 +319,90 @@ export default function AdminCourses() {
     return data || [];
   };
 
-  const [courseContents, setCourseContents] = useState<any[]>([]);
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-  const [previewContent, setPreviewContent] = useState<any>(null);
-
   // Pin State
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [courseToPin, setCourseToPin] = useState<any>(null);
   const [pinPosition, setPinPosition] = useState<number>(1);
+  const [pinnedCoursesMap, setPinnedCoursesMap] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (selectedCourse) {
-      fetchContents(selectedCourse.id).then(setCourseContents);
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    
+    // 1. Fetch pinned map
+    const { data: pinnedData } = await supabase.from('site_settings').select('value').eq('key', 'pinned_courses').maybeSingle();
+    let pMap = {};
+    if (pinnedData && pinnedData.value) {
+      try {
+        pMap = JSON.parse(pinnedData.value);
+        setPinnedCoursesMap(pMap);
+      } catch(e) {}
     }
-  }, [selectedCourse]);
+
+    // 2. Fetch courses
+    const { data: courseData, error } = await supabase
+      .from('courses')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching courses:', error);
+    } else {
+      setCourses(courseData ? courseData.map((c: any) => ({...c, pinned_position: (pMap as any)[c.id] || null})) : []);
+    }
+    setLoading(false);
+  };
 
   const handlePinCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseToPin) return;
 
-    // Check if position is already taken
-    const existingPinned = courses.find((c: any) => c.pinned_position === pinPosition);
-    if (existingPinned && existingPinned.id !== courseToPin.id) {
-       alert(`এই নম্বরটিতে বর্তমানে "${existingPinned.title}" কোর্সটি পিন করা আছে। দয়া করে আগে সেটি আনপিন করুন, অথবা অন্য নম্বর সিলেক্ট করুন।`);
-       return;
+    // Build new map
+    const newMap = { ...pinnedCoursesMap };
+    
+    // Check if position physically taken
+    for (const id in newMap) {
+       if (newMap[id] === pinPosition && id !== courseToPin.id) {
+         alert(`এই নম্বরটিতে বর্তমানে অন্য কোর্স পিন করা আছে।`);
+         return;
+       }
     }
 
-    try {
-      const { error } = await supabase
-        .from('courses')
-        .update({ pinned_position: pinPosition })
-        .eq('id', courseToPin.id);
+    newMap[courseToPin.id] = pinPosition;
 
+    try {
+      const { error } = await supabase.from('site_settings').upsert(
+        { key: 'pinned_courses', value: JSON.stringify(newMap) },
+        { onConflict: 'key' }
+      );
       if (error) throw error;
-      
+
+      setPinnedCoursesMap(newMap);
       setCourses(courses.map(c => c.id === courseToPin.id ? { ...c, pinned_position: pinPosition } : c));
       setIsPinModalOpen(false);
       setCourseToPin(null);
-    } catch (err) {
-      console.error('Error pinning course:', err);
+    } catch (err: any) {
       alert('Error pinning course');
     }
   };
 
   const handleUnpinCourse = async (courseId: string) => {
-    try {
-      const { error } = await supabase
-        .from('courses')
-        .update({ pinned_position: null })
-        .eq('id', courseId);
+    const newMap = { ...pinnedCoursesMap };
+    delete newMap[courseId];
 
+    try {
+      const { error } = await supabase.from('site_settings').upsert(
+        { key: 'pinned_courses', value: JSON.stringify(newMap) },
+        { onConflict: 'key' }
+      );
       if (error) throw error;
       
+      setPinnedCoursesMap(newMap);
       setCourses(courses.map(c => c.id === courseId ? { ...c, pinned_position: null } : c));
-    } catch (err) {
-      console.error('Error unpinning course:', err);
-      alert('Error unpinning course');
-    }
+    } catch(e) {}
   };
 
   const handleCreateCourse = async (e: React.FormEvent) => {
@@ -795,30 +814,45 @@ export default function AdminCourses() {
                 )}
               </div>
 
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 ml-auto sm:ml-0">
                 {course.pinned_position ? (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleUnpinCourse(course.id); }}
-                    className="flex items-center gap-1 bg-yellow-500/10 text-yellow-600 px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-yellow-500 hover:text-white transition-all border border-yellow-500/20"
+                    className="flex items-center gap-1 bg-yellow-500/10 text-yellow-600 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-tight sm:tracking-widest hover:bg-yellow-500 hover:text-white transition-all border border-yellow-500/20"
                     title={`Pinned at position ${course.pinned_position}`}
                   >
-                    <PinOff size={14} /> Unpin ({course.pinned_position})
+                    <PinOff size={12} className="sm:w-3.5 sm:h-3.5" /> <span className="hidden xs:inline">Unpin</span> ({course.pinned_position})
                   </button>
                 ) : (
                   <button 
                     onClick={(e) => { e.stopPropagation(); setCourseToPin(course); setIsPinModalOpen(true); }}
-                    className="p-2.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-600/10 rounded-xl transition-all"
-                    title="Pin Course to Popular"
+                    className="p-1.5 sm:p-2.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-600/10 rounded-xl transition-all"
+                    title="Pin Course"
                   >
-                    <Pin size={20} />
+                    <Pin size={18} className="sm:w-5 sm:h-5" />
                   </button>
                 )}
                 
                 <button 
-                  onClick={() => setSelectedCourse(course)}
-                  className="flex items-center gap-2 bg-[var(--primary)]/10 text-[var(--primary)] px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const url = `${window.location.origin}/course/${course.id}`;
+                    navigator.clipboard.writeText(url);
+                    alert('কোর্স লিঙ্ক কপি করা হয়েছে!');
+                  }}
+                  className="p-1.5 sm:p-2.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-xl transition-all"
+                  title="Copy Link"
                 >
-                  Enter Studio <ChevronLeft size={14} className="rotate-180" />
+                  <Plus size={18} className="rotate-45 sm:w-5 sm:h-5" />
+                </button>
+
+                <button 
+                  onClick={() => setSelectedCourse(course)}
+                  className="flex items-center gap-1 sm:gap-2 bg-[var(--primary)]/10 text-[var(--primary)] px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-tight sm:tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all whitespace-nowrap"
+                >
+                  <span className="hidden sm:inline">Enter Studio</span>
+                  <span className="sm:hidden">Studio</span>
+                  <ChevronLeft size={12} className="rotate-180 sm:w-3.5 sm:h-3.5" />
                 </button>
                 <button 
                   onClick={(e) => { 
@@ -835,15 +869,17 @@ export default function AdminCourses() {
                     });
                     setIsAddingCourse(true);
                   }}
-                  className="p-2.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
+                  className="p-1.5 sm:p-2.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
+                  title="Edit"
                 >
-                  <Edit2 size={20} />
+                  <Edit2 size={18} className="sm:w-5 sm:h-5" />
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleDeleteCourse(course.id); }}
-                  className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                  className="p-1.5 sm:p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                  title="Delete"
                 >
-                  <Trash2 size={20} />
+                  <Trash2 size={18} className="sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>

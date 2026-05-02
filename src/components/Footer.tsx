@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mail, MapPin, Phone, Facebook, Youtube, Instagram, Globe } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -24,7 +25,7 @@ const Footer = () => {
             <span className="text-xl font-bold tracking-tight text-[var(--text)]">PolyGuid</span>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs font-medium">
-            বাংলাদেশে প্রথম এবং একমাত্র পলিটেকনিক শিক্ষার্থীদের জন্য সম্পূর্ণ ডিজিটাল লার্নিং প্ল্যাটফর্ম। আমাদের লক্ষ্য দক্ষ ইঞ্জিনিয়ার তৈরি করা।
+            বাংলাদেশের প্রথম কমিউনিটি বেসড লার্নিং প্ল্যাটফর্ম। আমাদের লক্ষ্য দক্ষ ইঞ্জিনিয়ার তৈরি করা।
           </p>
           <div className="flex items-center gap-4">
             {[
@@ -46,13 +47,18 @@ const Footer = () => {
 
         {/* Info Links */}
         <div className="flex flex-col gap-5">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--text)] opacity-80">তথ্যাদি</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--text)] opacity-80">তথ্যসমূহ</h3>
           <ul className="flex flex-col gap-3">
-            {['আমাদের সম্পর্কে', 'প্রাইভেসি পলিসি', 'ব্যবহারকারীর শর্তাবলি', 'রিফান্ড পলিসি'].map((item, i) => (
+            {[
+              { name: 'আমাদের সম্পর্কে', path: '/about' },
+              { name: 'প্রাইভেসি পলিসি', path: '/privacy' },
+              { name: 'ব্যবহারকারীর শর্তাবলি', path: '/terms' },
+              { name: 'রিফান্ড পলিসি', path: '/refund' }
+            ].map((item, i) => (
               <li key={i}>
-                <a href="#" className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-medium">
-                  {item}
-                </a>
+                <Link to={item.path} className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-medium">
+                  {item.name}
+                </Link>
               </li>
             ))}
           </ul>
@@ -60,13 +66,13 @@ const Footer = () => {
 
         {/* Courses Links */}
         <div className="flex flex-col gap-5">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--text)] opacity-80">কোর্স সমূহ</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--text)] opacity-80">কোর্স</h3>
           <ul className="flex flex-col gap-3">
-            {['ডিপ্লোমা ইন ইঞ্জিনিয়ারিং', 'প্রোফেশনাল স্কিল', 'ফ্রি কোর্স', 'ভর্তি প্রস্তুতি'].map((item, i) => (
+            {['ডিপ্লোমা ইন ইঞ্জিনিয়ারিং', 'ডিপ্লোমা ইন টেক্সটাইল', 'ফ্রি কোর্স'].map((item, i) => (
               <li key={i}>
-                <a href="#" className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-medium">
+                <Link to="/courses" className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-medium">
                   {item}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -93,8 +99,8 @@ const Footer = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400 uppercase font-bold tracking-tighter">Head Office</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                  রংপুর, বাংলাদেশ
+                <span className="text-sm text-gray-500 dark:text-gray-400 font-semibold leading-tight">
+                  ৭৮ গ্রিন রোড, ঢাকা ১২১৫
                 </span>
               </div>
             </li>
@@ -104,8 +110,8 @@ const Footer = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400 uppercase font-bold tracking-tighter">Call Now</span>
-                <a href="tel:01993879904" className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-semibold">
-                  01993879904
+                <a href="tel:09677723301" className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-semibold">
+                  09677723301
                 </a>
               </div>
             </li>
@@ -113,22 +119,18 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Copyright */}
-      <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-black/5 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <p className="text-[11px] sm:text-xs text-gray-400 font-medium text-center sm:text-left">
-          স্বত্ব © {currentYear} পলিগাইড লিমিটেড কর্তৃক সর্বস্বত্ব সংরক্ষিত
-        </p>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-1.5 text-gray-400">
-            <Globe size={14} />
-            <span className="text-[10px] sm:text-xs font-medium">Rangpur, BD</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-gray-400">
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse" />
-            <span className="text-[10px] sm:text-xs font-medium">Servers Online</span>
+        {/* Copyright */}
+        <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-black/5 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-[11px] sm:text-xs text-gray-400 font-medium text-center sm:text-left">
+            স্বত্ব © {currentYear} পলিগাইড লিমিটেড কর্তৃক সর্বস্বত্ব সংরক্ষিত
+          </p>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1.5 text-gray-400">
+              <Globe size={14} />
+              <span className="text-[10px] sm:text-xs font-medium">Dhaka, BD</span>
+            </div>
           </div>
         </div>
-      </div>
     </footer>
   );
 };

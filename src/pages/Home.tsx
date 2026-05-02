@@ -36,20 +36,25 @@ const SEMESTERS = [
 
 const DEFAULT_BANNER = "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1200&auto=format&fit=crop";
 
+// Global cache to store home data between navigations for instant loading
+let homeCache: any = null;
+
 export default function Home() {
   const navigate = useNavigate();
   const coursesRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [bannerUrl, setBannerUrl] = useState<string>(DEFAULT_BANNER);
-  const [allCourses, setAllCourses] = useState<any[]>([]);
-  const [stats, setStats] = useState({ courses: 150, students: 20000, polytechnics: 49 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [enrollments, setEnrollments] = useState<any[]>([]);
+  
+  // Initialize from cache but allow loadAllData to refresh them
+  const [bannerUrl, setBannerUrl] = useState<string>(homeCache?.bannerUrl || DEFAULT_BANNER);
+  const [allCourses, setAllCourses] = useState<any[]>(homeCache?.allCourses || []);
+  const [stats, setStats] = useState(homeCache?.stats || { courses: 150, students: 20000, polytechnics: 49 });
+  const [isLoading, setIsLoading] = useState(!homeCache);
+  const [enrollments, setEnrollments] = useState<any[]>(homeCache?.enrollments || []);
 
   // Donation State
   const [showDonateModal, setShowDonateModal] = useState(false);
-  const [donationNumber, setDonationNumber] = useState('');
-  const [approvedDonations, setApprovedDonations] = useState<any[]>([]);
+  const [donationNumber, setDonationNumber] = useState(homeCache?.donationNumber || '01993879904');
+  const [approvedDonations, setApprovedDonations] = useState<any[]>(homeCache?.approvedDonations || []);
   const [currentDonationIndex, setCurrentDonationIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const [donateForm, setDonateForm] = useState({ name: '', polytechnic: '', trxId: '' });
@@ -61,7 +66,10 @@ export default function Home() {
     let isMounted = true;
 
     const loadAllData = async () => {
-      if (isMounted) setIsLoading(true);
+      // Only show top-level loading if we don't have cached data
+      if (!homeCache && isMounted) {
+        setIsLoading(true);
+      }
       
       try {
         const coursesPromise = supabase
@@ -73,37 +81,61 @@ export default function Home() {
 
         const bannerPromise = supabase
           .from('site_settings')
-          .select('value')
+          .select('key, value')
           .eq('key', 'home_banner')
           .maybeSingle();
 
         const statsPromise = supabase
           .from('site_settings')
           .select('key, value')
-          .in('key', ['stat_courses', 'stat_students', 'stat_polytechnics', 'donation_number']);
+          .in('key', ['stat_courses', 'stat_students', 'stat_polytechnics', 'donation_number', 'pinned_courses']);
 
-        const fetchDonations = async () => {
-          const { data: donationsData } = await supabase
-            .from('donations')
-            .select('*')
-            .eq('status', 'approved')
-            .order('created_at', { ascending: false });
-          if (isMounted && donationsData) {
-            setApprovedDonations(donationsData);
-          }
-        };
+        const donationsPromise = supabase
+          .from('donations')
+          .select('*')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false });
 
         const [
-          { data: coursesData },
-          { data: { session } },
-          { data: bannerData },
-          { data: statsData }
-        ] = await Promise.all([coursesPromise, sessionPromise, bannerPromise, statsPromise]);
+          coursesRes,
+          sessionRes,
+          bannerRes,
+          statsRes,
+          donationsRes
+        ] = await Promise.all([
+          Promise.resolve(coursesPromise).catch(e => ({ data: null, error: e })), 
+          Promise.resolve(sessionPromise).catch(e => ({ data: { session: null }, error: e })), 
+          Promise.resolve(bannerPromise).catch(e => ({ data: null, error: e })), 
+          Promise.resolve(statsPromise).catch(e => ({ data: null, error: e })),
+          Promise.resolve(donationsPromise).catch(e => ({ data: null, error: e }))
+        ]);
+
+        const coursesData = coursesRes.data;
+        const session = sessionRes.data?.session;
+        const bannerData = bannerRes.data;
+        const statsData = statsRes.data;
+        const donationsData = donationsRes.data;
 
         if (!isMounted) return;
 
+        const newCache: any = homeCache ? { ...homeCache } : {};
+
+        if (donationsData) {
+          setApprovedDonations(donationsData);
+          newCache.approvedDonations = donationsData;
+        }
+
+        let pinnedMap: Record<string, number> = {};
+        if (statsData) {
+          statsData.forEach((item: any) => {
+             if (item.key === 'pinned_courses') {
+                try { pinnedMap = JSON.parse(item.value); } catch(e) {}
+             }
+          });
+        }
+
         if (coursesData) {
-          setAllCourses(coursesData.map(c => ({
+          const processedCourses = coursesData.map((c: any) => ({
             id: c.id,
             title: c.title,
             description: c.description,
@@ -112,8 +144,10 @@ export default function Home() {
             thumbnail: c.thumbnail_url || "https://placehold.co/600x400/1a1a1a/32CD32?text=New+Course",
             classes: c.classes_count,
             categories: c.categories || [],
-            pinned_position: c.pinned_position || null
-          })));
+            pinned_position: pinnedMap[c.id] || null
+          }));
+          setAllCourses(processedCourses);
+          newCache.allCourses = processedCourses;
         }
 
         if (session) {
@@ -124,38 +158,61 @@ export default function Home() {
           
           if (enrollmentsData) {
             setEnrollments(enrollmentsData);
+            newCache.enrollments = enrollmentsData;
           }
         }
 
         if (bannerData?.value) {
           setBannerUrl(bannerData.value);
+          newCache.bannerUrl = bannerData.value;
         }
 
-        if (statsData) {
+         if (statsData) {
+          // Always start with fresh defaults to ensure database overrides actually happen
           const newStats = { courses: 150, students: 20000, polytechnics: 49 };
-          statsData.forEach(item => {
-            if (item.key === 'stat_courses') newStats.courses = parseInt(item.value, 10) || 150;
-            if (item.key === 'stat_students') newStats.students = parseInt(item.value, 10) || 20000;
-            if (item.key === 'stat_polytechnics') newStats.polytechnics = parseInt(item.value, 10) || 49;
-            if (item.key === 'donation_number') setDonationNumber(item.value);
+          let newDonationNumber = '01993879904';
+          
+          statsData.forEach((item: any) => {
+             if (item.key === 'stat_courses' && item.value) newStats.courses = parseInt(item.value, 10) || 150;
+             if (item.key === 'stat_students' && item.value) newStats.students = parseInt(item.value, 10) || 20000;
+             if (item.key === 'stat_polytechnics' && item.value) newStats.polytechnics = parseInt(item.value, 10) || 49;
+             if (item.key === 'donation_number' && item.value) newDonationNumber = item.value;
           });
+
           setStats(newStats);
+          setDonationNumber(newDonationNumber);
+          newCache.stats = newStats;
+          newCache.donationNumber = newDonationNumber;
         }
 
-        await fetchDonations();
+        // Global cache update
+        homeCache = newCache;
+
+        const fetchDonationsData = async () => {
+          const { data } = await supabase
+            .from('donations')
+            .select('*')
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false });
+          if (isMounted && data) setApprovedDonations(data);
+        };
 
         // Realtime subscription for donations
         subscription = supabase
           .channel(`donations_changes_${Date.now()}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'donations' }, () => {
-            fetchDonations();
+             fetchDonationsData();
           })
           .subscribe();
 
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          // Force it to false even if there's an error but we have cache
+          if (homeCache) setIsLoading(false);
+        }
       }
     };
     
@@ -232,8 +289,8 @@ export default function Home() {
             <img 
               src={getDirectLink(bannerUrl)} 
               alt="Banner" 
+              referrerPolicy="no-referrer"
               className="w-full h-auto block transition-transform duration-700 group-hover:scale-105 relative z-0"
-              onError={() => bannerUrl !== DEFAULT_BANNER && setBannerUrl(DEFAULT_BANNER)}
             />
             <div className="absolute inset-x-0 bottom-0 top-0 bg-gradient-to-t from-black/70 via-transparent to-transparent z-10 pointer-events-none" />
             
@@ -327,14 +384,19 @@ export default function Home() {
         </div>
         
         <div className="relative group">
-          {allCourses.filter(c => c.pinned_position > 0).length > 0 ? (
+          {allCourses.filter(c => c.pinned_position !== null && c.pinned_position > 0).length > 0 ? (
             <>
               <div 
                 ref={scrollContainerRef} 
+                onWheel={(e) => {
+                  if (e.deltaY !== 0) {
+                    e.currentTarget.scrollLeft += e.deltaY;
+                  }
+                }}
                 className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar scroll-smooth"
               >
                 {allCourses
-                  .filter(c => c.pinned_position > 0)
+                  .filter(c => c.pinned_position !== null && c.pinned_position > 0)
                   .sort((a, b) => a.pinned_position - b.pinned_position)
                   .map((course, i) => (
                     <div key={i} className="min-w-[140px] sm:min-w-[200px] max-w-[150px] sm:max-w-[220px] snap-start">
