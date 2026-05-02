@@ -96,7 +96,11 @@ export default function CourseDetails() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-[var(--text)]">Loading course...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[70vh]">
+        <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   if (!course) {

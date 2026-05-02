@@ -127,10 +127,16 @@ function AppContent() {
       if (session) {
         setSession(session);
         checkAdminStatus(session.user.id, session.user.email).finally(() => {
-          if (isMounted) setLoading(false);
+          if (isMounted) {
+            setTimeout(() => {
+              if (isMounted) setLoading(false);
+            }, 800);
+          }
         });
       } else {
-        setLoading(false);
+        setTimeout(() => {
+          if (isMounted) setLoading(false);
+        }, 800);
       }
     });
 
@@ -141,11 +147,17 @@ function AppContent() {
       setSession(session);
       if (session) {
         checkAdminStatus(session.user.id, session.user.email).finally(() => {
-          if (isMounted) setLoading(false);
+          if (isMounted) {
+            setTimeout(() => {
+              if (isMounted) setLoading(false);
+            }, 800);
+          }
         });
       } else {
         setIsAdmin(false);
-        setLoading(false);
+        setTimeout(() => {
+          if (isMounted) setLoading(false);
+        }, 800);
       }
     });
 
@@ -188,8 +200,8 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="text-[var(--primary)] animate-spin" size={48} />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
