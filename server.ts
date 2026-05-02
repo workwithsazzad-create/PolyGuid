@@ -21,6 +21,7 @@ async function startServer() {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use(express.text({ type: '*/*' })); // Catch raw text/xml/etc
 
   // In-memory store for webhook logs (debugging only)
   let webhookLogs: any[] = [];
@@ -35,8 +36,10 @@ async function startServer() {
 
   const handleWebhook = async (req: express.Request, res: express.Response) => {
     const logEntry = {
+      method: req.method,
       timestamp: new Date().toISOString(),
       body: req.body,
+      query: req.query,
       headers: {
         "user-agent": req.headers["user-agent"],
         "content-type": req.headers["content-type"]
@@ -48,7 +51,21 @@ async function startServer() {
 
     console.log("Webhook hit triggered:", logEntry);
 
-    const { trx_id, transaction_id, amount, message, text, from } = req.body;
+    if (req.method === 'GET') {
+      return res.status(200).send("✅ Webhook Server for AI Studio is Active! Please use POST method in your SMS App.");
+    }
+
+    let payload = req.body;
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload);
+      } catch (e) {
+        // Not JSON, maybe raw text? 
+        payload = { text: payload };
+      }
+    }
+
+    const { trx_id, transaction_id, amount, message, text, from } = payload;
     
     let finalMessage = message || text;
     let finalTrxId = trx_id || transaction_id;
@@ -103,8 +120,8 @@ async function startServer() {
     }
   };
 
-  app.post("/api/payment-webhook", handleWebhook);
-  app.post("/api/payment", handleWebhook);
+  app.all("/api/payment-webhook", handleWebhook);
+  app.all("/api/payment", handleWebhook);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

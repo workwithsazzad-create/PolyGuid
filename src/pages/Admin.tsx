@@ -1106,7 +1106,15 @@ export default function Admin() {
                   </div>
 
                   <div className="bg-black/20 dark:bg-black/40 p-4 rounded-xl border border-white/5">
-                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2">Use this exact URL in your SMS App:</p>
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Use this exact URL in your SMS App:</p>
+                      <button 
+                        onClick={() => window.open(`${window.location.origin}/api/payment-webhook`, '_blank')}
+                        className="text-[9px] bg-primary/20 text-primary px-2 py-1 rounded-md hover:bg-primary/30 transition-all font-bold"
+                      >
+                        Test URL in Browser
+                      </button>
+                    </div>
                     <code className="text-[11px] text-[var(--primary)] font-mono break-all bg-black/30 p-2 rounded block">
                       {window.location.origin}/api/payment-webhook
                     </code>
