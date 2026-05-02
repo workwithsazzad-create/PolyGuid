@@ -1,3 +1,4 @@
+import fs from "fs";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -15,6 +16,25 @@ if (!supabaseUrl) {
 
 const supabase = createClient(supabaseUrl || "", supabaseServiceKey || "");
 
+function getWebhookLogs() {
+  try {
+    if (fs.existsSync("webhook_logs.json")) {
+      const data = fs.readFileSync("webhook_logs.json", "utf-8");
+      return JSON.parse(data);
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveWebhookLog(logEntry: any) {
+  try {
+    let logs = getWebhookLogs();
+    logs.unshift(logEntry);
+    if (logs.length > 50) logs.pop();
+    fs.writeFileSync("webhook_logs.json", JSON.stringify(logs, null, 2));
+  } catch (e) {}
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -23,12 +43,9 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.text({ type: '*/*' })); // Catch raw text/xml/etc
 
-  // In-memory store for webhook logs (debugging only)
-  let webhookLogs: any[] = [];
-
   app.get("/api/webhook-logs", (req, res) => {
     res.json({
-      logs: webhookLogs,
+      logs: getWebhookLogs(),
       server_time: new Date().toISOString(),
       env: process.env.NODE_ENV || 'development'
     });
@@ -46,8 +63,7 @@ async function startServer() {
       }
     };
     
-    webhookLogs.unshift(logEntry);
-    if (webhookLogs.length > 50) webhookLogs.pop();
+    saveWebhookLog(logEntry);
 
     console.log("Webhook hit triggered:", logEntry);
 
@@ -71,6 +87,12 @@ async function startServer() {
     let finalTrxId = trx_id || transaction_id;
     let finalAmount = amount;
 
+    // Handle messages forwarded via Gmail (Apps Script adds "Incoming - ..." or similar)
+    if (finalMessage && finalMessage.includes("Message:")) {
+      const parts = finalMessage.split("Message:");
+      if (parts.length > 1) finalMessage = parts[1].trim();
+    }
+    
     if (finalMessage && !finalTrxId) {
       const trxMatch = finalMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
       const amountMatch = finalMessage.match(/(?:Tk|Amount|Taka)[:\s]*(\d+(?:\.\d+)?)/i);

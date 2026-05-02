@@ -1062,7 +1062,7 @@ export default function Admin() {
                 </div>
               </GlassmorphicCard>
 
-              {/* Webhook Live Logs for Debugging */}
+              {/* Gmail SMS Sync Logs */}
               <GlassmorphicCard className="max-w-5xl p-6 sm:p-8 border-dashed border-2 border-primary/30">
                 <div className="flex flex-col gap-4 mb-6">
                   <div className="flex items-center justify-between">
@@ -1070,77 +1070,49 @@ export default function Admin() {
                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       </div>
-                      <h2 className="text-lg font-bold text-[var(--text)]">Live Webhook Logs (Debug)</h2>
+                      <h2 className="text-lg font-bold text-[var(--text)]">Live SMS Incoming History</h2>
                     </div>
                     <div className="flex gap-2">
-                      <button 
-                        onClick={async () => {
-                          const trxs = transactions.filter(t => t.status === 'pending');
-                          if (trxs.length === 0) {
-                            alert("No pending transactions to match. Please submit a form from the home page first.");
-                            return;
-                          }
-                          const target = trxs[0];
-                          await fetch("/api/payment-webhook", {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              message: `You have received payment Tk ${target.amount}.00 from 01700000000. Balance Tk 5000. TrxID ${target.transaction_id} at 02/05/2026`,
-                              from: "bkash"
-                            })
-                          });
-                          fetchWebhookLogs();
-                          fetchTransactions();
-                        }}
-                        className="text-[10px] font-bold bg-white/10 text-white px-3 py-2 rounded-xl hover:bg-white/20 transition-all"
-                      >
-                        Simulate Match SMS
-                      </button>
                       <button 
                         onClick={fetchWebhookLogs} 
                         className="text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl hover:scale-105 transition-all active:scale-95"
                       >
-                        {isRefreshingLogs ? "Scanning..." : "Check for New SMS"}
+                        {isRefreshingLogs ? "Scanning..." : "Refresh SMS Logs"}
                       </button>
                     </div>
-                  </div>
-
-                  <div className="bg-black/20 dark:bg-black/40 p-4 rounded-xl border border-white/5">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Use this exact URL in your SMS App:</p>
-                      <button 
-                        onClick={() => window.open(`${window.location.origin}/api/payment-webhook`, '_blank')}
-                        className="text-[9px] bg-primary/20 text-primary px-2 py-1 rounded-md hover:bg-primary/30 transition-all font-bold"
-                      >
-                        Test URL in Browser
-                      </button>
-                    </div>
-                    <code className="text-[11px] text-[var(--primary)] font-mono break-all bg-black/30 p-2 rounded block">
-                      {window.location.origin}/api/payment-webhook
-                    </code>
-                    <p className="text-[9px] text-red-400 mt-2 italic">
-                      * IMPORTANT: Open the Admin panel on the SAME link you put in the SMS app. Dev link and Shared link are different servers!
-                    </p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   {webhookLogs.length === 0 ? (
                     <div className="text-center py-10 text-sm text-gray-500 border border-black/5 dark:border-white/5 rounded-2xl">
-                      No SMS received yet. Send a test SMS to your device.
+                      No SMS received yet. Ensure your Apps Script is running.
                     </div>
                   ) : (
-                    webhookLogs.map((log, idx) => (
-                      <div key={idx} className="bg-black/5 dark:bg-white/5 p-4 rounded-xl text-[11px] font-mono border border-black/5 dark:border-white/5">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-[var(--primary)] font-bold">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                          <span className="bg-white/10 px-2 py-0.5 rounded text-[9px]">POST /api/payment-webhook</span>
+                    webhookLogs.map((log, idx) => {
+                      const payloadText = typeof log.body === 'string' ? log.body : JSON.stringify(log.body);
+                      const trxMatch = payloadText.match(/TrxID[:\s]*([A-Z0-9]+)/i) || payloadText.match(/TrxID\s+([A-Z0-9]+)/i);
+                      const foundTrx = trxMatch ? trxMatch[1] : null;
+                      
+                      return (
+                        <div key={idx} className="bg-black/5 dark:bg-white/5 p-4 rounded-xl text-[11px] font-mono border border-black/5 dark:border-white/5">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-[var(--primary)] font-bold">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                            <div className="flex gap-2 items-center">
+                              {foundTrx && (
+                                <span className="text-[10px] font-mono text-green-400 font-bold bg-green-400/10 px-2 py-0.5 rounded">
+                                  Found TrxID: {foundTrx}
+                                </span>
+                              )}
+                              <span className="bg-white/10 px-2 py-0.5 rounded text-[9px]">GMAIL SYNC</span>
+                            </div>
+                          </div>
+                          <pre className="overflow-x-auto text-gray-400 whitespace-pre-wrap word-break-all">
+                            {payloadText.substring(0, 300)}{payloadText.length > 300 ? '...' : ''}
+                          </pre>
                         </div>
-                        <pre className="overflow-x-auto text-gray-400">
-                          {JSON.stringify(log.body, null, 2)}
-                        </pre>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
                 <p className="text-[10px] mt-4 text-gray-400 italic">* These logs are temporary and will be cleared if the server restarts.</p>
