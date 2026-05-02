@@ -190,27 +190,34 @@ const ContentModal = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex bg-gray-100 dark:bg-white/5 rounded-md p-1 border border-gray-200 dark:border-white/10 w-full">
-                      <button type="button" onClick={() => setCourseForm({...courseForm, isFree: true})} className={`flex-1 px-4 py-2 text-xs font-bold rounded-sm transition-all ${courseForm.isFree ? 'bg-white dark:bg-[#1a1a1a] text-blue-600 shadow-sm' : 'text-gray-400'}`}>FREE</button>
-                      <button type="button" onClick={() => setCourseForm({...courseForm, isFree: false})} className={`flex-1 px-4 py-2 text-xs font-bold rounded-sm transition-all ${!courseForm.isFree ? 'bg-white dark:bg-[#1a1a1a] text-blue-600 shadow-sm' : 'text-gray-400'}`}>PAID</button>
-                    </div>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Market Strategy</label>
+                    <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${courseForm.isFree ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-white/5 opacity-50'}`}>
+                      <input type="checkbox" className="sr-only" checked={courseForm.isFree} onChange={(e) => setCourseForm({...courseForm, isFree: e.target.checked})} />
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${courseForm.isFree ? 'bg-green-600 border-green-600' : 'border-gray-400'}`}>
+                        {courseForm.isFree && <Plus size={14} className="text-white rotate-45" />}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-tight">Mark as Free Course</span>
+                        <span className="text-[10px] text-gray-400">Checking this puts the course in the Free category</span>
+                      </div>
+                    </label>
                   </div>
-                </div>
 
-                {!courseForm.isFree && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="relative pt-2">
-                      <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 tracking-widest">Market Value</label>
-                      <input type="number" value={courseForm.originalPrice} onChange={(e) => setCourseForm({...courseForm, originalPrice: parseInt(e.target.value) || 0})} className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  {!courseForm.isFree && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="relative pt-2">
+                        <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 tracking-widest">Market Value</label>
+                        <input type="number" value={courseForm.originalPrice} onChange={(e) => setCourseForm({...courseForm, originalPrice: parseInt(e.target.value) || 0})} className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                      </div>
+                      <div className="relative pt-2">
+                        <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 tracking-widest">Your Price</label>
+                        <input type="number" value={courseForm.price} onChange={(e) => setCourseForm({...courseForm, price: parseInt(e.target.value) || 0})} className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                      </div>
                     </div>
-                    <div className="relative pt-2">
-                      <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 tracking-widest">Your Price</label>
-                      <input type="number" value={courseForm.price} onChange={(e) => setCourseForm({...courseForm, price: parseInt(e.target.value) || 0})} className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div className="flex flex-col gap-3">
                   <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Course Description</label>
@@ -224,15 +231,8 @@ const ContentModal = ({
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Semesters & Tags Selection</label>
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Semesters Selection</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-md border transition-all ${courseForm.isFree ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-white/5 opacity-50'}`}>
-                      <input type="checkbox" className="sr-only" checked={courseForm.isFree} onChange={(e) => setCourseForm({...courseForm, isFree: e.target.checked})} />
-                      <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-all ${courseForm.isFree ? 'bg-green-600 border-green-600' : 'border-gray-400'}`}>
-                        {courseForm.isFree && <Plus size={12} className="text-white rotate-45" />}
-                      </div>
-                      <span className="text-sm font-bold text-green-600 dark:text-green-400">ফ্রি কোর্স (FREE)</span>
-                    </label>
                     {SEMESTERS.map(sem => (
                       <label key={sem} className={`flex items-center gap-3 cursor-pointer p-3 rounded-md border transition-all ${courseForm.categories.includes(sem) ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-white/5 opacity-50'}`}>
                         <input type="checkbox" className="sr-only" checked={courseForm.categories.includes(sem)} onChange={(e) => {
@@ -384,6 +384,7 @@ export default function AdminCourses() {
       setCourses(courses.map(c => c.id === courseToPin.id ? { ...c, pinned_position: pinPosition } : c));
       setIsPinModalOpen(false);
       setCourseToPin(null);
+      fetchCourses(); // Refetch to ensure state sync
     } catch (err: any) {
       alert('Error pinning course');
     }
@@ -402,6 +403,7 @@ export default function AdminCourses() {
       
       setPinnedCoursesMap(newMap);
       setCourses(courses.map(c => c.id === courseId ? { ...c, pinned_position: null } : c));
+      fetchCourses(); // Refetch to ensure state sync
     } catch(e) {}
   };
 
@@ -814,7 +816,7 @@ export default function AdminCourses() {
                 )}
               </div>
 
-              <div className="flex items-center gap-1 sm:gap-2 ml-auto sm:ml-0">
+              <div className="flex items-center gap-1 sm:gap-2 ml-auto sm:ml-0 flex-wrap justify-end">
                 {course.pinned_position ? (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleUnpinCourse(course.id); }}
@@ -825,33 +827,42 @@ export default function AdminCourses() {
                   </button>
                 ) : (
                   <button 
-                    onClick={(e) => { e.stopPropagation(); setCourseToPin(course); setIsPinModalOpen(true); }}
-                    className="p-1.5 sm:p-2.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-600/10 rounded-xl transition-all"
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setCourseToPin(course);
+                      setIsPinModalOpen(true);
+                    }}
+                    className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-600/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
                     title="Pin Course"
                   >
-                    <Pin size={18} className="sm:w-5 sm:h-5" />
+                    <Pin size={18} className="hidden sm:block" />
+                    <span className="sm:hidden">Pin</span>
                   </button>
                 )}
                 
                 <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
                     const url = `${window.location.origin}/course/${course.id}`;
                     navigator.clipboard.writeText(url);
                     alert('কোর্স লিঙ্ক কপি করা হয়েছে!');
                   }}
-                  className="p-1.5 sm:p-2.5 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-xl transition-all"
+                  className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
                   title="Copy Link"
                 >
-                  <Plus size={18} className="rotate-45 sm:w-5 sm:h-5" />
+                  <Plus size={18} className="hidden sm:block rotate-45" />
+                  <span className="sm:hidden">Link</span>
                 </button>
 
                 <button 
-                  onClick={() => setSelectedCourse(course)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCourse(course);
+                    fetchContents(course.id).then(setCourseContents);
+                  }}
                   className="flex items-center gap-1 sm:gap-2 bg-[var(--primary)]/10 text-[var(--primary)] px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-tight sm:tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all whitespace-nowrap"
                 >
-                  <span className="hidden sm:inline">Enter Studio</span>
-                  <span className="sm:hidden">Studio</span>
+                  Studio
                   <ChevronLeft size={12} className="rotate-180 sm:w-3.5 sm:h-3.5" />
                 </button>
                 <button 
@@ -869,17 +880,19 @@ export default function AdminCourses() {
                     });
                     setIsAddingCourse(true);
                   }}
-                  className="p-1.5 sm:p-2.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
+                  className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
                   title="Edit"
                 >
-                  <Edit2 size={18} className="sm:w-5 sm:h-5" />
+                  <Edit2 size={18} className="hidden sm:block" />
+                  <span className="sm:hidden">Edit</span>
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleDeleteCourse(course.id); }}
-                  className="p-1.5 sm:p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                  className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
                   title="Delete"
                 >
-                  <Trash2 size={18} className="sm:w-5 sm:h-5" />
+                  <Trash2 size={18} className="hidden sm:block" />
+                  <span className="sm:hidden">Del</span>
                 </button>
               </div>
             </div>

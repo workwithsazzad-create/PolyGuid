@@ -28,7 +28,16 @@ import { Menu, X } from 'lucide-react';
 
 import Messages from './pages/Messages';
 
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 // Layout for authenticated pages
 function AppLayout({ isAdmin }: { isAdmin: boolean }) {
@@ -46,16 +55,11 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
           <Menu size={24} />
         </button>
         <div className={cn(
-          "ml-3 flex flex-1 items-center h-full justify-start overflow-hidden transition-opacity duration-300",
+          "ml-1 flex flex-1 items-center h-full justify-start overflow-hidden transition-opacity duration-300",
           isSidebarOpen ? "opacity-0 invisible" : "opacity-100 visible"
         )}>
           <Link to="/home">
-            <span className="text-xl font-bold tracking-tight font-sans">
-              <span className="text-[#32CD32]">P</span>
-              <span className="text-[var(--text)]">oly</span>
-              <span className="text-[#32CD32]">G</span>
-              <span className="text-[var(--text)]">uid</span>
-            </span>
+            <Logo theme={theme} showText={true} className="scale-[0.8] origin-left -ml-2" />
           </Link>
         </div>
       </div>
@@ -88,12 +92,7 @@ function InfoLayout() {
     <div className="min-h-screen bg-[var(--bg)]">
       <header className="w-full h-16 border-b border-black/5 dark:border-white/5 flex items-center px-4 sm:px-8 bg-white dark:bg-[#0a0a0a]">
         <Link to="/home" className="flex items-center gap-2 group">
-          <span className="text-xl sm:text-2xl font-bold tracking-tight font-sans">
-            <span className="text-[#32CD32]">P</span>
-            <span className="text-[var(--text)]">oly</span>
-            <span className="text-[#32CD32]">G</span>
-            <span className="text-[var(--text)]">uid</span>
-          </span>
+          <Logo theme={theme} showText={true} className="scale-[0.8] sm:scale-100 origin-left" />
         </Link>
       </header>
       <main className="w-full p-4 lg:p-12 overflow-x-hidden">
@@ -187,6 +186,7 @@ function AppContent() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         <Route 
           path="/login" 
