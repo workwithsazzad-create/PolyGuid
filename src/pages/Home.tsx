@@ -7,7 +7,7 @@ import { supabase } from '@/src/lib/supabase';
 import { getDirectLink } from '@/src/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/src/components/Footer';
-import { homeCache as globalHomeCache, prefetchHomeData } from '@/src/services/dataService';
+import { homeCache as globalHomeCache, prefetchHomeData, setHomeCache } from '@/src/services/dataService';
 
 const AnimatedCounter = ({ value, suffix = "" }: { value: number, suffix?: string }) => {
   const nodeRef = useRef<HTMLSpanElement>(null);
@@ -48,6 +48,7 @@ export default function Home() {
   const [stats, setStats] = useState(globalHomeCache?.stats || { courses: 150, students: 20000, polytechnics: 49 });
   const [isLoading, setIsLoading] = useState(!globalHomeCache);
   const [enrollments, setEnrollments] = useState<any[]>(globalHomeCache?.enrollments || []);
+  const [realUserCount, setRealUserCount] = useState(0);
 
   // Donation State
   const [showDonateModal, setShowDonateModal] = useState(false);
@@ -60,12 +61,20 @@ export default function Home() {
   const [donateMsg, setDonateMsg] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
+    const fetchUserCount = async () => {
+      const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
+      if (count !== null) setRealUserCount(count);
+    };
+    fetchUserCount();
+  }, []);
+
+  useEffect(() => {
     let subscription: any = null;
     let isMounted = true;
 
     const loadAllData = async () => {
       // Only show top-level loading if we don't have cached data
-      if (!homeCache && isMounted) {
+      if (!globalHomeCache && isMounted) {
         setIsLoading(true);
       }
       
@@ -116,7 +125,8 @@ export default function Home() {
 
         if (!isMounted) return;
 
-        const newCache: any = homeCache ? { ...homeCache } : {};
+        // Initialize new cache from existing global cache if available
+        const newCache: any = globalHomeCache ? { ...globalHomeCache } : {};
 
         if (donationsData) {
           setApprovedDonations(donationsData);
@@ -172,7 +182,7 @@ export default function Home() {
           
           statsData.forEach((item: any) => {
              if (item.key === 'stat_courses' && item.value) newStats.courses = parseInt(item.value, 10) || 150;
-             if (item.key === 'stat_students' && item.value) newStats.students = parseInt(item.value, 10) || 20000;
+             if (item.key === 'stat_students' && item.value) newStats.students = (parseInt(item.value, 10) || 0) + realUserCount;
              if (item.key === 'stat_polytechnics' && item.value) newStats.polytechnics = parseInt(item.value, 10) || 49;
              if (item.key === 'donation_number' && item.value) newDonationNumber = item.value;
           });
@@ -184,7 +194,7 @@ export default function Home() {
         }
 
         // Global cache update
-        homeCache = newCache;
+        setHomeCache(newCache);
 
         const fetchDonationsData = async () => {
           const { data } = await supabase
@@ -313,7 +323,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col">
                 <h3 className="text-[10px] sm:text-xl font-black text-[var(--text)] leading-tight">
-                  <AnimatedCounter value={stat.value} suffix="+" />
+                  <AnimatedCounter value={i === 1 ? stat.value + realUserCount : stat.value} suffix="+" />
                 </h3>
                 <p className="text-[4px] xs:text-[5px] sm:text-[10px] text-gray-500 font-black uppercase tracking-tight sm:tracking-widest">{stat.title}</p>
               </div>

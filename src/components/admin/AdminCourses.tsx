@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Edit2, Trash2, Eye, Video, FileText, ChevronLeft, Save, X, Paperclip, Pin, PinOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Video, FileText, ChevronLeft, Save, X, Paperclip, Pin, PinOff, Users } from 'lucide-react';
 import GlassmorphicCard from '../ui/GlassmorphicCard';
 import { supabase } from '../../lib/supabase';
 import { getDirectLink, getEmbedUrl } from '../../lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface ContentModalProps {
   isOpen: boolean;
@@ -231,6 +232,17 @@ const ContentModal = ({
                 </div>
 
                 <div className="flex flex-col gap-3">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Fake User Count</label>
+                  <input 
+                    type="number" 
+                    value={courseForm.fakeUserCount} 
+                    onChange={(e) => setCourseForm({...courseForm, fakeUserCount: parseInt(e.target.value) || 0})} 
+                    placeholder="e.g. 500"
+                    className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3">
                   <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Semesters Selection</label>
                   <div className="grid grid-cols-2 gap-2">
                     {SEMESTERS.map(sem => (
@@ -265,6 +277,7 @@ const ContentModal = ({
 };
 
 export default function AdminCourses() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
@@ -279,7 +292,8 @@ export default function AdminCourses() {
     originalPrice: 0,
     price: 0,
     categories: [] as string[],
-    description: ''
+    description: '',
+    fakeUserCount: 0
   });
 
   const SEMESTERS = [
@@ -411,6 +425,9 @@ export default function AdminCourses() {
     e.preventDefault();
     setLoading(true);
     
+    const cleanDesc = courseForm.description.replace(/\[meta:fake_user_count:\d+\]/, '').trim();
+    const metaString = `\n\n[meta:fake_user_count:${courseForm.fakeUserCount}]`;
+    
     const courseData = {
       title: courseForm.title,
       thumbnail_url: courseForm.thumbnail,
@@ -418,7 +435,7 @@ export default function AdminCourses() {
       original_price: courseForm.originalPrice,
       price: courseForm.price,
       categories: courseForm.categories,
-      description: courseForm.description
+      description: cleanDesc + metaString
     };
 
     if (editingCourseId) {
@@ -434,7 +451,7 @@ export default function AdminCourses() {
         setCourses(prev => prev.map(c => c.id === editingCourseId ? { ...c, ...courseData } : c));
         setIsAddingCourse(false);
         setEditingCourseId(null);
-        setCourseForm({ title: '', thumbnail: '', isFree: true, originalPrice: 0, price: 0, categories: [], description: '' });
+        setCourseForm({ title: '', thumbnail: '', isFree: true, originalPrice: 0, price: 0, categories: [], description: '', fakeUserCount: 0 });
       }
     } else {
       const { data, error } = await supabase
@@ -448,7 +465,7 @@ export default function AdminCourses() {
       } else {
         setCourses(prev => [data[0], ...prev]);
         setIsAddingCourse(false);
-        setCourseForm({ title: '', thumbnail: '', isFree: true, originalPrice: 0, price: 0, categories: [], description: '' });
+        setCourseForm({ title: '', thumbnail: '', isFree: true, originalPrice: 0, price: 0, categories: [], description: '', fakeUserCount: 0 });
       }
     }
     setLoading(false);
@@ -857,6 +874,18 @@ export default function AdminCourses() {
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
+                    navigate(`/admin/course/${course.id}/users`);
+                  }}
+                  className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
+                  title="Manage Users"
+                >
+                  <Users size={18} className="hidden sm:block" />
+                  <span className="sm:hidden">Users</span>
+                </button>
+
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setSelectedCourse(course);
                     fetchContents(course.id).then(setCourseContents);
                   }}
@@ -869,6 +898,9 @@ export default function AdminCourses() {
                   onClick={(e) => { 
                     e.stopPropagation(); 
                     setEditingCourseId(course.id);
+                    const metaMatch = course.description?.match(/\[meta:fake_user_count:(\d+)\]/);
+                    const cleanDesc = course.description?.replace(/\[meta:fake_user_count:\d+\]/, '').trim();
+
                     setCourseForm({
                       title: course.title,
                       thumbnail: course.thumbnail_url,
@@ -876,7 +908,8 @@ export default function AdminCourses() {
                       originalPrice: course.original_price || 0,
                       price: course.price || 0,
                       categories: course.categories || [],
-                      description: course.description || ''
+                      description: cleanDesc || '',
+                      fakeUserCount: metaMatch ? parseInt(metaMatch[1]) : 0
                     });
                     setIsAddingCourse(true);
                   }}

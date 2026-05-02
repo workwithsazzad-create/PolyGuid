@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ChevronLeft, PlayCircle, FileText, Lock, Eye, X, Video as VideoIcon } from 'lucide-react';
+import { ChevronLeft, PlayCircle, FileText, Lock, Eye, X, Video as VideoIcon, Users } from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import { supabase } from '../lib/supabase';
 import { getDirectLink } from '../lib/utils';
@@ -40,14 +40,28 @@ export default function CourseDetails() {
         .eq('id', id)
         .single();
       
+      // Enrollment Count
+      const { count: realCount } = await supabase
+        .from('enrollments')
+        .select('id', { count: 'exact', head: true })
+        .eq('course_id', id);
+
       if (courseData) {
         const videoCount = contentsData?.filter(c => c.type === 'video').length || 0;
+        
+        // Extract meta info from description
+        const metaMatch = courseData.description?.match(/\[meta:fake_user_count:(\d+)\]/);
+        const fakeCount = metaMatch ? parseInt(metaMatch[1]) : 0;
+        const cleanDesc = courseData.description?.replace(/\[meta:fake_user_count:\d+\]/, '').trim();
+
         setCourse({
           ...courseData,
+          description: cleanDesc,
           price: courseData.price,
           originalPrice: courseData.original_price,
           classes: videoCount,
-          thumbnail: courseData.thumbnail_url
+          thumbnail: courseData.thumbnail_url,
+          totalUsers: (realCount || 0) + fakeCount
         });
       }
 
@@ -138,6 +152,7 @@ export default function CourseDetails() {
           <h1 className="text-2xl md:text-3xl font-bold text-[var(--text)]">{course.title}</h1>
           <div className="flex items-center gap-4 text-sm text-gray-500">
             <span className="flex items-center gap-1"><PlayCircle size={16}/> {course.classes} Classes</span>
+            <span className="flex items-center gap-1"><Users size={16}/> {course.totalUsers} Students</span>
           </div>
           
           {course.description && (

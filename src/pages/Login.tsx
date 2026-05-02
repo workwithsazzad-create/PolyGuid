@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Lock, Loader2, UserPlus, LogIn } from 'lucide-react';
+import { Phone, Lock, Loader2, UserPlus, LogIn, Eye, EyeOff, User, MapPin, School } from 'lucide-react';
 
 import Logo from '@/src/components/ui/Logo';
 import { useTheme } from '@/src/components/ThemeProvider';
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [polytechnic, setPolytechnic] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,10 +23,17 @@ export default function Login() {
     setLoading(true);
     setMessage(null);
 
+    // Format phone to be used as email for Supabase Auth
+    const dummyEmail = `${phone.replace(/\+/g, '')}@polyguid.com`;
+
     try {
       if (isSignUp) {
+        if (!name || !phone || !address || !polytechnic) {
+          throw new Error('সকল তথ্য পূরণ করা আবশ্যক');
+        }
+
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
+          email: dummyEmail,
           password,
         });
         if (authError) throw authError;
@@ -38,29 +45,31 @@ export default function Login() {
             .upsert({
               id: authData.user.id,
               full_name: name,
-              phone_number: phone,
+              phone: phone,
               address: address,
-              polytechnic_name: polytechnic,
-              role: 'student', // Default role
+              polytechnic: polytechnic,
+              role: phone === '01993879904' ? 'admin' : 'student',
             });
 
           if (profileError) {
             console.error('Error saving profile data:', profileError);
-            // We don't throw here to still allow login, but we could
           }
         }
 
-        setMessage({ type: 'success', text: 'Registration successful! You can now login.' });
+        setMessage({ type: 'success', text: 'নিবন্ধন সফল হয়েছে! এখন লগইন করুন।' });
         setIsSignUp(false);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: dummyEmail,
           password,
         });
         if (error) throw error;
       }
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Authentication failed' });
+      const errorMessage = error.message === 'Invalid login credentials' 
+        ? 'ভুল নম্বর অথবা পাসওয়ার্ড' 
+        : (error.message || 'ব্যর্থ হয়েছে');
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -89,7 +98,7 @@ export default function Login() {
               }`}
             >
               <LogIn size={16} />
-              Login
+              লগইন
             </button>
             <button
               onClick={() => setIsSignUp(true)}
@@ -100,23 +109,43 @@ export default function Login() {
               }`}
             >
               <UserPlus size={16} />
-              Sign Up
+              সাইন আপ
             </button>
           </div>
 
-          <form onSubmit={handleAuth} className="flex flex-col gap-6">
+          <form onSubmit={handleAuth} className="flex flex-col gap-5">
+            {isSignUp && (
+              <div className="flex flex-col gap-2">
+                <label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  সম্পূর্ণ নাম
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    id="name"
+                    type="text"
+                    placeholder="আপনার নাম লিখুন"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required={isSignUp}
+                    className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-11 pr-4 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col gap-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email Address
+              <label htmlFor="phone" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                মোবাইল নম্বর
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="phone"
+                  type="text"
+                  placeholder="01XXXXXXXXX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                   className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-11 pr-4 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
                 />
@@ -126,67 +155,36 @@ export default function Login() {
             {isSignUp && (
               <>
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Full Name
+                  <label htmlFor="address" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    ঠিকানা
                   </label>
                   <div className="relative">
-                    <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                     <input
-                      id="name"
+                      id="address"
                       type="text"
-                      placeholder="John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      placeholder="আপনার জেলা বা এলাকা"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
                       required={isSignUp}
                       className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-11 pr-4 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
                     />
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="phone" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="phone"
-                      type="tel"
-                      placeholder="+880 1XXX XXXXXX"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      required={isSignUp}
-                      className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 px-4 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="address" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Address
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="address"
-                      type="text"
-                      placeholder="Dhaka, Bangladesh"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      required={isSignUp}
-                      className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 px-4 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
                   <label htmlFor="polytechnic" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Polytechnic Name
+                    পলিটেকনিকের নাম
                   </label>
                   <div className="relative">
+                    <School className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                     <input
                       id="polytechnic"
                       type="text"
-                      placeholder="Dhaka Polytechnic Institute"
+                      placeholder="পলিটেকনিকের নাম লিখুন"
                       value={polytechnic}
                       onChange={(e) => setPolytechnic(e.target.value)}
                       required={isSignUp}
-                      className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 px-4 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
+                      className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-11 pr-4 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
                     />
                   </div>
                 </div>
@@ -195,19 +193,26 @@ export default function Login() {
 
             <div className="flex flex-col gap-2">
               <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password
+                পাসওয়ার্ড
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-11 pr-4 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
+                  className="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-11 pr-12 text-[var(--text)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--primary)] transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
 
@@ -234,7 +239,7 @@ export default function Login() {
               {loading ? (
                 <Loader2 className="animate-spin" size={20} />
               ) : (
-                isSignUp ? 'Create Account' : 'Sign In'
+                isSignUp ? 'একাউন্ট তৈরি করুন' : 'লগইন করুন'
               )}
             </button>
           </form>

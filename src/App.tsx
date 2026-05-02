@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
+import AdminCourseUsers from './pages/admin/AdminCourseUsers';
 import Profile from './pages/Profile';
 import Home from './pages/Home';
 import CourseDetails from './pages/CourseDetails';
@@ -171,33 +172,25 @@ function AppContent() {
   }, []);
 
   const checkAdminStatus = async (userId: string, email?: string) => {
-    // Hardcoded admin for the owner
-    if (email === 'workwithsazzad@gmail.com') {
-      setIsAdmin(true);
-    }
+    // Check if it's the primary admin phone number
+    const isPrimaryAdmin = email?.startsWith('01993879904');
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, phone')
       .eq('id', userId)
       .maybeSingle();
 
-    if (data?.role === 'admin') {
+    if (isPrimaryAdmin || data?.role === 'admin' || data?.phone === '01993879904') {
       setIsAdmin(true);
-    } else if (!data && !error) {
-      // If profile doesn't exist, create it. 
-      // First user or the owner email is admin.
-      const { data: profiles } = await supabase.from('profiles').select('id').limit(1);
-      const isFirstUser = !profiles || profiles.length === 0;
-      const role = (isFirstUser || email === 'workwithsazzad@gmail.com') ? 'admin' : 'student';
-      
+    } else if (!data && !error && isPrimaryAdmin) {
+      // If profile doesn't exist but it is the primary admin phone, create it.
       await supabase.from('profiles').insert({
         id: userId,
-        email: email,
-        role: role
+        phone: '01993879904',
+        role: 'admin'
       });
-      
-      if (role === 'admin') setIsAdmin(true);
+      setIsAdmin(true);
     }
   };
 
@@ -229,6 +222,7 @@ function AppContent() {
           <Route path="/saved-items" element={<SavedItems />} />
           <Route path="/results" element={<ResultViewer />} />
           <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />} />
+          <Route path="/admin/course/:id/users" element={isAdmin ? <AdminCourseUsers /> : <Navigate to="/dashboard" replace />} />
           <Route path="/profile" element={<Profile />} />
           
           {/* Layer Routes (Standalone Pages) */}

@@ -11,6 +11,10 @@ export interface HomeCache {
 
 export let homeCache: HomeCache | null = null;
 
+export const setHomeCache = (cache: HomeCache) => {
+  homeCache = cache;
+};
+
 export const prefetchHomeData = async () => {
   try {
     const coursesPromise = supabase

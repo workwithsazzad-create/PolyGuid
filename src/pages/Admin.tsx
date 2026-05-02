@@ -24,6 +24,7 @@ import {
   FileUp,
   Paperclip,
   Database,
+  Users,
 } from "lucide-react";
 import { supabase } from "@/src/lib/supabase";
 import { getDirectLink } from "@/src/lib/utils";
@@ -40,9 +41,11 @@ type AdminTab =
   | "pdf"
   | "youtube"
   | "admins"
+  | "users"
   | "results";
 
 import AdminCourses from "../components/admin/AdminCourses";
+import AdminUsers from "../components/admin/AdminUsers";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<AdminTab>("courses");
@@ -268,6 +271,7 @@ export default function Admin() {
     { id: "donations", label: "Donations", icon: Heart },
     { id: "pdf", label: "PDFs", icon: FileText },
     { id: "youtube", label: "YouTube", icon: Youtube },
+    { id: "users", label: "Manage Users", icon: Users },
     { id: "admins", label: "Admins", icon: UserPlus },
     { id: "results", label: "Result Parser", icon: FileCheck },
   ];
@@ -721,6 +725,8 @@ export default function Admin() {
         >
           {activeTab === "courses" && <AdminCourses />}
 
+          {activeTab === "users" && <AdminUsers />}
+
           {activeTab === "banner" && (
             <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -827,7 +833,7 @@ export default function Admin() {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Students Joined
+                    Fake Student Count (Offset)
                   </label>
                   <input
                     type="number"
@@ -837,6 +843,9 @@ export default function Admin() {
                     }
                     className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
                   />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    This value will be added to the actual database user count.
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
