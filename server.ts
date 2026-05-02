@@ -67,31 +67,35 @@ async function startServer() {
       return res.status(200).json({ status: "logged_no_trxid" });
     }
 
+    const cleanTrxId = finalTrxId.toString().trim().toUpperCase();
+
     try {
       const { data: results, error: fetchError } = await supabase
         .from("donations")
         .select("*")
-        .eq("transaction_id", finalTrxId)
+        .eq("transaction_id", cleanTrxId)
         .eq("status", "pending");
       
       if (fetchError) throw fetchError;
       const transaction = results && results[0];
 
       if (transaction) {
+        // Approve transaction
         await supabase.from("donations").update({ 
           status: "approved", 
           verified_at: new Date().toISOString() 
         }).eq("id", transaction.id);
 
+        // Auto-enroll if it's a course purchase
         if (transaction.type === "course" && transaction.course_id && transaction.user_id) {
           await supabase.from("enrollments").upsert({
             user_id: transaction.user_id,
             course_id: transaction.course_id
           }, { onConflict: 'user_id,course_id' });
         }
-        return res.json({ status: "approved", transaction_id: finalTrxId });
+        return res.json({ status: "approved", transaction_id: cleanTrxId });
       } else {
-        return res.json({ status: "received_but_not_matched", trx_id: finalTrxId });
+        return res.json({ status: "received_but_not_matched", trx_id: cleanTrxId });
       }
     } catch (err: any) {
       console.error("Webhook processing error:", err);
