@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ChevronLeft, PlayCircle, FileText, Lock, Eye, X, Video as VideoIcon, Users } from 'lucide-react';
+import { ChevronLeft, PlayCircle, FileText, Lock, Eye, X, Video as VideoIcon, Users, DollarSign } from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
+import PaymentModal from '../components/ui/PaymentModal';
 import { supabase } from '../lib/supabase';
 import { getDirectLink } from '../lib/utils';
 
@@ -13,10 +14,21 @@ export default function CourseDetails() {
   const [contents, setContents] = useState<any[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentNumber, setPaymentNumber] = useState('01993879904');
 
   useEffect(() => {
     fetchCourseData();
+    fetchSettings();
   }, [id]);
+
+  const fetchSettings = async () => {
+    const { data } = await supabase.from('site_settings').select('key, value');
+    if (data) {
+      const num = data.find(s => s.key === 'donation_number')?.value;
+      if (num) setPaymentNumber(num);
+    }
+  };
 
   const fetchCourseData = async () => {
     if (!id) return;
@@ -105,7 +117,7 @@ export default function CourseDetails() {
         setIsEnrolled(true);
       }
     } else {
-      alert('Payment gateway integration coming soon for paid courses.');
+      setShowPaymentModal(true);
     }
   };
 
@@ -171,6 +183,16 @@ export default function CourseDetails() {
           )}
         </div>
       </GlassmorphicCard>
+
+      <PaymentModal 
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        type="course"
+        courseId={id}
+        courseTitle={course.title}
+        price={course.price}
+        paymentNumber={paymentNumber}
+      />
 
       <div className="flex flex-col gap-4">
         <h2 className="text-xl font-bold text-[var(--text)]">Course Content</h2>

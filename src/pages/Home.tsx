@@ -8,6 +8,7 @@ import { getDirectLink } from '@/src/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/src/components/Footer';
 import { homeCache as globalHomeCache, prefetchHomeData, setHomeCache } from '@/src/services/dataService';
+import PaymentModal from '@/src/components/ui/PaymentModal';
 
 const AnimatedCounter = ({ value, suffix = "" }: { value: number, suffix?: string }) => {
   const nodeRef = useRef<HTMLSpanElement>(null);
@@ -55,10 +56,6 @@ export default function Home() {
   const [donationNumber, setDonationNumber] = useState(globalHomeCache?.donationNumber || '01993879904');
   const [approvedDonations, setApprovedDonations] = useState<any[]>(globalHomeCache?.approvedDonations || []);
   const [currentDonationIndex, setCurrentDonationIndex] = useState(0);
-  const [copied, setCopied] = useState(false);
-  const [donateForm, setDonateForm] = useState({ name: '', polytechnic: '', trxId: '' });
-  const [isSubmittingDonate, setIsSubmittingDonate] = useState(false);
-  const [donateMsg, setDonateMsg] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
     const fetchUserCount = async () => {
@@ -241,29 +238,6 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(interval);
   }, [approvedDonations.length]);
-
-  const handleDonateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setDonateMsg(null);
-    setIsSubmittingDonate(true);
-    try {
-      const { error } = await supabase.from('donations').insert([
-        { 
-          student_name: donateForm.name, 
-          polytechnic_name: donateForm.polytechnic, 
-          transaction_id: donateForm.trxId 
-        }
-      ]);
-      if (error) throw error;
-      setDonateMsg({ type: 'success', text: 'Thank you! Your submission is pending approval.' });
-      setDonateForm({ name: '', polytechnic: '', trxId: '' });
-      setTimeout(() => setShowDonateModal(false), 3000);
-    } catch (err: any) {
-      setDonateMsg({ type: 'error', text: err.message || 'Failed to submit.' });
-    } finally {
-      setIsSubmittingDonate(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -508,69 +482,12 @@ export default function Home() {
       <Footer />
 
       {/* Donate Modal */}
-      <AnimatePresence>
-        {showDonateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-6 max-w-md w-full relative border border-black/10 dark:border-white/10 shadow-2xl"
-            >
-              <button onClick={() => setShowDonateModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-[var(--text)]">
-                <X size={20} />
-              </button>
-              <h2 className="text-xl font-bold text-[var(--text)] mb-4 flex items-center gap-2">
-                <Heart className="text-red-500 fill-red-500" size={24} /> Support PolyGuid
-              </h2>
-              
-              <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4 mb-6 text-center">
-                <p className="text-sm text-gray-500 mb-2">Send Money to this number:</p>
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  <span className="text-2xl font-bold text-[var(--primary)] tracking-wider">{donationNumber || '017XXXXXXXX'}</span>
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(donationNumber || '017XXXXXXXX');
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className="p-2 bg-white dark:bg-white/10 rounded-lg hover:bg-gray-100 dark:hover:bg-white/20 transition-colors shadow-sm dark:shadow-none border border-black/5 dark:border-transparent"
-                  >
-                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} className="text-gray-600 dark:text-gray-400" />}
-                  </button>
-                </div>
-                <div className="flex justify-center gap-4 items-center">
-                  <div className="bg-white p-1.5 rounded-md border border-black/10 dark:border-transparent shadow-sm">
-                    <img src="https://download.logo.wine/logo/BKash/BKash-Icon-Logo.wine.png" alt="bKash" className="h-6 object-contain" />
-                  </div>
-                  <div className="bg-white p-1.5 rounded-md border border-black/10 dark:border-transparent shadow-sm">
-                    <img src="https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png" alt="Nagad" className="h-6 object-contain" />
-                  </div>
-                  <div className="bg-white p-1.5 rounded-md border border-black/10 dark:border-transparent shadow-sm">
-                    <img src="https://seeklogo.com/images/D/dutch-bangla-rocket-logo-B4D104E17A-seeklogo.com.png" alt="Rocket" className="h-6 object-contain" />
-                  </div>
-                </div>
-              </div>
-
-              <form onSubmit={handleDonateSubmit} className="flex flex-col gap-4">
-                <input required type="text" placeholder="Your Name" value={donateForm.name} onChange={e => setDonateForm({...donateForm, name: e.target.value})} className="w-full bg-white dark:bg-white/5 border border-black/20 dark:border-white/10 rounded-lg p-3 text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
-                <input required type="text" placeholder="Polytechnic Name" value={donateForm.polytechnic} onChange={e => setDonateForm({...donateForm, polytechnic: e.target.value})} className="w-full bg-white dark:bg-white/5 border border-black/20 dark:border-white/10 rounded-lg p-3 text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
-                <input required type="text" placeholder="Transaction ID (TrxID)" value={donateForm.trxId} onChange={e => setDonateForm({...donateForm, trxId: e.target.value})} className="w-full bg-white dark:bg-white/5 border border-black/20 dark:border-white/10 rounded-lg p-3 text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
-                
-                {donateMsg && (
-                  <div className={`p-3 rounded-lg text-sm font-medium ${donateMsg.type === 'success' ? 'bg-green-500/10 text-green-600 dark:text-green-500' : 'bg-red-500/10 text-red-600 dark:text-red-500'}`}>
-                    {donateMsg.text}
-                  </div>
-                )}
-
-                <button disabled={isSubmittingDonate} type="submit" className="w-full bg-[var(--primary)] text-white font-bold py-3 rounded-lg hover:bg-[#28a428] transition-all disabled:opacity-50 mt-2 shadow-lg shadow-[var(--primary)]/20">
-                  {isSubmittingDonate ? 'Submitting...' : 'Submit Details'}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <PaymentModal 
+        isOpen={showDonateModal}
+        onClose={() => setShowDonateModal(false)}
+        type="donation"
+        paymentNumber={donationNumber}
+      />
     </motion.div>
   );
 }

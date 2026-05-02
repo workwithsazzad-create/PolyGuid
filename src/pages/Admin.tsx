@@ -37,7 +37,7 @@ type AdminTab =
   | "courses"
   | "banner"
   | "analytics"
-  | "donations"
+  | "transactions"
   | "pdf"
   | "youtube"
   | "admins"
@@ -69,9 +69,11 @@ export default function Admin() {
     text: string;
   } | null>(null);
 
-  // Donations State
+  // Transactions State
   const [donationNumber, setDonationNumber] = useState("");
-  const [donations, setDonations] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
+  const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
   const [isSavingDonationNum, setIsSavingDonationNum] = useState(false);
   const [totalStudentsCount, setTotalStudentsCount] = useState(0);
 
@@ -122,19 +124,41 @@ export default function Admin() {
     fetchSettings();
   }, []);
 
-  // Fetch Donations
+  // Fetch Transactions and Logs
   React.useEffect(() => {
-    if (activeTab === "donations") {
-      const fetchDonations = async () => {
-        const { data } = await supabase
-          .from("donations")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (data) setDonations(data);
-      };
-      fetchDonations();
+    if (activeTab === "transactions") {
+      fetchTransactions();
+      fetchWebhookLogs();
     }
   }, [activeTab]);
+
+  const fetchTransactions = async () => {
+    const { data } = await supabase
+      .from("donations")
+      .select("*, courses(title)")
+      .order("created_at", { ascending: false });
+    
+    if (data) {
+      // Filter out duplicate TrxIDs in the UI
+      const uniqueDocs = data.filter((v, i, a) => 
+        a.findIndex(t => t.transaction_id === v.transaction_id) === i
+      );
+      setTransactions(uniqueDocs);
+    }
+  };
+
+  const fetchWebhookLogs = async () => {
+    setIsRefreshingLogs(true);
+    try {
+      const res = await fetch("/api/webhook-logs");
+      const data = await res.json();
+      setWebhookLogs(data.logs || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsRefreshingLogs(false);
+    }
+  };
 
   const handleSaveDonationNumber = async () => {
     setIsSavingDonationNum(true);
@@ -163,29 +187,37 @@ export default function Admin() {
     }
   };
 
-  const updateDonationStatus = async (id: string, status: string) => {
+  const updateTransactionStatus = async (id: string, status: string) => {
     try {
+      // If approved and it's a course, auto-enroll
+      if (status === 'approved') {
+        const tx = transactions.find(t => t.id === id);
+        if (tx?.type === 'course' && tx.course_id && tx.user_id) {
+          await supabase.from('enrollments').insert({
+            user_id: tx.user_id,
+            course_id: tx.course_id
+          });
+        }
+      }
+
       const { error } = await supabase
         .from("donations")
         .update({ status })
         .eq("id", id);
       if (error) throw error;
-      setDonations(donations.map((d) => (d.id === id ? { ...d, status } : d)));
+      setTransactions(transactions.map((d) => (d.id === id ? { ...d, status } : d)));
     } catch (err) {
       console.error("Error updating status:", err);
     }
   };
 
-  const deleteDonation = async (id: string) => {
-    // Removed window.confirm as it is blocked in the iframe
+  const deleteTransaction = async (id: string) => {
     try {
       const { error } = await supabase.from("donations").delete().eq("id", id);
       if (error) throw error;
-      setDonations(donations.filter((d) => d.id !== id));
+      setTransactions(transactions.filter((d) => d.id !== id));
     } catch (err: any) {
-      console.error("Error deleting donation:", err);
-      // alert is also blocked in iframe, so we just log it or use a toast.
-      // For now, we'll just log it.
+      console.error("Error deleting transaction:", err);
     }
   };
 
@@ -268,7 +300,7 @@ export default function Admin() {
     { id: "courses", label: "Courses", icon: BookOpen },
     { id: "banner", label: "Banner", icon: Layout },
     { id: "analytics", label: "Analytics", icon: FileText },
-    { id: "donations", label: "Donations", icon: Heart },
+    { id: "transactions", label: "Transactions", icon: DollarSign },
     { id: "pdf", label: "PDFs", icon: FileText },
     { id: "youtube", label: "YouTube", icon: Youtube },
     { id: "users", label: "Manage Users", icon: Users },
@@ -881,21 +913,21 @@ export default function Admin() {
             </GlassmorphicCard>
           )}
 
-          {activeTab === "donations" && (
+          {activeTab === "transactions" && (
             <div className="flex flex-col gap-6">
               <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
-                    <Heart className="text-red-500" size={18} />
+                    <DollarSign className="text-red-500" size={18} />
                   </div>
                   <h2 className="text-lg font-bold text-[var(--text)]">
-                    Donation Settings
+                    Payment Settings
                   </h2>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Donation Receive Number (bKash/Nagad/Rocket)
+                    Payment Receive Number (bKash/Nagad/Rocket)
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -913,7 +945,7 @@ export default function Admin() {
                       {isSavingDonationNum ? "Saving..." : "Save"}
                     </button>
                   </div>
-                  {statusMsg && activeTab === "donations" && (
+                  {statusMsg && activeTab === "transactions" && (
                     <p
                       className={`text-xs mt-1 ${statusMsg.type === "success" ? "text-green-500" : "text-red-500"}`}
                     >
@@ -923,16 +955,24 @@ export default function Admin() {
                 </div>
               </GlassmorphicCard>
 
-              <GlassmorphicCard className="max-w-4xl p-6 sm:p-8">
-                <h2 className="text-lg font-bold text-[var(--text)] mb-6">
-                  Donation Submissions
-                </h2>
+              <GlassmorphicCard className="max-w-5xl p-6 sm:p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-bold text-[var(--text)]">
+                    Transaction Submissions
+                  </h2>
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    Pending Requests
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
                     <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-black/5 dark:bg-white/5">
                       <tr>
-                        <th className="px-4 py-3 rounded-l-lg">Name</th>
-                        <th className="px-4 py-3">Polytechnic</th>
+                        <th className="px-4 py-3 rounded-l-lg">User (Phone)</th>
+                        <th className="px-4 py-3">Type</th>
+                        <th className="px-4 py-3">Amount</th>
+                        <th className="px-4 py-3">Course/Purpose</th>
                         <th className="px-4 py-3">TrxID</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3 rounded-r-lg text-right">
@@ -941,28 +981,43 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {donations.length === 0 ? (
+                      {transactions.filter(t => t.status === 'pending').length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center">
-                            No donations found.
+                          <td colSpan={6} className="px-4 py-8 text-center">
+                            No pending transactions found.
                           </td>
                         </tr>
                       ) : (
-                        donations.map((d) => (
+                        transactions.filter(t => t.status === 'pending').map((d) => (
                           <tr
                             key={d.id}
                             className="border-b border-black/5 dark:border-white/5 last:border-0"
                           >
-                            <td className="px-4 py-3 font-medium text-[var(--text)]">
-                              {d.student_name}
+                            <td className="px-4 py-3">
+                              <div className="font-medium text-[var(--text)]">{d.student_name}</div>
+                              <div className="text-[10px] text-gray-400">{d.polytechnic_name}</div>
                             </td>
-                            <td className="px-4 py-3">{d.polytechnic_name}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${d.type === 'course' ? 'bg-blue-500/10 text-blue-500' : 'bg-pink-500/10 text-pink-500'}`}>
+                                {d.type || 'donation'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-bold text-[var(--primary)]">
+                              ৳{d.amount}
+                            </td>
+                            <td className="px-4 py-3 text-xs">
+                              {d.type === 'course' ? (
+                                <span className="text-blue-500 font-semibold">{d.courses?.title || 'Unknown Course'}</span>
+                              ) : (
+                                <span className="text-gray-400 italic">Self Donation</span>
+                              )}
+                            </td>
                             <td className="px-4 py-3 font-mono text-xs">
                               {d.transaction_id}
                             </td>
                             <td className="px-4 py-3">
                               <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                className={`px-2 py-1 rounded-full text-xs font-bold ${
                                   d.status === "approved"
                                     ? "bg-green-500/10 text-green-500"
                                     : d.status === "rejected"
@@ -979,33 +1034,23 @@ export default function Admin() {
                                   <>
                                     <button
                                       onClick={() =>
-                                        updateDonationStatus(d.id, "approved")
+                                        updateTransactionStatus(d.id, "approved")
                                       }
-                                      className="p-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-md transition-colors"
+                                      className="p-1.5 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white rounded-lg transition-all"
                                       title="Approve"
                                     >
                                       <Check size={16} />
                                     </button>
                                     <button
                                       onClick={() =>
-                                        updateDonationStatus(d.id, "rejected")
+                                        updateTransactionStatus(d.id, "rejected")
                                       }
-                                      className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-md transition-colors"
+                                      className="p-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-all"
                                       title="Reject"
                                     >
                                       <X size={16} />
                                     </button>
                                   </>
-                                )}
-                                {(d.status === "approved" ||
-                                  d.status === "rejected") && (
-                                  <button
-                                    onClick={() => deleteDonation(d.id)}
-                                    className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-md transition-colors"
-                                    title="Delete"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
                                 )}
                               </div>
                             </td>
@@ -1014,6 +1059,105 @@ export default function Admin() {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </GlassmorphicCard>
+
+              {/* Webhook Live Logs for Debugging */}
+              <GlassmorphicCard className="max-w-5xl p-6 sm:p-8 border-dashed border-2 border-primary/30">
+                <div className="flex flex-col gap-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                      </div>
+                      <h2 className="text-lg font-bold text-[var(--text)]">Live Webhook Logs (Debug)</h2>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={async () => {
+                          const trxs = transactions.filter(t => t.status === 'pending');
+                          if (trxs.length === 0) {
+                            alert("No pending transactions to match. Please submit a form from the home page first.");
+                            return;
+                          }
+                          const target = trxs[0];
+                          await fetch("/api/payment-webhook", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              message: `You have received payment Tk ${target.amount}.00 from 01700000000. Balance Tk 5000. TrxID ${target.transaction_id} at 02/05/2026`,
+                              from: "bkash"
+                            })
+                          });
+                          fetchWebhookLogs();
+                          fetchTransactions();
+                        }}
+                        className="text-[10px] font-bold bg-white/10 text-white px-3 py-2 rounded-xl hover:bg-white/20 transition-all"
+                      >
+                        Simulate Match SMS
+                      </button>
+                      <button 
+                        onClick={fetchWebhookLogs} 
+                        className="text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl hover:scale-105 transition-all active:scale-95"
+                      >
+                        {isRefreshingLogs ? "Scanning..." : "Check for New SMS"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-black/20 dark:bg-black/40 p-4 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2">Use this exact URL in your SMS App:</p>
+                    <code className="text-[11px] text-[var(--primary)] font-mono break-all bg-black/30 p-2 rounded block">
+                      {window.location.origin}/api/payment-webhook
+                    </code>
+                    <p className="text-[9px] text-red-400 mt-2 italic">
+                      * IMPORTANT: Open the Admin panel on the SAME link you put in the SMS app. Dev link and Shared link are different servers!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {webhookLogs.length === 0 ? (
+                    <div className="text-center py-10 text-sm text-gray-500 border border-black/5 dark:border-white/5 rounded-2xl">
+                      No SMS received yet. Send a test SMS to your device.
+                    </div>
+                  ) : (
+                    webhookLogs.map((log, idx) => (
+                      <div key={idx} className="bg-black/5 dark:bg-white/5 p-4 rounded-xl text-[11px] font-mono border border-black/5 dark:border-white/5">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[var(--primary)] font-bold">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                          <span className="bg-white/10 px-2 py-0.5 rounded text-[9px]">POST /api/payment-webhook</span>
+                        </div>
+                        <pre className="overflow-x-auto text-gray-400">
+                          {JSON.stringify(log.body, null, 2)}
+                        </pre>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <p className="text-[10px] mt-4 text-gray-400 italic">* These logs are temporary and will be cleared if the server restarts.</p>
+              </GlassmorphicCard>
+
+              {/* History Table (Optional) */}
+              <GlassmorphicCard className="max-w-5xl p-6 sm:p-8 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+                <h3 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-widest">Transaction History</h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-[11px] text-gray-500">
+                        <tbody>
+                            {transactions.filter(t => t.status !== 'pending').slice(0, 10).map(t => (
+                                <tr key={t.id} className="border-b border-black/5 dark:border-white/5">
+                                    <td className="py-2">{t.student_name}</td>
+                                    <td className="py-2 font-mono">{t.transaction_id}</td>
+                                    <td className="py-2">
+                                        <span className={`px-2 py-0.5 rounded uppercase font-bold text-[9px] ${t.status === 'approved' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>{t.status}</span>
+                                    </td>
+                                    <td className="py-2 text-right">
+                                        <button onClick={() => deleteTransaction(t.id)} className="text-red-500 hover:scale-110 transition-transform"><Trash2 size={12}/></button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
               </GlassmorphicCard>
             </div>
