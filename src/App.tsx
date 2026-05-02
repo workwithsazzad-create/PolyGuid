@@ -30,6 +30,8 @@ import Messages from './pages/Messages';
 
 import { Link, useLocation } from 'react-router-dom';
 
+import { prefetchHomeData } from './services/dataService';
+
 // Scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -126,17 +128,18 @@ function AppContent() {
       
       if (session) {
         setSession(session);
+        prefetchHomeData();
         checkAdminStatus(session.user.id, session.user.email).finally(() => {
           if (isMounted) {
             setTimeout(() => {
               if (isMounted) setLoading(false);
-            }, 800);
+            }, 3500);
           }
         });
       } else {
         setTimeout(() => {
           if (isMounted) setLoading(false);
-        }, 800);
+        }, 3500);
       }
     });
 
@@ -150,14 +153,14 @@ function AppContent() {
           if (isMounted) {
             setTimeout(() => {
               if (isMounted) setLoading(false);
-            }, 800);
+            }, 3500);
           }
         });
       } else {
         setIsAdmin(false);
         setTimeout(() => {
           if (isMounted) setLoading(false);
-        }, 800);
+        }, 3500);
       }
     });
 

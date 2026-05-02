@@ -95,8 +95,8 @@ export default function SemesterCourses() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <div className="w-10 h-10 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex justify-center py-20 animate-pulse">
+          <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : courses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

@@ -97,8 +97,8 @@ export default function CourseDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[70vh]">
-        <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-[70vh] animate-pulse">
+        <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

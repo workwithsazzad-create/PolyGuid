@@ -7,6 +7,7 @@ import { supabase } from '@/src/lib/supabase';
 import { getDirectLink } from '@/src/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/src/components/Footer';
+import { homeCache as globalHomeCache, prefetchHomeData } from '@/src/services/dataService';
 
 const AnimatedCounter = ({ value, suffix = "" }: { value: number, suffix?: string }) => {
   const nodeRef = useRef<HTMLSpanElement>(null);
@@ -36,25 +37,22 @@ const SEMESTERS = [
 
 const DEFAULT_BANNER = "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1200&auto=format&fit=crop";
 
-// Global cache to store home data between navigations for instant loading
-let homeCache: any = null;
-
 export default function Home() {
   const navigate = useNavigate();
   const coursesRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Initialize from cache but allow loadAllData to refresh them
-  const [bannerUrl, setBannerUrl] = useState<string>(homeCache?.bannerUrl || DEFAULT_BANNER);
-  const [allCourses, setAllCourses] = useState<any[]>(homeCache?.allCourses || []);
-  const [stats, setStats] = useState(homeCache?.stats || { courses: 150, students: 20000, polytechnics: 49 });
-  const [isLoading, setIsLoading] = useState(!homeCache);
-  const [enrollments, setEnrollments] = useState<any[]>(homeCache?.enrollments || []);
+  const [bannerUrl, setBannerUrl] = useState<string>(globalHomeCache?.bannerUrl || DEFAULT_BANNER);
+  const [allCourses, setAllCourses] = useState<any[]>(globalHomeCache?.allCourses || []);
+  const [stats, setStats] = useState(globalHomeCache?.stats || { courses: 150, students: 20000, polytechnics: 49 });
+  const [isLoading, setIsLoading] = useState(!globalHomeCache);
+  const [enrollments, setEnrollments] = useState<any[]>(globalHomeCache?.enrollments || []);
 
   // Donation State
   const [showDonateModal, setShowDonateModal] = useState(false);
-  const [donationNumber, setDonationNumber] = useState(homeCache?.donationNumber || '01993879904');
-  const [approvedDonations, setApprovedDonations] = useState<any[]>(homeCache?.approvedDonations || []);
+  const [donationNumber, setDonationNumber] = useState(globalHomeCache?.donationNumber || '01993879904');
+  const [approvedDonations, setApprovedDonations] = useState<any[]>(globalHomeCache?.approvedDonations || []);
   const [currentDonationIndex, setCurrentDonationIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const [donateForm, setDonateForm] = useState({ name: '', polytechnic: '', trxId: '' });
@@ -210,8 +208,6 @@ export default function Home() {
       } finally {
         if (isMounted) {
           setIsLoading(false);
-          // Force it to false even if there's an error but we have cache
-          if (homeCache) setIsLoading(false);
         }
       }
     };
@@ -261,8 +257,8 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[70vh]">
-        <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-[70vh] animate-pulse">
+        <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

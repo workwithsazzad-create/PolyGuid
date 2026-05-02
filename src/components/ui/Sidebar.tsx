@@ -85,9 +85,15 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       "fixed left-0 top-0 h-screen w-60 sm:w-64 glass border-r border-[var(--glass-border)] flex flex-col p-4 sm:p-6 z-50 transition-transform duration-300",
       isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
     )}>
-      <div className="flex items-center justify-between mb-8 sm:mb-10 -mt-2 sm:-mt-6 px-1 lg:px-2 min-h-[100px]">
-        <NavLink to="/home" className="flex items-center gap-2 group ml-2 lg:ml-0">
-          <Logo theme={theme} showText={true} className="scale-100 sm:scale-[1.15] origin-left" />
+      <div className="flex items-center justify-between mb-8 sm:mb-10 -mt-2 sm:-mt-6 px-3 lg:px-4 min-h-[100px]">
+        <NavLink to="/home" className="flex items-center gap-2 group">
+          <Logo 
+            theme={theme} 
+            showText={true} 
+            className="scale-100 sm:scale-[1.1] origin-left"
+            imgClassName="ml-[-15px] sm:ml-[-26px] mr-0"
+            textClassName="ml-[8px] sm:ml-[-2px] mt-[-22px] sm:mt-[-27px]"
+          />
         </NavLink>
         <button 
           onClick={onClose}

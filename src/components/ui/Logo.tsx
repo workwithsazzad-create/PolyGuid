@@ -4,11 +4,19 @@ import { logoDarkB64, logoLightB64 } from './logo-data';
 
 interface LogoProps {
   className?: string;
+  imgClassName?: string;
+  textClassName?: string;
   showText?: boolean;
   theme?: 'light' | 'dark';
 }
 
-export default function Logo({ className, showText = true, theme = 'dark' }: LogoProps) {
+export default function Logo({ 
+  className, 
+  imgClassName: customImgClassName, 
+  textClassName: customTextClassName, 
+  showText = true, 
+  theme = 'dark' 
+}: LogoProps) {
   const [imgError, setImgError] = useState(false);
   const logoSrc = theme === 'light' ? logoDarkB64 : logoLightB64;
 
@@ -25,7 +33,8 @@ export default function Logo({ className, showText = true, theme = 'dark' }: Log
 
   const imgClassName = cn(
     "h-full w-auto object-contain transition-all",
-    !showText ? "max-w-none absolute left-0 top-0 scale-[1.3]" : "relative"
+    !showText ? "max-w-none absolute left-0 top-0 scale-[1.3]" : "relative",
+    customImgClassName
   );
 
   return (
@@ -53,8 +62,9 @@ export default function Logo({ className, showText = true, theme = 'dark' }: Log
       </div>
       {!imgError && showText && (
         <p className={cn(
-          "font-bold text-[9px] sm:text-[11px] tracking-[0.16em] uppercase mt-[-4px] sm:mt-[-10px] ml-1 opacity-80 leading-none",
-          theme === 'light' ? "text-gray-600" : "text-gray-400"
+          "font-bold text-[9px] sm:text-[11px] tracking-[0.16em] uppercase mt-[-4px] sm:mt-[-10px] opacity-80 leading-none whitespace-nowrap",
+          theme === 'light' ? "text-gray-600" : "text-gray-400",
+          customTextClassName
         )}>
           Your learning partner
         </p>
