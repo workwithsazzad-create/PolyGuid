@@ -18,6 +18,7 @@ import { supabase } from '@/src/lib/supabase';
 import Logo from './Logo';
 import { useTheme } from '../ThemeProvider';
 import { useState, useEffect } from 'react';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 interface SidebarProps {
   isAdmin?: boolean;
@@ -29,6 +30,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
   const { theme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   const [newNoticeCount, setNewNoticeCount] = useState(0);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   
   const navItems = [
     { name: 'Home', icon: Home, path: '/home' },
@@ -76,7 +78,18 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
           setUnreadCount(count || 0);
       };
 
+      const fetchNotificationCount = async () => {
+          const { count } = await supabase
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', session.user.id)
+            .eq('read', false);
+            
+          setUnreadNotificationCount(count || 0);
+      };
+
       await fetchCount();
+      await fetchNotificationCount();
 
       channel = supabase
         .channel(`sidebar_messages_${session.user.id}_${Math.random().toString(36).substring(7)}`)
@@ -88,9 +101,47 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
         }, payload => {
             fetchCount();
         })
+        .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'notifications',
+            filter: `user_id=eq.${session.user.id}` 
+        }, async (payload) => {
+            fetchNotificationCount();
+            try {
+              // Trigger local notification for native devices
+              const newNotification = payload.new as any;
+              await LocalNotifications.schedule({
+                notifications: [
+                  {
+                    title: newNotification.title || 'New Notification',
+                    body: newNotification.message || '',
+                    id: Math.floor(Math.random() * 100000),
+                    schedule: { at: new Date(Date.now() + 100) },
+                    sound: undefined,
+                    attachments: undefined,
+                    actionTypeId: "",
+                    extra: null
+                  }
+                ]
+              });
+            } catch (err) {
+              console.log("Local notification scheduling failed:", err);
+            }
+        })
         .subscribe();
     };
-    
+
+    // Request permissions on init
+    const requestPermissions = async () => {
+      try {
+        await LocalNotifications.requestPermissions();
+      } catch (e) {
+        // Not on native device, ignore
+      }
+    };
+    requestPermissions();
+
     checkUnread();
     
     return () => {
@@ -148,6 +199,11 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
             {item.name === 'Message' && unreadCount > 0 && (
               <span className="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm animate-pulse">
                 {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+            {item.name === 'Notifications' && unreadNotificationCount > 0 && (
+              <span className="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm animate-pulse">
+                {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
               </span>
             )}
             {item.name === 'Notice Board' && newNoticeCount > 0 && (
