@@ -102,31 +102,33 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
             fetchCount();
         })
         .on('postgres_changes', { 
-            event: 'INSERT', 
+            event: '*', 
             schema: 'public', 
             table: 'notifications',
             filter: `user_id=eq.${session.user.id}` 
         }, async (payload) => {
             fetchNotificationCount();
-            try {
-              // Trigger local notification for native devices
-              const newNotification = payload.new as any;
-              await LocalNotifications.schedule({
-                notifications: [
-                  {
-                    title: newNotification.title || 'New Notification',
-                    body: newNotification.message || '',
-                    id: Math.floor(Math.random() * 100000),
-                    schedule: { at: new Date(Date.now() + 100) },
-                    sound: undefined,
-                    attachments: undefined,
-                    actionTypeId: "",
-                    extra: null
-                  }
-                ]
-              });
-            } catch (err) {
-              console.log("Local notification scheduling failed:", err);
+            if (payload.eventType === 'INSERT') {
+              try {
+                // Trigger local notification for native devices
+                const newNotification = payload.new as any;
+                await LocalNotifications.schedule({
+                  notifications: [
+                    {
+                      title: newNotification.title || 'New Notification',
+                      body: newNotification.message || '',
+                      id: Math.floor(Math.random() * 100000),
+                      schedule: { at: new Date(Date.now() + 100) },
+                      sound: undefined,
+                      attachments: undefined,
+                      actionTypeId: "",
+                      extra: null
+                    }
+                  ]
+                });
+              } catch (err) {
+                console.log("Local notification scheduling failed:", err);
+              }
             }
         })
         .subscribe();

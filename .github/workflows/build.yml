@@ -58,12 +58,22 @@ jobs:
             npx capacitor-assets generate --android || true
           fi
 
+      - name: Setup Firebase Google Services
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            echo "Google services JSON created successfully."
+          else
+            echo "Warning: GOOGLE_SERVICES_JSON secret is empty or missing. Build may fail if Push is enabled."
+            # Remove plugin if missing to avoid failure
+            sed -i 's/apply plugin: "com.google.gms.google-services"//g' android/app/build.gradle || true
+          fi
+
       - name: Build Android APK
         run: |
           cd android
-          
-          # Remove google-services plugin to fix the build error you faced previously
-          sed -i 's/apply plugin: "com.google.gms.google-services"//g' app/build.gradle || true
           
           echo "configurations.all {
               resolutionStrategy.eachDependency { DependencyResolveDetails details ->
