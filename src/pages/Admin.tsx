@@ -25,6 +25,7 @@ import {
   Paperclip,
   Database,
   Users,
+  Bell,
 } from "lucide-react";
 import { supabase } from "@/src/lib/supabase";
 import { getDirectLink } from "@/src/lib/utils";
@@ -40,9 +41,9 @@ type AdminTab =
   | "transactions"
   | "pdf"
   | "youtube"
-  | "admins"
   | "users"
-  | "results";
+  | "results"
+  | "notifications";
 
 import AdminCourses from "../components/admin/AdminCourses";
 import AdminUsers from "../components/admin/AdminUsers";
@@ -76,6 +77,7 @@ export default function Admin() {
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
   const [isSavingDonationNum, setIsSavingDonationNum] = useState(false);
   const [totalStudentsCount, setTotalStudentsCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch student count
   const fetchDBStats = async () => {
@@ -150,6 +152,23 @@ export default function Admin() {
   const fetchWebhookLogs = async () => {
     setIsRefreshingLogs(true);
     try {
+      // 1. Fetch from database (Persistent)
+      const { data: dbLogs, error: dbError } = await supabase
+        .from("webhook_logs")
+        .select("*")
+        .order("timestamp", { ascending: false })
+        .limit(20);
+      
+      if (!dbError && dbLogs && dbLogs.length > 0) {
+        setWebhookLogs(dbLogs.map(l => ({
+          timestamp: l.timestamp,
+          body: l.payload,
+          method: l.method
+        })));
+        return;
+      }
+
+      // 2. Fallback to server API (Local)
       const res = await fetch("/api/webhook-logs");
       const data = await res.json();
       setWebhookLogs(data.logs || []);
@@ -193,10 +212,10 @@ export default function Admin() {
       if (status === 'approved') {
         const tx = transactions.find(t => t.id === id);
         if (tx?.type === 'course' && tx.course_id && tx.user_id) {
-          await supabase.from('enrollments').insert({
+          await supabase.from('enrollments').upsert({
             user_id: tx.user_id,
             course_id: tx.course_id
-          });
+          }, { onConflict: 'user_id,course_id' });
         }
       }
 
@@ -304,8 +323,8 @@ export default function Admin() {
     { id: "pdf", label: "PDFs", icon: FileText },
     { id: "youtube", label: "YouTube", icon: Youtube },
     { id: "users", label: "Manage Users", icon: Users },
-    { id: "admins", label: "Admins", icon: UserPlus },
     { id: "results", label: "Result Parser", icon: FileCheck },
+    { id: "notifications", label: "Push Notify", icon: Bell },
   ];
 
   // Result Parser State
@@ -956,13 +975,25 @@ export default function Admin() {
               </GlassmorphicCard>
 
               <GlassmorphicCard className="max-w-5xl p-6 sm:p-8">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                   <h2 className="text-lg font-bold text-[var(--text)]">
                     Transaction Submissions
                   </h2>
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500">
-                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                    Pending Requests
+                  <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input 
+                        type="text" 
+                        placeholder="Search number or TrxID..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">
+                      <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                      Pending Requests
+                    </div>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -981,14 +1012,33 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {transactions.filter(t => t.status === 'pending').length === 0 ? (
+                      {transactions
+                        .filter(t => t.status === 'pending')
+                        .filter(t => {
+                          if (!searchQuery) return true;
+                          const q = searchQuery.toLowerCase();
+                          return (
+                            t.student_name?.toLowerCase().includes(q) || 
+                            t.transaction_id?.toLowerCase().includes(q)
+                          );
+                        }).length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center">
-                            No pending transactions found.
+                          <td colSpan={7} className="px-4 py-8 text-center">
+                            {searchQuery ? "No matching pending transactions found." : "No pending transactions found."}
                           </td>
                         </tr>
                       ) : (
-                        transactions.filter(t => t.status === 'pending').map((d) => (
+                        transactions
+                          .filter(t => t.status === 'pending')
+                          .filter(t => {
+                            if (!searchQuery) return true;
+                            const q = searchQuery.toLowerCase();
+                            return (
+                              t.student_name?.toLowerCase().includes(q) || 
+                              t.transaction_id?.toLowerCase().includes(q)
+                            );
+                          })
+                          .map((d) => (
                           <tr
                             key={d.id}
                             className="border-b border-black/5 dark:border-white/5 last:border-0"
@@ -1062,61 +1112,38 @@ export default function Admin() {
                 </div>
               </GlassmorphicCard>
 
-              {/* Gmail SMS Sync Logs */}
-              <GlassmorphicCard className="max-w-5xl p-6 sm:p-8 border-dashed border-2 border-primary/30">
-                <div className="flex flex-col gap-4 mb-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
-                        <div className="w-3 h-3 rounded-full bg-primary" />
+              {/* Gmail SMS Sync Logs (HIDDEN as per user request to remove auto code) */}
+              {webhookLogs.length > 0 && (
+                <GlassmorphicCard className="max-w-5xl p-6 sm:p-8 border-dashed border-2 border-primary/10 opacity-50">
+                  <div className="flex flex-col gap-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <div className="w-3 h-3 rounded-full bg-primary" />
+                        </div>
+                        <h2 className="text-lg font-bold text-[var(--text)]">Incoming SMS History (Read-Only)</h2>
                       </div>
-                      <h2 className="text-lg font-bold text-[var(--text)]">Live SMS Incoming History</h2>
-                    </div>
-                    <div className="flex gap-2">
                       <button 
                         onClick={fetchWebhookLogs} 
-                        className="text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl hover:scale-105 transition-all active:scale-95"
+                        className="text-xs font-bold bg-black/5 dark:bg-white/5 px-4 py-2 rounded-xl"
                       >
-                        {isRefreshingLogs ? "Scanning..." : "Refresh SMS Logs"}
+                        {isRefreshingLogs ? "Scanning..." : "Sync Logs"}
                       </button>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex flex-col gap-3">
-                  {webhookLogs.length === 0 ? (
-                    <div className="text-center py-10 text-sm text-gray-500 border border-black/5 dark:border-white/5 rounded-2xl">
-                      No SMS received yet. Ensure your Apps Script is running.
-                    </div>
-                  ) : (
-                    webhookLogs.map((log, idx) => {
-                      const payloadText = typeof log.body === 'string' ? log.body : JSON.stringify(log.body);
-                      const trxMatch = payloadText.match(/TrxID[:\s]*([A-Z0-9]+)/i) || payloadText.match(/TrxID\s+([A-Z0-9]+)/i);
-                      const foundTrx = trxMatch ? trxMatch[1] : null;
-                      
-                      return (
-                        <div key={idx} className="bg-black/5 dark:bg-white/5 p-4 rounded-xl text-[11px] font-mono border border-black/5 dark:border-white/5">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-[var(--primary)] font-bold">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                            <div className="flex gap-2 items-center">
-                              {foundTrx && (
-                                <span className="text-[10px] font-mono text-green-400 font-bold bg-green-400/10 px-2 py-0.5 rounded">
-                                  Found TrxID: {foundTrx}
-                                </span>
-                              )}
-                              <span className="bg-white/10 px-2 py-0.5 rounded text-[9px]">GMAIL SYNC</span>
-                            </div>
-                          </div>
-                          <pre className="overflow-x-auto text-gray-400 whitespace-pre-wrap word-break-all">
-                            {payloadText.substring(0, 300)}{payloadText.length > 300 ? '...' : ''}
-                          </pre>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-                <p className="text-[10px] mt-4 text-gray-400 italic">* These logs are temporary and will be cleared if the server restarts.</p>
-              </GlassmorphicCard>
+                  <div className="flex flex-col gap-2">
+                    {webhookLogs.slice(0, 5).map((log, idx) => {
+                       const payloadText = typeof log.body === 'string' ? log.body : JSON.stringify(log.body);
+                       return (
+                         <div key={idx} className="text-[10px] p-2 bg-black/5 dark:bg-white/5 rounded border border-black/5">
+                           {payloadText.substring(0, 150)}...
+                         </div>
+                       );
+                    })}
+                  </div>
+                </GlassmorphicCard>
+              )}
 
               {/* History Table (Optional) */}
               <GlassmorphicCard className="max-w-5xl p-6 sm:p-8 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
@@ -1185,36 +1212,6 @@ export default function Admin() {
             </GlassmorphicCard>
           )}
 
-          {activeTab === "admins" && (
-            <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                  <UserPlus className="text-blue-500" size={18} />
-                </div>
-                <h2 className="text-lg font-bold text-[var(--text)]">
-                  Manage Admins
-                </h2>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    User Email
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      placeholder="admin@example.com"
-                      className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
-                    />
-                    <button className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-[var(--text)] font-bold px-4 rounded-lg transition-all text-sm">
-                      Grant
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </GlassmorphicCard>
-          )}
 
           {activeTab === "results" && (
             <div className="flex flex-col gap-6">
@@ -1460,6 +1457,84 @@ export default function Admin() {
                   )}
                 </div>
               )}
+            </div>
+          )}
+          
+          {activeTab === "notifications" && (
+            <div className="space-y-6">
+              <GlassmorphicCard className="p-6">
+                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <Bell className="text-[var(--primary)]" />
+                  Push Notifications
+                </h3>
+                <p className="text-sm text-gray-500 mb-6 font-medium">Send a notification to all users using the built-in system. Make sure you've ran the Supabase script for notifications table.</p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
+                      Notification Title
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                      placeholder="e.g. New Feature Update!"
+                      id="notify-title"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
+                      Message Body
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 resize-none"
+                      placeholder="Write 1/2 lines of message to push to all users..."
+                      id="notify-body"
+                    />
+                  </div>
+                  
+                  <button
+                    onClick={async () => {
+                      const titleNode = document.getElementById('notify-title') as HTMLInputElement;
+                      const bodyNode = document.getElementById('notify-body') as HTMLTextAreaElement;
+                      if (!titleNode.value || !bodyNode.value) {
+                         alert("Please enter title and body.");
+                         return;
+                      }
+                      
+                      try {
+                        const { data: users, error: userError } = await supabase.from('profiles').select('id');
+                        if (userError) throw userError;
+                        
+                        if (users && users.length > 0) {
+                           const notifications = users.map(u => ({
+                              user_id: u.id,
+                              title: titleNode.value,
+                              body: bodyNode.value,
+                              type: 'admin'
+                           }));
+                           
+                           const { error } = await supabase.from('notifications').insert(notifications);
+                           if (error) throw error;
+                           
+                           alert(`Notification sent to ${users.length} users!`);
+                           titleNode.value = '';
+                           bodyNode.value = '';
+                        } else {
+                           alert("No users found.");
+                        }
+                      } catch (err: any) {
+                         alert(err.message || 'Make sure the notifications table exists! Check the UI setup instructions.');
+                      }
+                    }}
+                    className="w-full py-3 bg-[var(--primary)] text-white font-bold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Bell size={18} />
+                    Push to All Users
+                  </button>
+                </div>
+              </GlassmorphicCard>
             </div>
           )}
         </motion.div>

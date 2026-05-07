@@ -49,10 +49,20 @@ export default function Profile() {
 
       if (error) throw error;
       if (data) {
+        let phoneNum = data.phone_number || '';
+        
+        // Auto-extract phone from placeholder email if needed
+        if (!phoneNum && user.email?.endsWith('@polyguid.com')) {
+          const extracted = user.email.split('@')[0];
+          if (/^\d+$/.test(extracted)) {
+            phoneNum = extracted;
+          }
+        }
+
         setProfile(data);
         setEditForm({
           full_name: data.full_name || '',
-          phone_number: data.phone_number || '',
+          phone_number: phoneNum,
           address: data.address || '',
           polytechnic_name: data.polytechnic_name || '',
           avatar_url: data.avatar_url || ''
@@ -236,22 +246,13 @@ export default function Profile() {
               </div>
             )}
 
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-              <div className="p-3 rounded-lg bg-[var(--primary)]/20 text-[var(--primary)]">
-                <Mail size={20} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Email Address</p>
-                <p className="text-[var(--text)] font-medium">{email}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+            {/* Phone Number - PRIMARY */}
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 ring-2 ring-[var(--primary)]/20 shadow-lg shadow-[var(--primary)]/5">
               <div className="p-3 rounded-lg bg-[var(--primary)]/20 text-[var(--primary)]">
                 <Phone size={20} />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Phone Number</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Phone Number (Primary ID)</p>
                 {isEditing ? (
                   <input
                     type="tel"
@@ -261,10 +262,23 @@ export default function Profile() {
                     placeholder="+880 1XXX XXXXXX"
                   />
                 ) : (
-                  <p className="text-[var(--text)] font-medium">{profile?.phone_number || 'Not provided'}</p>
+                  <p className="text-[var(--text)] font-bold text-lg">{editForm.phone_number || 'Not provided'}</p>
                 )}
               </div>
             </div>
+
+            {/* Email Address - Show only if NOT a placeholder */}
+            {email && !email.endsWith('@polyguid.com') && (
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+                <div className="p-3 rounded-lg bg-blue-500/10 text-blue-500">
+                  <Mail size={20} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Email Address</p>
+                  <p className="text-[var(--text)] font-medium">{email}</p>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10">
               <div className="p-3 rounded-lg bg-[var(--primary)]/20 text-[var(--primary)]">

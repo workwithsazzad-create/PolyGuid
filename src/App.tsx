@@ -28,6 +28,8 @@ import { cn } from './lib/utils';
 import { Menu, X } from 'lucide-react';
 
 import Messages from './pages/Messages';
+import NoticeBoard from './pages/NoticeBoard';
+import Notifications from './pages/Notifications';
 
 import { Link, useLocation } from 'react-router-dom';
 
@@ -229,8 +231,8 @@ function AppContent() {
           <Route path="/marketplace" element={<div className="p-8 max-w-4xl mx-auto"><h1 className="text-3xl font-bold font-sans"><span className="text-[#32CD32]">P</span>oly<span className="text-[#00BFFF]">G</span>uid Marketplace</h1><p className="text-gray-500 mt-4 leading-relaxed">শীঘ্রই আসছে: এখান থেকে আপনি আপনার প্রয়োজনীয় ইঞ্জিনিয়ারিং বই কেনা-বেচা করতে পারবেন।</p></div>} />
           <Route path="/books-pdf" element={<CoursesPage />} />
           <Route path="/book-list" element={<CoursesPage />} />
-          <Route path="/my-courses" element={<Dashboard />} />
-          <Route path="/exams" element={<div className="p-8 max-w-4xl mx-auto"><h1 className="text-3xl font-bold font-sans"><span className="text-[#32CD32]">P</span>oly<span className="text-[#00BFFF]">G</span>uid Exams</h1><p className="text-gray-500 mt-4 leading-relaxed">শীঘ্রই আসছে: অনলাইনে পরীক্ষা দিন এবং আপনার মেধা যাচাই করুন।</p></div>} />
+          <Route path="/notices" element={<NoticeBoard />} />
+          <Route path="/notifications" element={<Notifications />} />
           
           <Route path="/messages" element={<Messages />} />
           

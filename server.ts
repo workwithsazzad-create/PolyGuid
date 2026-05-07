@@ -4,6 +4,8 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import axios from "axios";
+import * as cheerio from "cheerio";
 
 dotenv.config();
 
@@ -51,6 +53,50 @@ async function startServer() {
     });
   });
 
+  app.get("/api/bteb-notices", async (req, res) => {
+    try {
+      const response = await axios.get("https://bteb.gov.bd/pages/notices", {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9,bn;q=0.8'
+        },
+        timeout: 10000
+      });
+
+      const $ = cheerio.load(response.data);
+      const notices: any[] = [];
+      
+      // Target the notice list based on common gov.bd patterns
+      // They usually use a table with tr/td or a specific list class
+      $('table tr').each((i, el) => {
+        const cols = $(el).find('td');
+        if (cols.length >= 2) {
+          const titleCell = $(cols[1]);
+          const dateCell = $(cols[2]);
+          const link = titleCell.find('a').attr('href');
+          const title = titleCell.text().trim();
+          const date = dateCell.text().trim();
+
+          if (title && title !== "বিষয়") {
+            notices.push({
+              id: `not-${i}`,
+              title,
+              date: date || "No Date",
+              link: link ? (link.startsWith('http') ? link : `https://bteb.gov.bd${link}`) : "https://bteb.gov.bd/pages/notices",
+              isNew: titleCell.find('img[src*="new"]').length > 0 || title.includes("নতুন")
+            });
+          }
+        }
+      });
+
+      res.json(notices.slice(0, 30));
+    } catch (error: any) {
+      console.error("Notice Fetch Error:", error.message);
+      res.status(500).json({ error: "Failed to fetch notices" });
+    }
+  });
+
   const handleWebhook = async (req: express.Request, res: express.Response) => {
     const logEntry = {
       method: req.method,
@@ -63,7 +109,20 @@ async function startServer() {
       }
     };
     
+    // Save locally
     saveWebhookLog(logEntry);
+
+    // PERSISTENT: Save to Supabase for cross-container visibility
+    try {
+      const payloadString = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      await supabase.from("webhook_logs").insert([{
+        timestamp: logEntry.timestamp,
+        payload: payloadString,
+        method: req.method
+      }]);
+    } catch (e) {
+      console.warn("Supabase logging failed (Check if 'webhook_logs' table exists):", e);
+    }
 
     console.log("Webhook hit triggered:", logEntry);
 
@@ -76,70 +135,23 @@ async function startServer() {
       try {
         payload = JSON.parse(payload);
       } catch (e) {
-        // Not JSON, maybe raw text? 
+        // Not JSON, raw text? 
         payload = { text: payload };
       }
     }
 
-    const { trx_id, transaction_id, amount, message, text, from } = payload;
+    const { trx_id, transaction_id, message, text } = payload;
     
     let finalMessage = message || text;
     let finalTrxId = trx_id || transaction_id;
-    let finalAmount = amount;
 
-    // Handle messages forwarded via Gmail (Apps Script adds "Incoming - ..." or similar)
-    if (finalMessage && finalMessage.includes("Message:")) {
-      const parts = finalMessage.split("Message:");
-      if (parts.length > 1) finalMessage = parts[1].trim();
-    }
+    // Log the hit but don't automatically approve anything
+    console.log("Manual verification mode active. Auto-update skipped for:", finalTrxId);
     
-    if (finalMessage && !finalTrxId) {
-      const trxMatch = finalMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
-      const amountMatch = finalMessage.match(/(?:Tk|Amount|Taka)[:\s]*(\d+(?:\.\d+)?)/i);
-      
-      if (trxMatch) finalTrxId = trxMatch[1];
-      if (amountMatch) finalAmount = parseFloat(amountMatch[1]);
-    }
-
-    if (!finalTrxId) {
-      // Even if no TrxID, we return 200 so the SMS app doesn't retry infinitely
-      return res.status(200).json({ status: "logged_no_trxid" });
-    }
-
-    const cleanTrxId = finalTrxId.toString().trim().toUpperCase();
-
-    try {
-      const { data: results, error: fetchError } = await supabase
-        .from("donations")
-        .select("*")
-        .eq("transaction_id", cleanTrxId)
-        .eq("status", "pending");
-      
-      if (fetchError) throw fetchError;
-      const transaction = results && results[0];
-
-      if (transaction) {
-        // Approve transaction
-        await supabase.from("donations").update({ 
-          status: "approved", 
-          verified_at: new Date().toISOString() 
-        }).eq("id", transaction.id);
-
-        // Auto-enroll if it's a course purchase
-        if (transaction.type === "course" && transaction.course_id && transaction.user_id) {
-          await supabase.from("enrollments").upsert({
-            user_id: transaction.user_id,
-            course_id: transaction.course_id
-          }, { onConflict: 'user_id,course_id' });
-        }
-        return res.json({ status: "approved", transaction_id: cleanTrxId });
-      } else {
-        return res.json({ status: "received_but_not_matched", trx_id: cleanTrxId });
-      }
-    } catch (err: any) {
-      console.error("Webhook processing error:", err);
-      return res.status(500).json({ error: err.message });
-    }
+    return res.status(200).json({ 
+      status: "logged", 
+      message: "Webhook received and logged. Manual verification required." 
+    });
   };
 
   app.all("/api/payment-webhook", handleWebhook);

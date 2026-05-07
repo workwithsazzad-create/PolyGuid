@@ -2,7 +2,8 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   MessageSquare, 
-  BookOpen, 
+  Bell, 
+  BookOpen,
   FileText, 
   User, 
   ShieldCheck,
@@ -27,15 +28,36 @@ interface SidebarProps {
 export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: SidebarProps) {
   const { theme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [newNoticeCount, setNewNoticeCount] = useState(0);
   
   const navItems = [
     { name: 'Home', icon: Home, path: '/home' },
     { name: 'Student Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Message', icon: MessageSquare, path: '/messages' },
-    { name: 'My Course', icon: BookOpen, path: '/my-courses' },
-    { name: 'Exam', icon: FileText, path: '/exams' },
+    { name: 'Notice Board', icon: BookOpen, path: '/notices' },
+    { name: 'Notifications', icon: Bell, path: '/notifications' },
     { name: 'Profile', icon: User, path: '/profile' },
   ];
+
+  // Fetch notices to show badge
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const response = await fetch('/api/bteb-notices');
+        if (response.ok) {
+          const data = await response.json();
+          const newOnes = data.filter((n: any) => n.isNew).length;
+          setNewNoticeCount(newOnes);
+        }
+      } catch (e) {
+        // Ignore failed to fetch
+      }
+    };
+    fetchNotices();
+    // Poll every 5 minutes
+    const interval = setInterval(fetchNotices, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     let channel: any;
@@ -85,14 +107,14 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       "fixed left-0 top-0 h-screen w-60 sm:w-64 glass border-r border-[var(--glass-border)] flex flex-col p-4 sm:p-6 z-50 transition-transform duration-300",
       isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
     )}>
-      <div className="flex items-center justify-between mb-8 sm:mb-10 -mt-2 sm:-mt-6 px-3 lg:px-4 min-h-[100px]">
+      <div className="flex items-center justify-between mb-6 sm:mb-8 px-3 sm:px-4 min-h-[100px]">
         <NavLink to="/home" className="flex items-center gap-2 group">
           <Logo 
             theme={theme} 
             showText={true} 
-            className="scale-100 sm:scale-[1.1] origin-left"
-            imgClassName="ml-[-15px] sm:ml-[-26px] mr-0"
-            textClassName="ml-[8px] sm:ml-[-2px] mt-[-22px] sm:mt-[-27px]"
+            className="scale-100 origin-left"
+            imgClassName="ml-[-18px] mr-[3px] mt-[-13px] pl-0"
+            textClassName="mt-[-10px] pl-[4px] sm:pl-[6px]"
           />
         </NavLink>
         <button 
@@ -126,6 +148,11 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
             {item.name === 'Message' && unreadCount > 0 && (
               <span className="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm animate-pulse">
                 {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+            {item.name === 'Notice Board' && newNoticeCount > 0 && (
+              <span className="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm animate-bounce">
+                {newNoticeCount}
               </span>
             )}
           </NavLink>

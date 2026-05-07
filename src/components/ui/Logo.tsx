@@ -27,8 +27,8 @@ export default function Logo({
 
   // Adjust Logo image wrapper class based on text presence
   const imgWrapperClassName = cn(
-    "relative flex items-center overflow-hidden transition-all",
-    showText ? "h-20 sm:h-28" : "h-[40px] w-[150px]" 
+    "relative flex items-center transition-all",
+    showText ? "h-20 sm:h-24" : "h-[40px] w-[150px]" 
   );
 
   const imgClassName = cn(
@@ -38,7 +38,7 @@ export default function Logo({
   );
 
   return (
-    <div className={cn("flex flex-col items-start px-1 sm:px-2", className)}>
+    <div className={cn("flex flex-col items-start", className)}>
       <div className={imgWrapperClassName}>
         {!imgError ? (
           <img 
@@ -62,11 +62,11 @@ export default function Logo({
       </div>
       {!imgError && showText && (
         <p className={cn(
-          "font-bold text-[9px] sm:text-[11px] tracking-[0.16em] uppercase mt-[-4px] sm:mt-[-10px] opacity-80 leading-none whitespace-nowrap",
+          "font-bold text-[8.5px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.18em] uppercase opacity-70 leading-none whitespace-nowrap",
           theme === 'light' ? "text-gray-600" : "text-gray-400",
           customTextClassName
         )}>
-          Your learning partner
+          Your Learning Partner
         </p>
       )}
     </div>

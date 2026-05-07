@@ -176,7 +176,7 @@ export default function PaymentModal({
                   {isSubmitting ? 'Verifying...' : 'Submit Payment Details'}
                   <ChevronRight size={18} />
                 </button>
-                <p className="text-[9px] text-center text-gray-500 font-bold uppercase tracking-widest">Auto verification via API System Enabled</p>
+                <p className="text-[9px] text-center text-gray-500 font-bold uppercase tracking-widest">Manual verification by admin within 24 hours</p>
               </form>
             </div>
           </motion.div>

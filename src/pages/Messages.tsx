@@ -375,6 +375,17 @@ export default function Messages() {
       .select()
       .single();
 
+    if (!error) {
+      // Send notification to receiver
+      const senderName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'A user';
+      await supabase.from('notifications').insert([{
+         user_id: selectedUser.id,
+         title: 'New Message',
+         body: `${senderName} sent you a message: "${msg.substring(0, 30)}${msg.length > 30 ? '...' : ''}"`,
+         type: 'message'
+      }]);
+    }
+
     if (error) {
       console.error('Error sending message:', error);
       // Rollback optimistic update on error
