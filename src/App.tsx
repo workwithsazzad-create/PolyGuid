@@ -20,13 +20,11 @@ import Privacy from './pages/info/Privacy';
 import Terms from './pages/info/Terms';
 import Refund from './pages/info/Refund';
 import Sidebar from './components/ui/Sidebar';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Menu, X, Bell } from 'lucide-react';
 
 import { ThemeProvider, useTheme } from './components/ThemeProvider';
 import Logo from './components/ui/Logo';
 import { cn } from './lib/utils';
-
-import { Menu, X } from 'lucide-react';
 
 import Messages from './pages/Messages';
 import NoticeBoard from './pages/NoticeBoard';
@@ -133,6 +131,7 @@ function AppContent() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showPermissionGate, setShowPermissionGate] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -155,13 +154,27 @@ function AppContent() {
       if (isMounted) setLoading(false);
     }, 5000); // 5s absolute fallback
 
+    const initPush = async (session: any) => {
+      if (Capacitor.getPlatform() !== 'web') {
+        const { PushNotifications } = await import('@capacitor/push-notifications');
+        const status = await PushNotifications.checkPermissions();
+        if (status.receive !== 'granted') {
+          setShowPermissionGate(true);
+        } else {
+          PushNotificationService.init();
+        }
+      } else {
+        PushNotificationService.init();
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return;
       
       if (session) {
         setSession(session);
         prefetchHomeData();
-        PushNotificationService.init();
+        initPush(session);
         checkAdminStatus(session.user.id, session.user.email).finally(() => {
           clearTimeout(authTimeout);
           if (isMounted) {
@@ -186,7 +199,7 @@ function AppContent() {
       
       setSession(session);
       if (session) {
-        PushNotificationService.init();
+        initPush(session);
         checkAdminStatus(session.user.id, session.user.email).finally(() => {
           if (isMounted) {
             setTimeout(() => {
@@ -235,6 +248,37 @@ function AppContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
         <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (showPermissionGate && session) {
+    return (
+      <div className="fixed inset-0 z-[200] bg-[var(--background)] flex items-center justify-center p-6">
+        <div className="max-w-sm w-full text-center">
+          <div className="w-20 h-20 bg-[var(--primary)]/10 rounded-full flex items-center justify-center text-[var(--primary)] mx-auto mb-8">
+            <Bell size={40} className="animate-bounce" />
+          </div>
+          <h2 className="text-xl font-black text-[var(--text)] mb-3">নোটিফিকেশন পারমিশন</h2>
+          <p className="text-gray-500 text-sm mb-10 leading-relaxed px-4">
+            আপনার কোর্সের গুরুত্বপূর্ণ আপডেট ও পরীক্ষার রুটিন সাথে সাথে পেতে নোটিফিকেশন এলাও করা প্রয়োজন।
+          </p>
+          <button
+            onClick={async () => {
+              await PushNotificationService.init();
+              setShowPermissionGate(false);
+            }}
+            className="w-full bg-[var(--primary)] text-white font-black py-4 rounded-xl shadow-lg shadow-[var(--primary)]/20 active:scale-95"
+          >
+            এগিয়ে যান
+          </button>
+          <button 
+            onClick={() => setShowPermissionGate(false)}
+            className="mt-4 text-xs text-gray-400 font-bold"
+          >
+            পরে করবো
+          </button>
+        </div>
       </div>
     );
   }

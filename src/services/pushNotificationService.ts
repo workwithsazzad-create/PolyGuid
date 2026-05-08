@@ -11,16 +11,25 @@ export const PushNotificationService = {
 
     // Request permission to use push notifications
     // iOS will prompt user and return if they granted permission or not
-    // Android will grant without prompting
-    await PushNotifications.requestPermissions().then(result => {
-      if (result.receive === 'granted') {
-        // Register with Apple / Google to receive push via APNS/FCM
-        PushNotifications.register();
+    // Android will grant without prompting (on older versions) or prompt on 13+
+    try {
+      const status = await PushNotifications.checkPermissions();
+      console.log('Current Push Status:', status.receive);
+
+      if (status.receive !== 'granted') {
+        const result = await PushNotifications.requestPermissions();
+        if (result.receive === 'granted') {
+          PushNotifications.register();
+        } else {
+          console.warn('Push permission denied after request');
+        }
       } else {
-        // Show some error
-        console.error('Push notification permission denied.');
+        // Already granted, just register
+        PushNotifications.register();
       }
-    });
+    } catch (e) {
+      console.error('Error in Push init:', e);
+    }
 
     // On success, we should be able to receive notifications
     PushNotifications.addListener('registration', async (token) => {
