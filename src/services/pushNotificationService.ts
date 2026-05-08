@@ -1,4 +1,5 @@
 import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { supabase } from '@/src/lib/supabase';
 import { Capacitor } from '@capacitor/core';
 
@@ -26,8 +27,6 @@ export const PushNotificationService = {
     }
 
     // Request permission to use push notifications
-    // iOS will prompt user and return if they granted permission or not
-    // Android will grant without prompting (on older versions) or prompt on 13+
     try {
       const status = await PushNotifications.checkPermissions();
       console.log('Current Push Status:', status.receive);
@@ -43,6 +42,9 @@ export const PushNotificationService = {
         // Already granted, just register
         PushNotifications.register();
       }
+      
+      // Also request Local Notifications permission
+      await LocalNotifications.requestPermissions();
     } catch (e) {
       console.error('Error in Push init:', e);
     }
@@ -73,14 +75,60 @@ export const PushNotificationService = {
     });
 
     // Show us the notification payload if the app is open on our device
-    PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      console.log('Push received: ' + JSON.stringify(notification));
+    PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+      console.log('Push received in foreground: ' + JSON.stringify(notification));
+      
+      // If the app is in the foreground, manually trigger a local notification 
+      // so the user sees it "outside" the app (system-level)
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title: notification.title || 'নতুন নোটিফিকেশন',
+            body: notification.body || '',
+            id: new Date().getTime(),
+            schedule: { at: new Date(Date.now() + 100) },
+            sound: 'default',
+            attachments: [],
+            extra: notification.data
+          }
+        ]
+      });
     });
 
     // Method called when tapping on a notification
     PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
       console.log('Push action performed: ' + JSON.stringify(notification));
     });
+  },
+
+  async sendTestNotification() {
+    if (Capacitor.getPlatform() === 'web') {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('টেস্ট নোটিফিকেশন', {
+          body: 'এটি একটি টেস্ট নোটিফিকেশন। আপনার সিস্টেম ঠিকভাবে কাজ করছে।',
+          icon: '/hero.png'
+        });
+      } else {
+        alert('Web notifications not granted or supported.');
+      }
+      return;
+    }
+
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title: 'সিস্টেম টেস্ট',
+            body: 'আপনার নোটিফিকেশন সিস্টেম এখন সক্রিয় এবং সঠিকভাবে কাজ করছে।',
+            id: 1,
+            schedule: { at: new Date(Date.now() + 500) },
+            sound: 'default'
+          }
+        ]
+      });
+    } catch (e) {
+      console.error('Test notification failed:', e);
+    }
   },
 
   async removeToken() {

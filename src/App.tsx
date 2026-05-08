@@ -276,10 +276,20 @@ function AppContent() {
               await PushNotificationService.init();
               setShowPermissionGate(false);
             }}
-            className="w-full bg-[var(--primary)] text-white font-black py-4 rounded-xl shadow-lg shadow-[var(--primary)]/20 active:scale-95"
+            className="w-full bg-[var(--primary)] text-white font-black py-4 rounded-xl shadow-lg shadow-[var(--primary)]/20 active:scale-95 mb-4"
           >
             এগিয়ে যান
           </button>
+          
+          <button
+            onClick={async () => {
+              await PushNotificationService.sendTestNotification();
+            }}
+            className="w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl active:scale-95 mb-4"
+          >
+            চেক করুন (টেস্ট নোটিফিকেশন)
+          </button>
+
           <button 
             onClick={() => setShowPermissionGate(false)}
             className="mt-4 text-xs text-gray-400 font-bold"
