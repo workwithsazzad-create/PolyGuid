@@ -6,7 +6,7 @@ import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import { useSearchParams } from 'react-router-dom';
 
 export default function Messages() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialUserId = searchParams.get('userId');
   
   const [user, setUser] = useState<any>(null);
@@ -380,6 +380,15 @@ export default function Messages() {
     }
   };
 
+  const selectUser = (conv: any) => {
+    setSelectedUser(conv);
+    if (conv) {
+      setSearchParams({ userId: conv.id });
+    } else {
+      setSearchParams({});
+    }
+  };
+
   const deleteConversation = async (otherUserId: string) => {
     if (!user) return;
     try {
@@ -391,7 +400,7 @@ export default function Messages() {
       if (error) throw error;
       fetchConversations(user.id);
       if (selectedUser?.id === otherUserId) {
-        setSelectedUser(null);
+        selectUser(null);
         setMessages([]);
       }
     } catch (err) {
@@ -452,7 +461,7 @@ export default function Messages() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col h-[calc(100dvh-120px)] md:h-[calc(100vh-140px)] md:max-w-6xl md:mx-auto overflow-hidden bg-white dark:bg-[#1a1a1a] md:bg-transparent md:mt-2"
+      className={`flex flex-col md:h-[calc(100vh-140px)] md:max-w-6xl md:mx-auto overflow-hidden bg-white dark:bg-[#1a1a1a] md:bg-transparent md:mt-2 ${selectedUser ? 'h-[calc(100dvh-56px)]' : 'h-[calc(100dvh-120px)]'}`}
     >
       <div className="flex bg-white dark:bg-[#1a1a1a] md:rounded-2xl md:shadow-2xl md:border border-black/10 dark:border-white/10 flex-1 relative overflow-hidden h-full">
         
@@ -471,7 +480,7 @@ export default function Messages() {
                   className={`flex flex-col border-b border-black/5 dark:border-white/5 ${selectedUser?.id === conv.id ? 'bg-[var(--primary)]/10 border-l-4 border-l-[var(--primary)]' : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-4 border-l-transparent'}`}
                 >
                   <div 
-                    onClick={() => setSelectedUser(conv)}
+                    onClick={() => selectUser(conv)}
                     className="flex items-center gap-3 p-4 cursor-pointer"
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 shrink-0">
@@ -507,7 +516,7 @@ export default function Messages() {
                 <div className="flex items-center gap-3">
                   <button 
                     className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[var(--primary)]"
-                    onClick={() => setSelectedUser(null)}
+                    onClick={() => selectUser(null)}
                   >
                     <ChevronLeft size={24} />
                   </button>

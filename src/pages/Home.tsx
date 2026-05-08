@@ -461,44 +461,52 @@ export default function Home() {
         </div>
 
         {/* Feature Grid - Even more space and smaller refined buttons */}
-        <div className="grid grid-cols-4 gap-2 mt-8">
+        <div className="grid grid-cols-4 gap-2 mt-8 px-2">
           {[
             {
               name: "Book Buy/Sell",
               icon: BookOpen,
-              color: "text-blue-500 bg-blue-100 dark:bg-blue-500/20",
+              color: "text-blue-600",
+              bgColor: "bg-blue-50 dark:bg-blue-900/20",
+              shadowColor: "shadow-blue-500/20",
               route: "/marketplace",
             },
             {
               name: "Check Result",
               icon: FileCheck,
-              color: "text-purple-500 bg-purple-100 dark:bg-purple-500/20",
+              color: "text-purple-600",
+              bgColor: "bg-purple-50 dark:bg-purple-900/20",
+              shadowColor: "shadow-purple-500/20",
               route: "/results",
             },
             {
               name: "Book PDF",
               icon: FileText,
-              color: "text-red-500 bg-red-100 dark:bg-red-100/20",
+              color: "text-red-500",
+              bgColor: "bg-red-50 dark:bg-red-900/20",
+              shadowColor: "shadow-red-500/20",
               route: "/saved-items",
             },
             {
               name: "Book List",
               icon: List,
-              color: "text-orange-500 bg-orange-100 dark:bg-orange-500/20",
+              color: "text-orange-500",
+              bgColor: "bg-orange-50 dark:bg-orange-900/20",
+              shadowColor: "shadow-orange-500/20",
               route: "/book-list",
             },
           ].map((item, idx) => (
             <div
               key={idx}
               onClick={() => navigate(item.route)}
-              className="flex flex-col items-center gap-3 text-center cursor-pointer active:scale-90 transition-transform"
+              className="flex flex-col items-center gap-2.5 text-center cursor-pointer group"
             >
               <div
-                className={`w-10 h-10 rounded-full flex justify-center items-center ${item.color} shadow-sm border border-black/5 dark:border-white/5`}
+                className={`w-[54px] h-[54px] xs:w-[62px] xs:h-[62px] rounded-full flex justify-center items-center ${item.bgColor} shadow-xl ${item.shadowColor} active:scale-95 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl border border-white/40 dark:border-white/5 shadow-black/5`}
               >
-                <item.icon size={18} className="fill-current opacity-90" />
+                <item.icon size={22} className={`${item.color} group-hover:scale-110 transition-transform`} />
               </div>
-              <span className="text-[8px] xs:text-[9px] font-bold text-gray-700 dark:text-gray-300 leading-tight">
+              <span className="text-[10px] xs:text-[11px] font-bold text-gray-700 dark:text-gray-300 leading-tight tracking-tight">
                 {item.name}
               </span>
             </div>

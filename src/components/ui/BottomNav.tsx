@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
 import { Home, BookOpen, MessageSquare, Bell, LayoutGrid } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
@@ -7,6 +7,11 @@ import { cn } from '@/src/lib/utils';
 export default function BottomNav() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // Hide bottom nav if we are in a message conversation on mobile
+  const isMessageConversation = location.pathname === '/messages' && searchParams.has('userId');
 
   useEffect(() => {
     let channel: any;
@@ -72,6 +77,8 @@ export default function BottomNav() {
     { name: 'Notification', icon: Bell, path: '/notifications', badge: unreadNotificationCount },
     { name: 'More', icon: LayoutGrid, path: '/more' },
   ];
+
+  if (isMessageConversation) return null;
 
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-50 flex items-center justify-around px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
