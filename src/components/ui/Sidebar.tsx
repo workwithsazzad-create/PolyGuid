@@ -20,6 +20,7 @@ import Logo from './Logo';
 import { useTheme } from '../ThemeProvider';
 import { useState, useEffect } from 'react';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { Badge } from '@capawesome/capacitor-badge';
 
 interface SidebarProps {
   isAdmin?: boolean;
@@ -111,8 +112,10 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
 
       // Listen for manual triggers from other components
       const handleBadgeRefresh = () => {
-        fetchCount(userId);
-        fetchNotificationCount(userId);
+        if (isMounted) {
+          fetchCount(userId);
+          fetchNotificationCount(userId);
+        }
       };
       window.addEventListener('unread-count-changed', handleBadgeRefresh);
       window.addEventListener('notifications-changed', handleBadgeRefresh);
@@ -125,8 +128,23 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
             schema: 'public', 
             table: 'messages',
             filter: `receiver_id=eq.${userId}` 
-        }, () => {
+        }, async (payload) => {
             fetchCount(userId);
+            // Local notification for new message
+            try {
+              const newMessage = payload.new as any;
+              await LocalNotifications.schedule({
+                notifications: [
+                  {
+                    title: 'New Message',
+                    body: newMessage.message || newMessage.content || 'You have a new message',
+                    id: Math.floor(Math.random() * 100000),
+                    smallIcon: 'ic_stat_name', // Common icon name for Android
+                    schedule: { at: new Date(Date.now() + 100) },
+                  }
+                ]
+              });
+            } catch (err) {}
         })
         .on('postgres_changes', { 
             event: 'UPDATE', 
@@ -152,6 +170,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
                       title: newNotification.title || 'New Notification',
                       body: newNotification.message || '',
                       id: Math.floor(Math.random() * 100000),
+                      smallIcon: 'ic_stat_name',
                       schedule: { at: new Date(Date.now() + 100) },
                     }
                   ]
@@ -180,10 +199,13 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
 
     setupRealtime();
     
-    // Request permissions on init
+    // Request permissions on init with extra check
     const requestPermissions = async () => {
       try {
-        await LocalNotifications.requestPermissions();
+        const status = await LocalNotifications.checkPermissions();
+        if (status.display !== 'granted') {
+          await LocalNotifications.requestPermissions();
+        }
       } catch (e) {}
     };
     requestPermissions();
@@ -193,6 +215,17 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       if (unreadChannel) supabase.removeChannel(unreadChannel);
     };
   }, []);
+
+  // Separate useEffect for Badge update
+  useEffect(() => {
+    const updateAppBadge = async () => {
+      try {
+        const total = unreadCount + unreadNotificationCount;
+        await Badge.set({ count: total });
+      } catch (e) {}
+    };
+    updateAppBadge();
+  }, [unreadCount, unreadNotificationCount]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

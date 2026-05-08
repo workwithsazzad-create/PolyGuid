@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { PushNotificationService } from '@/src/services/pushNotificationService';
 import { 
   Phone, Lock, Loader2, Eye, EyeOff, User, 
   MapPin, School, ArrowRight, Bell, CheckCircle2 
@@ -11,8 +14,18 @@ import { useTheme } from '@/src/components/ThemeProvider';
 
 type Step = 'WELCOME' | 'IDENTIFY' | 'LOGIN_PASS' | 'ONBOARDING' | 'SIGNUP_PASS' | 'PERMISSIONS';
 
-export default function Login() {
+export default function Login({ session }: { session?: any }) {
   const [step, setStep] = useState<Step>('WELCOME');
+  const navigate = useNavigate();
+
+  // Handle auto-redirect if session exists, EXCEPT when on permissions step
+  useEffect(() => {
+    // If we have a session AND the current step isn't PERMISSIONS
+    // then redirect. If we JUST signed up, handleSignup already set step to PERMISSIONS.
+    if (session && step !== 'PERMISSIONS') {
+      navigate('/home', { replace: true });
+    }
+  }, [session, step, navigate]);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -131,14 +144,18 @@ export default function Login() {
 
   const requestNotificationPermission = async () => {
     try {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        window.location.reload();
-      } else {
-        window.location.reload();
-      }
+      // Initialize Push Notifications (includes permission request and registration)
+      await PushNotificationService.init();
+      
+      // Also request Local Notifications permission for overlays
+      try {
+        await LocalNotifications.requestPermissions();
+      } catch (e) {}
+
+      // Final redirect
+      navigate('/home', { replace: true });
     } catch (err) {
-      window.location.reload();
+      navigate('/home', { replace: true });
     }
   };
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "918233942930",
+    "project_id": "polyguidapp",
+    "storage_bucket": "polyguidapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:918233942930:android:7d17c4014f4d584edecf4b",
+        "android_client_info": {
+          "package_name": "com.ec.aoo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCP2xJO04b45dvbTWqyvQPZfqCCFr9pfTM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

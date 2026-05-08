@@ -3,6 +3,8 @@ import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
 import { Home, BookOpen, MessageSquare, Bell, LayoutGrid } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
+import { Badge } from '@capawesome/capacitor-badge';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 export default function BottomNav() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -114,6 +116,30 @@ export default function BottomNav() {
       isMounted = false;
       if (unreadChannel) supabase.removeChannel(unreadChannel);
     };
+  }, []);
+
+  // Update App Icon Badge
+  useEffect(() => {
+    const updateAppBadge = async () => {
+      try {
+        const total = unreadCount + unreadNotificationCount;
+        await Badge.set({ count: total });
+      } catch (e) {}
+    };
+    updateAppBadge();
+  }, [unreadCount, unreadNotificationCount]);
+
+  // Request permissions fallback
+  useEffect(() => {
+    const requestPermissions = async () => {
+      try {
+        const status = await LocalNotifications.checkPermissions();
+        if (status.display !== 'granted') {
+          await LocalNotifications.requestPermissions();
+        }
+      } catch (e) {}
+    };
+    requestPermissions();
   }, []);
 
   const navItems = [

@@ -38,6 +38,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 
 import { prefetchHomeData } from './services/dataService';
 import { App as CapacitorApp } from '@capacitor/app';
+import { PushNotificationService } from './services/pushNotificationService';
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -160,6 +161,7 @@ function AppContent() {
       if (session) {
         setSession(session);
         prefetchHomeData();
+        PushNotificationService.init();
         checkAdminStatus(session.user.id, session.user.email).finally(() => {
           clearTimeout(authTimeout);
           if (isMounted) {
@@ -184,6 +186,7 @@ function AppContent() {
       
       setSession(session);
       if (session) {
+        PushNotificationService.init();
         checkAdminStatus(session.user.id, session.user.email).finally(() => {
           if (isMounted) {
             setTimeout(() => {
@@ -242,7 +245,7 @@ function AppContent() {
       <Routes>
         <Route 
           path="/login" 
-          element={!session ? <Login /> : <Navigate to="/home" replace />} 
+          element={<Login session={session} />} 
         />
         
         <Route element={session ? <AppLayout isAdmin={isAdmin} /> : <Navigate to="/login" replace />}>
