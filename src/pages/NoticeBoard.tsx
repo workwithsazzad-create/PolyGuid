@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Bell, 
@@ -65,15 +65,15 @@ export default function NoticeBoard() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+        <div className="space-y-1 sm:space-y-2">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#32CD32]/20 rounded-2xl flex items-center justify-center">
-              <Bell className="text-[#32CD32]" size={24} />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#32CD32]/20 rounded-2xl flex items-center justify-center hidden sm:flex">
+              <Bell className="text-[#32CD32]" size={20} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-[var(--text)]">Notice Board</h1>
-              <p className="text-sm text-gray-500 font-medium">BTEB Official Notice Updates</p>
+              <h1 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--text)]">Notice Board</h1>
+              <p className="text-[10px] sm:text-sm text-gray-500 font-medium">BTEB Official Notice Updates</p>
             </div>
           </div>
         </div>

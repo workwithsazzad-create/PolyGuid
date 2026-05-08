@@ -78,19 +78,19 @@ export default function SemesterCourses() {
   };
 
   return (
-    <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
-      <div className="flex items-center gap-4 border-b border-white/10 pb-6">
+    <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-8 animate-fade-in focus-within:outline-none">
+      <div className="flex items-center gap-3 sm:gap-4 border-b border-black/5 dark:border-white/10 pb-4 sm:pb-6">
         <button 
           onClick={() => navigate(-1)}
-          className="p-2 hover:bg-white/5 rounded-full transition-colors"
+          className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors hidden lg:flex"
         >
-          <ArrowLeft className="text-[var(--text)]" />
+          <ArrowLeft size={24} className="text-[var(--text)]" />
         </button>
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-xl sm:text-3xl font-black text-[var(--text)]">
             {semesterName}
           </h1>
-          <p className="text-gray-400 mt-1 text-sm">উপলব্ধ কোর্স সমূহ</p>
+          <p className="text-gray-400 mt-0.5 text-[10px] sm:text-sm">উপলব্ধ কোর্স সমূহ</p>
         </div>
       </div>
 

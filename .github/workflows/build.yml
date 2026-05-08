@@ -49,12 +49,12 @@ jobs:
 
       - name: Setup App Icon (If available)
         run: |
-          if [ -f "public/Untitled design.png" ]; then
+          if [ -f "public/hero.png" ]; then
             npm install -g @capacitor/assets
             # Rename for capacitor-assets
             mkdir -p assets
-            cp "public/Untitled design.png" assets/icon.png
-            cp "public/Untitled design.png" assets/splash.png || true
+            cp "public/hero.png" assets/icon.png
+            cp "public/hero.png" assets/splash.png || true
             npx capacitor-assets generate --android || true
           fi
 

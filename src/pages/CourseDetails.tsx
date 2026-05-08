@@ -141,7 +141,7 @@ export default function CourseDetails() {
     >
       <button 
         onClick={() => navigate('/home')}
-        className="flex items-center gap-2 text-gray-500 hover:text-[var(--primary)] transition-colors w-fit"
+        className="flex items-center gap-2 text-gray-500 hover:text-[var(--primary)] transition-colors w-fit hidden lg:flex"
       >
         <ChevronLeft size={20} /> Back to Home
       </button>
@@ -160,11 +160,11 @@ export default function CourseDetails() {
           />
         </div>
         
-        <div className="flex flex-col gap-4 flex-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-[var(--text)]">{course.title}</h1>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <span className="flex items-center gap-1"><PlayCircle size={16}/> {course.classes} Classes</span>
-            <span className="flex items-center gap-1"><Users size={16}/> {course.totalUsers} Students</span>
+        <div className="flex flex-col gap-2 sm:gap-4 flex-1">
+          <h1 className="text-xl md:text-3xl font-black text-[var(--text)] leading-tight">{course.title}</h1>
+          <div className="flex items-center gap-4 text-[10px] sm:text-sm text-gray-500 font-bold uppercase tracking-wider">
+            <span className="flex items-center gap-1"><PlayCircle size={14}/> {course.classes} Classes</span>
+            <span className="flex items-center gap-1"><Users size={14}/> {course.totalUsers} Students</span>
           </div>
           
           {course.description && (

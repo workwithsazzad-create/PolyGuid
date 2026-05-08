@@ -14,6 +14,7 @@ import SemesterCourses from './pages/SemesterCourses';
 import CoursesPage from './pages/CoursesPage';
 import SavedItems from './pages/SavedItems';
 import ResultViewer from './pages/ResultViewer';
+import OrderHistory from './pages/OrderHistory';
 import About from './pages/info/About';
 import Privacy from './pages/info/Privacy';
 import Terms from './pages/info/Terms';
@@ -30,10 +31,13 @@ import { Menu, X } from 'lucide-react';
 import Messages from './pages/Messages';
 import NoticeBoard from './pages/NoticeBoard';
 import Notifications from './pages/Notifications';
+import More from './pages/More';
+import BottomNav from './components/ui/BottomNav';
 
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { prefetchHomeData } from './services/dataService';
+import { App as CapacitorApp } from '@capacitor/app';
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -48,33 +52,26 @@ function ScrollToTop() {
 function AppLayout({ isAdmin }: { isAdmin: boolean }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { theme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen">
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 glass z-40 flex items-center px-4 border-b border-[var(--glass-border)]">
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="p-2 rounded-lg text-[var(--text)] hover:bg-black/5 dark:hover:bg-white/10 shrink-0"
-        >
-          <Menu size={24} />
+    <div className="flex min-h-screen pb-16 lg:pb-0">
+      <div className={cn("lg:hidden fixed top-0 left-0 right-0 h-14 z-40 bg-white/90 dark:bg-[#121212]/90 backdrop-blur-md flex flex-row items-center px-2 border-b border-black/5 dark:border-white/5", location.pathname === '/home' ? 'hidden' : '')}>
+        <button onClick={() => navigate(-1)} className="p-2 mr-1 text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors active:scale-95">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <div className={cn(
-          "ml-1 flex flex-1 items-center h-full justify-start overflow-hidden transition-opacity duration-300",
-          isSidebarOpen ? "opacity-0 invisible" : "opacity-100 visible"
-        )}>
-          <Link to="/home">
-            <span className="text-xl font-bold tracking-tight font-sans">
-              <span className="text-[#32CD32]">P</span>
-              <span className="text-[var(--text)]">oly</span>
-              <span className="text-[#32CD32]">G</span>
-              <span className="text-[var(--text)]">uid</span>
-            </span>
-          </Link>
+        <div className="flex items-center gap-1 group">
+          <span className="text-xl font-bold tracking-tight font-sans">
+            <span className="text-[#32CD32]">P</span>
+            <span className="text-gray-900 dark:text-white">oly</span>
+            <span className="text-[#32CD32]">G</span>
+            <span className="text-gray-900 dark:text-white">uid</span>
+          </span>
         </div>
       </div>
 
-      {/* Overlay for mobile */}
+      {/* Overlay for mobile sidebar (if still used somewhere) */}
       {isSidebarOpen && (
         <div 
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
@@ -82,15 +79,22 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
         />
       )}
 
-      <Sidebar 
-        isAdmin={isAdmin} 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)} 
-      />
+      {/* Sidebar is hidden on mobile entirely by the utility classes if we wanted, 
+          but currently it has translate classes. We will modify Sidebar to be hidden on mobile later 
+          or just let it remain and never open it. */}
+      <div className="hidden lg:block">
+        <Sidebar 
+          isAdmin={isAdmin} 
+          isOpen={true} 
+          onClose={() => setIsSidebarOpen(false)} 
+        />
+      </div>
       
-      <main className="flex-1 lg:ml-64 p-4 pt-20 lg:p-8 lg:pt-8 w-full overflow-x-hidden">
+      <main className={cn("flex-1 lg:ml-64 p-0 lg:p-8 lg:pt-8 w-full overflow-x-hidden relative", location.pathname !== '/home' ? "pt-14" : "")}>
         <Outlet />
       </main>
+
+      <BottomNav />
     </div>
   );
 }
@@ -98,9 +102,13 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
 // Simple layout for info pages without sidebar
 function InfoLayout() {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <header className="w-full h-16 border-b border-black/5 dark:border-white/5 flex items-center px-4 sm:px-8 bg-white dark:bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[var(--background)]">
+      <header className="w-full h-14 lg:h-16 border-b border-black/5 dark:border-white/5 flex items-center px-4 sm:px-8 bg-white dark:bg-[#0a0a0a]">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 mr-2 text-gray-700 dark:text-gray-300">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
         <Link to="/home" className="flex items-center gap-2 group">
           <span className="text-xl sm:text-2xl font-bold tracking-tight font-sans">
             <span className="text-[#32CD32]">P</span>
@@ -124,8 +132,25 @@ function AppContent() {
 
   useEffect(() => {
     let isMounted = true;
+    
+    // Capacitor Hardware Back Button Support
+    try {
+      CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        if(!canGoBack){
+          CapacitorApp.exitApp();
+        } else {
+          window.history.back();
+        }
+      });
+    } catch(e) {
+      console.log('Capacitor App plugin not available/initialized');
+    }
 
     // Check current session
+    const authTimeout = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 5000); // 5s absolute fallback
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return;
       
@@ -133,17 +158,21 @@ function AppContent() {
         setSession(session);
         prefetchHomeData();
         checkAdminStatus(session.user.id, session.user.email).finally(() => {
+          clearTimeout(authTimeout);
           if (isMounted) {
             setTimeout(() => {
               if (isMounted) setLoading(false);
-            }, 3500);
+            }, 500);
           }
         });
       } else {
+        clearTimeout(authTimeout);
         setTimeout(() => {
           if (isMounted) setLoading(false);
-        }, 3500);
+        }, 500);
       }
+    }).catch(() => {
+      if (isMounted) setLoading(false);
     });
 
     // Listen for auth changes
@@ -156,14 +185,14 @@ function AppContent() {
           if (isMounted) {
             setTimeout(() => {
               if (isMounted) setLoading(false);
-            }, 3500);
+            }, 500);
           }
         });
       } else {
         setIsAdmin(false);
         setTimeout(() => {
           if (isMounted) setLoading(false);
-        }, 3500);
+        }, 500);
       }
     });
 
@@ -198,7 +227,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
         <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -223,6 +252,7 @@ function AppContent() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/saved-items" element={<SavedItems />} />
           <Route path="/results" element={<ResultViewer />} />
+          <Route path="/orders" element={<OrderHistory />} />
           <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />} />
           <Route path="/admin/course/:id/users" element={isAdmin ? <AdminCourseUsers /> : <Navigate to="/dashboard" replace />} />
           <Route path="/profile" element={<Profile />} />
@@ -233,7 +263,7 @@ function AppContent() {
           <Route path="/book-list" element={<CoursesPage />} />
           <Route path="/notices" element={<NoticeBoard />} />
           <Route path="/notifications" element={<Notifications />} />
-          
+          <Route path="/more" element={<More />} />
           <Route path="/messages" element={<Messages />} />
           
           <Route path="/" element={<Navigate to="/home" replace />} />

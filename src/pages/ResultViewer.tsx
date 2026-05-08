@@ -179,14 +179,14 @@ export default function ResultViewer() {
 
   return (
     <div className="max-w-4xl mx-auto pb-12 print:p-0 print:m-0">
-      <div className="flex items-center gap-4 mb-8 print:hidden">
+      <div className="flex items-center gap-4 mb-4 sm:mb-8 print:hidden">
         <button 
           onClick={() => navigate('/home')}
-          className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 text-gray-500 hover:text-[var(--text)] transition-colors"
+          className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 text-gray-500 hover:text-[var(--text)] transition-colors hidden lg:flex"
         >
           <ChevronLeft size={24} />
         </button>
-        <h1 className="text-2xl font-bold text-[var(--text)]">Check Result</h1>
+        <h1 className="text-xl sm:text-2xl font-black text-[var(--text)]">Check Result</h1>
       </div>
 
       <section className="mb-8 print:hidden">

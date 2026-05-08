@@ -11,6 +11,7 @@ import {
   Sun,
   Moon,
   Home,
+  History,
   X
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
@@ -38,6 +39,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
     { name: 'Message', icon: MessageSquare, path: '/messages' },
     { name: 'Notice Board', icon: BookOpen, path: '/notices' },
     { name: 'Notifications', icon: Bell, path: '/notifications' },
+    { name: 'Order History', icon: History, path: '/orders' },
     { name: 'Profile', icon: User, path: '/profile' },
   ];
 

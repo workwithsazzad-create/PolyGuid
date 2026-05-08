@@ -93,17 +93,17 @@ export default function CoursesPage() {
   return (
     <div className="flex flex-col gap-8 max-w-7xl mx-auto w-full px-4 py-8">
       {/* Header & Search */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group"
+            className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group hidden lg:flex"
           >
             <ArrowLeft className="text-[var(--text)] group-hover:text-[var(--primary)]" size={24} />
           </button>
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--text)] tracking-tight">কোর্স লাইব্রেরি</h1>
-            <p className="text-gray-500 mt-1">আপনার প্রয়োজনীয় কোর্সটি খুঁজে নিন</p>
+          <div className="pl-0 sm:pl-0 lg:pl-0">
+            <h1 className="text-xl sm:text-3xl font-black text-[var(--text)] tracking-tight">কোর্স লাইব্রেরি</h1>
+            <p className="text-[10px] sm:text-sm text-gray-500 mt-0.5">আপনার প্রয়োজনীয় কোর্সটি খুঁজে নিন</p>
           </div>
         </div>
         

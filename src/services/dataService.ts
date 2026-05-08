@@ -7,6 +7,7 @@ export interface HomeCache {
   enrollments: any[];
   donationNumber: string;
   approvedDonations: any[];
+  profile?: any;
 }
 
 export let homeCache: HomeCache | null = null;

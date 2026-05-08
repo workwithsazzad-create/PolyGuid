@@ -202,11 +202,11 @@ export default function VideoPlayer() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col gap-6 max-w-5xl mx-auto pb-12"
+      className="flex flex-col gap-4 sm:gap-6 max-w-5xl mx-auto pb-12 px-2 sm:px-0"
     >
       <button 
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-gray-500 hover:text-[var(--primary)] transition-colors w-fit"
+        className="flex items-center gap-2 text-gray-500 hover:text-[var(--primary)] transition-colors w-fit hidden lg:flex"
       >
         <ChevronLeft size={20} /> Back to Course
       </button>
@@ -223,13 +223,13 @@ export default function VideoPlayer() {
           />
         </div>
         
-        <div className="flex flex-col gap-2 px-2">
+        <div className="flex flex-col gap-1 sm:gap-2 px-2">
           <div className="flex items-center justify-between gap-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text)] line-clamp-2 md:line-clamp-none">{content.title}</h1>
+            <h1 className="text-lg sm:text-2xl font-black text-[var(--text)] line-clamp-2 md:line-clamp-none">{content.title}</h1>
             <button 
               onClick={toggleSave}
               disabled={isSaving}
-              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl transition-all font-bold text-[10px] sm:text-sm shrink-0 shadow-sm ${isSaved ? 'bg-[var(--primary)] text-white' : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:text-[var(--primary)]'}`}
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl transition-all font-bold text-[9px] sm:text-sm shrink-0 shadow-sm ${isSaved ? 'bg-[var(--primary)] text-white' : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:text-[var(--primary)]'}`}
             >
               {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" /> : <Star className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" />}
               <span>{isSaved ? 'Saved' : 'Save for later'}</span>

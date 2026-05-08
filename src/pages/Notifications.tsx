@@ -39,8 +39,9 @@ export default function Notifications() {
   useEffect(() => {
     fetchNotifications();
 
+    const channelId = `notifications_channel_${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel('public:notifications')
+      .channel(channelId)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
         setNotifications(prev => [payload.new as Notification, ...prev]);
       })
@@ -85,11 +86,11 @@ export default function Notifications() {
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text)] flex items-center gap-3">
-            <Bell className="text-[#32CD32]" />
+          <h1 className="text-xl sm:text-3xl font-black text-[var(--text)] flex items-center gap-2 sm:gap-3">
+            <Bell className="text-[#32CD32] hidden sm:block" />
             Notifications
           </h1>
-          <p className="text-gray-500 mt-1">আপনার সকল নোটিফিকেশন এখানে দেখতে পাবেন</p>
+          <p className="text-[10px] sm:text-sm text-gray-500 mt-0.5">আপনার সকল নোটিফিকেশন এখানে দেখতে পাবেন</p>
         </div>
         {notifications.some(n => !n.read) && (
           <button

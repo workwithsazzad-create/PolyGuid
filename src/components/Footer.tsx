@@ -8,7 +8,7 @@ const Footer = () => {
   const logoUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7hXz1Z0A1iE_7mZ0z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z/s1600/PolyGuid%20Logo.png";
 
   return (
-    <footer className="w-full bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 pt-12 pb-8 px-4 sm:px-6 lg:px-8">
+    <footer className="hidden lg:block w-full bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 pt-12 pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-8 lg:gap-12">
         {/* Brand Section */}
         <div className="flex flex-col gap-5">

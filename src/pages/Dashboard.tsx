@@ -223,7 +223,7 @@ export default function Dashboard() {
               </div>
               <button 
                 onClick={() => navigate('/home')}
-                className="mt-2 bg-[var(--primary)] text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20 active:scale-95 transition-all text-sm"
+                className="mt-2 bg-[var(--primary)] text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20 active:scale-95 transition-all text-sm hidden sm:block"
               >
                 Explore Courses
               </button>

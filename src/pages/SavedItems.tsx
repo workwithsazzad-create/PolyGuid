@@ -105,14 +105,14 @@ export default function SavedItems() {
       className="flex flex-col gap-6 lg:gap-8 pb-12 w-full max-w-4xl mx-auto"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="p-1.5 sm:p-2 rounded-xl bg-black/5 dark:bg-white/5 text-gray-500 hover:text-[var(--text)] transition-colors shrink-0"
+            className="p-1.5 sm:p-2 rounded-xl bg-black/5 dark:bg-white/5 text-gray-500 hover:text-[var(--text)] transition-colors shrink-0 hidden lg:flex"
           >
             <ChevronLeft size={20} />
           </button>
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-[var(--text)] leading-tight whitespace-nowrap">আপনার সংরক্ষিত কন্টেন্ট</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-[var(--text)] leading-tight">সংরক্ষিত কন্টেন্ট</h1>
         </div>
 
         {/* Custom Tabs */}

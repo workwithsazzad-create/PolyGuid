@@ -272,8 +272,9 @@ export default function Messages() {
         checkBlockStatus(selectedUser.id);
 
         // Real-time subscription to block status changes
+        const blockChannelId = `blocks_status_${user.id}_${selectedUser.id}_${Math.random().toString(36).substring(7)}`;
         blockChannel = supabase
-          .channel(`blocks_status_${user.id}_${selectedUser.id}`)
+          .channel(blockChannelId)
           .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 

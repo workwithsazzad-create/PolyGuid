@@ -101,16 +101,16 @@ export default function PdfViewer() {
         <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 pr-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-1.5 md:p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors shrink-0 text-gray-300 hover:text-white"
+            className="p-1.5 md:p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors shrink-0 text-gray-300 hover:text-white hidden lg:flex"
           >
             <ChevronLeft size={20} />
           </button>
           
           <div className="flex flex-col min-w-0">
-            <h1 className="text-sm md:text-lg font-bold text-white truncate max-w-[200px] sm:max-w-xs md:max-w-md lg:max-w-xl">
+            <h1 className="text-xs md:text-lg font-black text-white truncate max-w-[150px] sm:max-w-xs md:max-w-md lg:max-w-xl">
               {content.title}
             </h1>
-            <p className="text-[10px] md:text-xs text-gray-400 font-medium">
+            <p className="text-[8px] md:text-xs text-gray-400 font-bold uppercase tracking-tight">
               PolyGuid PDF Viewer
             </p>
           </div>
