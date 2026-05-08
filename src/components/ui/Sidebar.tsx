@@ -72,7 +72,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       try {
         const { count, error } = await supabase
           .from('messages')
-          .select('id', { count: 'exact', head: true })
+          .select('*', { count: 'exact', head: true })
           .eq('receiver_id', userId)
           .eq('read', false);
           
@@ -88,7 +88,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       try {
         const { count, error } = await supabase
           .from('notifications')
-          .select('id', { count: 'exact', head: true })
+          .select('*', { count: 'exact', head: true })
           .eq('user_id', userId)
           .eq('read', false);
           
@@ -121,7 +121,15 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       unreadChannel = supabase
         .channel(`sidebar_unread_badges_${userId}_${Math.random().toString(36).substring(7)}`)
         .on('postgres_changes', { 
-            event: '*', 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `receiver_id=eq.${userId}` 
+        }, () => {
+            fetchCount(userId);
+        })
+        .on('postgres_changes', { 
+            event: 'UPDATE', 
             schema: 'public', 
             table: 'messages',
             filter: `receiver_id=eq.${userId}` 
@@ -155,13 +163,13 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
         })
         .subscribe();
         
-      // Fallback polling every 30 seconds for badges
+      // Fallback polling every 10 seconds for badges
       const interval = setInterval(() => {
         if (isMounted) {
           fetchCount(userId);
           fetchNotificationCount(userId);
         }
-      }, 30000);
+      }, 10000);
       
       return () => {
         clearInterval(interval);

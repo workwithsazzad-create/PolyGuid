@@ -36,6 +36,7 @@ export default function Messages() {
             filter: `receiver_id=eq.${session.user.id}`
           }, () => {
              fetchConversations(session.user.id);
+             window.dispatchEvent(new CustomEvent('unread-count-changed'));
           })
           .on('postgres_changes', { 
             event: 'INSERT', 
