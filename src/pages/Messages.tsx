@@ -219,14 +219,22 @@ export default function Messages() {
     setConversations(prev => prev.map(conv => 
       conv.id === senderId ? { ...conv, unread: false } : conv
     ));
+    
+    // Notify navigation components to refresh badges
+    window.dispatchEvent(new CustomEvent('unread-count-changed'));
 
     try {
-      await supabase
+      const { error } = await supabase
         .from('messages')
         .update({ read: true })
         .eq('receiver_id', user.id)
         .eq('sender_id', senderId)
         .eq('read', false);
+        
+      if (!error) {
+        // Dispatch again after successful DB update to be sure
+        window.dispatchEvent(new CustomEvent('unread-count-changed'));
+      }
     } catch {
       // safe ignore
     }
@@ -415,6 +423,9 @@ export default function Messages() {
 
     const msgContent = newMessage.trim();
     setNewMessage(''); 
+    
+    // Notify navigation components to refresh badges
+    window.dispatchEvent(new CustomEvent('unread-count-changed'));
 
     // Optimistic update
     const tempId = `msg-temp-${Date.now()}`;

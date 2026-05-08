@@ -14,59 +14,97 @@ export default function BottomNav() {
   const isMessageConversation = location.pathname === '/messages' && searchParams.has('userId');
 
   useEffect(() => {
-    let channel: any;
+    let unreadChannel: any;
+    let isMounted = true;
 
-    const checkUnread = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const fetchMessageCount = async () => {
-        const { count } = await supabase
+    const fetchMessageCount = async (userId: string) => {
+      if (!isMounted) return;
+      try {
+        const { count, error } = await supabase
           .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('receiver_id', session.user.id)
+          .select('id', { count: 'exact', head: true })
+          .eq('receiver_id', userId)
           .eq('read', false);
-        setUnreadCount(count || 0);
-      };
+        if (error) throw error;
+        if (isMounted) setUnreadCount(count || 0);
+      } catch (e) {
+        console.error("Error fetching message count:", e);
+      }
+    };
 
-      const fetchNotificationCount = async () => {
-        const { count } = await supabase
+    const fetchNotificationCount = async (userId: string) => {
+      if (!isMounted) return;
+      try {
+        const { count, error } = await supabase
           .from('notifications')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', session.user.id)
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
           .eq('read', false);
-        setUnreadNotificationCount(count || 0);
+        if (error) throw error;
+        if (isMounted) setUnreadNotificationCount(count || 0);
+      } catch (e) {
+        console.error("Error fetching notification count:", e);
+      }
+    };
+
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !isMounted) return;
+
+      const userId = session.user.id;
+      
+      fetchMessageCount(userId);
+      fetchNotificationCount(userId);
+
+      // Listen for manual triggers
+      const handleBadgeRefresh = () => {
+        fetchMessageCount(userId);
+        fetchNotificationCount(userId);
       };
+      window.addEventListener('unread-count-changed', handleBadgeRefresh);
+      window.addEventListener('notifications-changed', handleBadgeRefresh);
 
-      await fetchMessageCount();
-      await fetchNotificationCount();
-
-      const channelId = `bottom_nav_${session.user.id}_${Math.random().toString(36).substring(7)}`;
-      channel = supabase
+      const channelId = `bottom_nav_unread_badges_${userId}_${Math.random().toString(36).substring(7)}`;
+      unreadChannel = supabase
         .channel(channelId)
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
             table: 'messages',
-            filter: `receiver_id=eq.${session.user.id}` 
+            filter: `receiver_id=eq.${userId}` 
         }, () => {
-            fetchMessageCount();
+            fetchMessageCount(userId);
         })
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
             table: 'notifications',
-            filter: `user_id=eq.${session.user.id}` 
+            filter: `user_id=eq.${userId}` 
         }, () => {
-            fetchNotificationCount();
+            fetchNotificationCount(userId);
         })
         .subscribe();
+        
+      // Fallback polling
+      const interval = setInterval(() => {
+        if (isMounted) {
+          fetchMessageCount(userId);
+          fetchNotificationCount(userId);
+        }
+      }, 30000);
+      
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('unread-count-changed', handleBadgeRefresh);
+        window.removeEventListener('notifications-changed', handleBadgeRefresh);
+      };
     };
     
-    checkUnread();
+    setupRealtime();
     
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      isMounted = false;
+      if (unreadChannel) supabase.removeChannel(unreadChannel);
     };
   }, []);
 

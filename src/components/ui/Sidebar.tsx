@@ -64,55 +64,79 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
   }, []);
 
   useEffect(() => {
-    let channel: any;
+    let unreadChannel: any;
+    let isMounted = true;
 
-    const checkUnread = async () => {
+    const fetchCount = async (userId: string) => {
+      if (!isMounted) return;
+      try {
+        const { count, error } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('receiver_id', userId)
+          .eq('read', false);
+          
+        if (error) throw error;
+        if (isMounted) setUnreadCount(count || 0);
+      } catch (e) {
+        console.error("Error fetching message count:", e);
+      }
+    };
+
+    const fetchNotificationCount = async (userId: string) => {
+      if (!isMounted) return;
+      try {
+        const { count, error } = await supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('read', false);
+          
+        if (error) throw error;
+        if (isMounted) setUnreadNotificationCount(count || 0);
+      } catch (e) {
+        console.error("Error fetching notification count:", e);
+      }
+    };
+
+    const setupRealtime = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session || !isMounted) return;
       
-      const fetchCount = async () => {
-          const { count } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('receiver_id', session.user.id)
-            .eq('read', false);
-            
-          setUnreadCount(count || 0);
+      const userId = session.user.id;
+      
+      // Initial fetch
+      fetchCount(userId);
+      fetchNotificationCount(userId);
+
+      // Listen for manual triggers from other components
+      const handleBadgeRefresh = () => {
+        fetchCount(userId);
+        fetchNotificationCount(userId);
       };
+      window.addEventListener('unread-count-changed', handleBadgeRefresh);
+      window.addEventListener('notifications-changed', handleBadgeRefresh);
 
-      const fetchNotificationCount = async () => {
-          const { count } = await supabase
-            .from('notifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', session.user.id)
-            .eq('read', false);
-            
-          setUnreadNotificationCount(count || 0);
-      };
-
-      await fetchCount();
-      await fetchNotificationCount();
-
-      channel = supabase
-        .channel(`sidebar_messages_${session.user.id}_${Math.random().toString(36).substring(7)}`)
+      // Subscribe to changes
+      unreadChannel = supabase
+        .channel(`sidebar_unread_badges_${userId}_${Math.random().toString(36).substring(7)}`)
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
             table: 'messages',
-            filter: `receiver_id=eq.${session.user.id}` 
-        }, payload => {
-            fetchCount();
+            filter: `receiver_id=eq.${userId}` 
+        }, () => {
+            fetchCount(userId);
         })
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
             table: 'notifications',
-            filter: `user_id=eq.${session.user.id}` 
+            filter: `user_id=eq.${userId}` 
         }, async (payload) => {
-            fetchNotificationCount();
+            fetchNotificationCount(userId);
             if (payload.eventType === 'INSERT') {
               try {
-                // Trigger local notification for native devices
                 const newNotification = payload.new as any;
                 await LocalNotifications.schedule({
                   notifications: [
@@ -121,35 +145,44 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
                       body: newNotification.message || '',
                       id: Math.floor(Math.random() * 100000),
                       schedule: { at: new Date(Date.now() + 100) },
-                      sound: undefined,
-                      attachments: undefined,
-                      actionTypeId: "",
-                      extra: null
                     }
                   ]
                 });
               } catch (err) {
-                console.log("Local notification scheduling failed:", err);
+                // ignore errors
               }
             }
         })
         .subscribe();
+        
+      // Fallback polling every 30 seconds for badges
+      const interval = setInterval(() => {
+        if (isMounted) {
+          fetchCount(userId);
+          fetchNotificationCount(userId);
+        }
+      }, 30000);
+      
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('unread-count-changed', handleBadgeRefresh);
+        window.removeEventListener('notifications-changed', handleBadgeRefresh);
+      };
     };
 
+    setupRealtime();
+    
     // Request permissions on init
     const requestPermissions = async () => {
       try {
         await LocalNotifications.requestPermissions();
-      } catch (e) {
-        // Not on native device, ignore
-      }
+      } catch (e) {}
     };
     requestPermissions();
 
-    checkUnread();
-    
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      isMounted = false;
+      if (unreadChannel) supabase.removeChannel(unreadChannel);
     };
   }, []);
 

@@ -54,7 +54,9 @@ export default function Notifications() {
 
   const markAsRead = async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    window.dispatchEvent(new CustomEvent('notifications-changed'));
     await supabase.from('notifications').update({ read: true }).eq('id', id);
+    window.dispatchEvent(new CustomEvent('notifications-changed'));
   };
 
   const markAllAsRead = async () => {
@@ -62,7 +64,9 @@ export default function Notifications() {
     if (!session) return;
     
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    window.dispatchEvent(new CustomEvent('notifications-changed'));
     await supabase.from('notifications').update({ read: true }).eq('user_id', session.user.id).eq('read', false);
+    window.dispatchEvent(new CustomEvent('notifications-changed'));
   };
 
   const getIcon = (type: string) => {
