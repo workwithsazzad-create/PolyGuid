@@ -158,27 +158,29 @@ export default function Messages() {
     let channel: any;
     if (selectedUser && user) {
       fetchMessages(selectedUser.id);
-      
-      // Mark messages from this user to me as read
       markAsRead(selectedUser.id);
       
       channel = supabase
         .channel(`messages_${user.id}_${selectedUser.id}_${Math.random().toString(36).substring(7)}`)
+        .on('postgres_changes', { 
+            event: 'DELETE', 
+            schema: 'public', 
+            table: 'messages'
+        }, payload => {
+            setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+        })
         .on('postgres_changes', { 
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
             filter: `receiver_id=eq.${user.id}` 
         }, payload => {
-            // Update messages list if it's from the current open thread
             if (payload.new.sender_id === selectedUser.id) {
                 setMessages(prev => {
                    if (prev.some(m => m.id === payload.new.id)) return prev;
                    return [...prev, payload.new];
                 });
-                setTimeout(scrollToBottom, 50);
-                
-                // Automatically mark it as read since the chat is open
+                scrollToBottom('smooth');
                 markAsRead(selectedUser.id);
             }
         })
@@ -188,13 +190,19 @@ export default function Messages() {
             table: 'messages',
             filter: `sender_id=eq.${user.id}` 
         }, payload => {
-            // Update messages list for messages WE send
             if (payload.new.receiver_id === selectedUser.id) {
                 setMessages(prev => {
+                   // Safely replace the temporary message that matches this content
+                   const tempIndex = prev.findIndex(m => m.id.toString().includes('-temp-') && m.content === payload.new.content);
+                   if (tempIndex !== -1) {
+                     const next = [...prev];
+                     next[tempIndex] = payload.new;
+                     return next;
+                   }
                    if (prev.some(m => m.id === payload.new.id)) return prev;
                    return [...prev, payload.new];
                 });
-                setTimeout(scrollToBottom, 50);
+                scrollToBottom('smooth');
             }
         })
         .subscribe();
@@ -237,18 +245,52 @@ export default function Messages() {
       console.error('Error fetching messages:', error);
     } else {
       setMessages(data || []);
-      scrollToBottom();
+      // Land at the bottom instantly on load
+      scrollToBottom('auto');
+      
+      // Cleanup notifications whenever we enter a chat
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+         await supabase.from('notifications').delete().eq('user_id', session.user.id).eq('type', 'message');
+      }
     }
   };
+
+  useEffect(() => {
+    const cleanupNotifications = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      // Delete all message notifications for this user
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('type', 'message');
+    };
+    
+    cleanupNotifications();
+  }, []);
 
   const [blockedByMe, setBlockedByMe] = useState(false);
   const [blockedByOther, setBlockedByOther] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    // Small delay to ensure DOM is updated
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+        // Secondary fallback to scroll parent container effectively
+        const container = messagesEndRef.current.parentElement;
+        if (container) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior
+          });
+        }
+      }
     }, 100);
   };
   
@@ -325,6 +367,19 @@ export default function Messages() {
      checkBlockStatus(otherUserId);
   };
 
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+      if (error) throw error;
+      // Real-time listener will handle UI update
+    } catch (err) {
+      console.error('Error deleting message:', err);
+    }
+  };
+
   const deleteConversation = async (otherUserId: string) => {
     if (!user) return;
     try {
@@ -349,54 +404,42 @@ export default function Messages() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser || !user) return;
 
-    const msg = newMessage;
+    const msgContent = newMessage.trim();
     setNewMessage(''); 
 
     // Optimistic update
-    const tempId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString();
+    const tempId = `msg-temp-${Date.now()}`;
     const optimisticMsg = {
         id: tempId,
         sender_id: user.id,
         receiver_id: selectedUser.id,
-        content: msg,
+        content: msgContent,
         created_at: new Date().toISOString(),
         read: false
     };
+    
     // @ts-ignore
-    setMessages(prev => [...prev, optimisticMsg]);
-    setTimeout(scrollToBottom, 50);
+    setMessages(prev => {
+        // Prevent double optimistic update if something already triggered it
+        if (prev.some(m => m.content === msgContent && m.id.toString().includes('-temp-'))) return prev;
+        return [...prev, optimisticMsg];
+    });
+    scrollToBottom('smooth');
 
-    const { error, data } = await supabase
+    // Remove any notification code here to strictly follow "notification off"
+    const { error } = await supabase
       .from('messages')
       .insert([{
         sender_id: user.id,
         receiver_id: selectedUser.id,
-        content: msg
-      }])
-      .select()
-      .single();
-
-    if (!error) {
-      // Send notification to receiver
-      const senderName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'A user';
-      await supabase.from('notifications').insert([{
-         user_id: selectedUser.id,
-         title: 'New Message',
-         body: `${senderName} sent you a message: "${msg.substring(0, 30)}${msg.length > 30 ? '...' : ''}"`,
-         type: 'message'
+        content: msgContent
       }]);
-    }
 
     if (error) {
       console.error('Error sending message:', error);
-      // Rollback optimistic update on error
       setMessages(prev => prev.filter(m => m.id !== tempId));
       alert("Failed to send message: " + error.message);
     } else {
-      // Replace optimistic msg with real one to get correct ID and timestamp
-      if (data) {
-          setMessages(prev => prev.map(m => m.id === tempId ? data : m));
-      }
       fetchConversations(user.id);
     }
   };
@@ -409,7 +452,7 @@ export default function Messages() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed inset-0 top-16 bottom-0 z-30 flex flex-col md:static md:h-[calc(100vh-140px)] md:max-w-6xl md:mx-auto overflow-hidden bg-white dark:bg-[#1a1a1a] md:bg-transparent md:mt-2"
+      className="flex flex-col h-[calc(100dvh-120px)] md:h-[calc(100vh-140px)] md:max-w-6xl md:mx-auto overflow-hidden bg-white dark:bg-[#1a1a1a] md:bg-transparent md:mt-2"
     >
       <div className="flex bg-white dark:bg-[#1a1a1a] md:rounded-2xl md:shadow-2xl md:border border-black/10 dark:border-white/10 flex-1 relative overflow-hidden h-full">
         
@@ -505,7 +548,7 @@ export default function Messages() {
               </div>
 
               {/* Message List */}
-              <div className="flex-1 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3 bg-gray-50 dark:bg-[#141414]">
                 {messages.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-500 text-sm">
                     Send a message to start the conversation
@@ -513,16 +556,22 @@ export default function Messages() {
                 ) : (
                   messages.map((msg, i) => {
                     const isMe = msg.sender_id === user?.id;
+                    const isTemp = msg.id.toString().includes('-temp-');
                     return (
-                      <div key={msg.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div key={msg.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isTemp ? 'opacity-70 focus-within:opacity-100' : ''}`}>
                         <div 
-                          className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl ${
+                          onClick={() => {
+                            if (isMe && !isTemp && window.confirm('Delete this message for everyone?')) {
+                              deleteMessage(msg.id);
+                            }
+                          }}
+                          className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl cursor-pointer select-none transition-all active:scale-[0.98] ${
                             isMe 
                               ? 'bg-[var(--primary)] text-white rounded-tr-sm' 
                               : 'bg-white dark:bg-[#2a2a2a] text-[var(--text)] rounded-tl-sm border border-black/5 dark:border-white/5 shadow-sm'
                           }`}
                         >
-                          <p className="text-sm">{msg.content}</p>
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                           <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -531,30 +580,30 @@ export default function Messages() {
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
+                <div ref={messagesEndRef} className="h-2" />
               </div>
 
               {/* Input Area */}
-              <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-black/10 dark:border-white/10 shrink-0 z-10">
+              <div className="p-3 bg-white dark:bg-[#1a1a1a] border-t border-black/10 dark:border-white/10 shrink-0 pb-4 md:pb-3">
                 {blockedByMe || blockedByOther ? (
                     <div className="text-center p-3 text-sm font-medium text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
                         {blockedByMe ? 'You have blocked this conversation.' : 'You have been blocked by this user.'}
                     </div>
                 ) : (
-                    <form onSubmit={sendMessage} className="flex gap-2 relative">
+                    <form onSubmit={sendMessage} className="flex gap-2 relative max-w-4xl mx-auto w-full">
                     <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message..."
-                        className="flex-1 bg-gray-100 dark:bg-black/20 border border-transparent focus:border-[var(--primary)]/30 rounded-full px-6 py-3 pr-12 text-sm text-[var(--text)] focus:outline-none transition-all"
+                        className="flex-1 bg-gray-100 dark:bg-black/40 border border-transparent focus:border-[var(--primary)]/30 rounded-2xl px-5 py-3 pr-12 text-sm text-[var(--text)] focus:outline-none transition-all shadow-inner"
                     />
                     <button 
                         type="submit"
                         disabled={!newMessage.trim()}
-                        className="absolute right-2 top-1 bottom-1 aspect-square bg-[var(--primary)] hover:bg-[#28a428] text-white rounded-full flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-[var(--primary)] shadow-sm"
+                        className="absolute right-1.5 top-1.5 bottom-1.5 aspect-square bg-[var(--primary)] hover:bg-[#28a428] text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-[var(--primary)] shadow-sm"
                     >
-                        <Send size={16} className="-ml-0.5" />
+                        <Send size={18} className="-ml-0.5" />
                     </button>
                     </form>
                 )}

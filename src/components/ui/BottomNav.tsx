@@ -40,7 +40,7 @@ export default function BottomNav() {
       channel = supabase
         .channel(channelId)
         .on('postgres_changes', { 
-            event: 'INSERT', 
+            event: '*', 
             schema: 'public', 
             table: 'messages',
             filter: `receiver_id=eq.${session.user.id}` 
