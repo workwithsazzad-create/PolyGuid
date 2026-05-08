@@ -5,7 +5,23 @@ import { Capacitor } from '@capacitor/core';
 export const PushNotificationService = {
   async init() {
     if (Capacitor.getPlatform() === 'web') {
-      console.log('Push notifications are not supported on web.');
+      if ('Notification' in window) {
+        console.log('Web Notification permission status:', Notification.permission);
+        try {
+          const permission = await Notification.requestPermission();
+          console.log('Result of Web Notification request:', permission);
+          if (permission === 'granted') {
+            new Notification('স্বাগতম!', {
+              body: 'আপনি এখন থেকে সকল গুরুত্বপূর্ণ আপডেট পাবেন।',
+              icon: '/hero.png'
+            });
+          }
+        } catch (e) {
+          console.error('Error requesting web notification permission:', e);
+        }
+      } else {
+        console.warn('Push notifications / Notifications API not supported on this browser.');
+      }
       return;
     }
 

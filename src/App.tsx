@@ -36,6 +36,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 
 import { prefetchHomeData } from './services/dataService';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { PushNotificationService } from './services/pushNotificationService';
 
 // Scroll to top on route change
@@ -155,14 +156,21 @@ function AppContent() {
     }, 5000); // 5s absolute fallback
 
     const initPush = async (session: any) => {
+      let isGranted = false;
+      let isDenied = false;
+      
       if (Capacitor.getPlatform() !== 'web') {
         const { PushNotifications } = await import('@capacitor/push-notifications');
         const status = await PushNotifications.checkPermissions();
-        if (status.receive !== 'granted') {
-          setShowPermissionGate(true);
-        } else {
-          PushNotificationService.init();
-        }
+        isGranted = status.receive === 'granted';
+        isDenied = status.receive === 'denied';
+      } else {
+        isGranted = 'Notification' in window && Notification.permission === 'granted';
+        isDenied = 'Notification' in window && Notification.permission === 'denied';
+      }
+
+      if (!isGranted) {
+        setShowPermissionGate(true);
       } else {
         PushNotificationService.init();
       }
