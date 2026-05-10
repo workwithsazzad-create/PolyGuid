@@ -1,5 +1,6 @@
 import fs from "fs";
 import express from "express";
+import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
@@ -42,6 +43,7 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+  app.use(cors());
   app.use(express.urlencoded({ extended: true }));
   app.use(express.text({ type: '*/*' })); // Catch raw text/xml/etc
 

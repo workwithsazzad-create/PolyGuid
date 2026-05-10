@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 import GlassmorphicCard from "@/src/components/ui/GlassmorphicCard";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -169,7 +170,10 @@ export default function Admin() {
       }
 
       // 2. Fallback to server API (Local)
-      const res = await fetch("/api/webhook-logs");
+      const baseUrl = Capacitor.getPlatform() === 'web' 
+        ? '' 
+        : 'https://ais-pre-ycflp7quzujcyjbcxjg2ft-740046178869.asia-east1.run.app';
+      const res = await fetch(`${baseUrl}/api/webhook-logs`);
       const data = await res.json();
       setWebhookLogs(data.logs || []);
     } catch (e) {

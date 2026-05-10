@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { 
   LayoutDashboard, 
   MessageSquare, 
@@ -48,7 +49,11 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
   useEffect(() => {
     const fetchNotices = async () => {
       try {
-        const response = await fetch('/api/bteb-notices');
+        const baseUrl = Capacitor.getPlatform() === 'web' 
+          ? '' 
+          : 'https://ais-pre-ycflp7quzujcyjbcxjg2ft-740046178869.asia-east1.run.app';
+          
+        const response = await fetch(`${baseUrl}/api/bteb-notices`);
         if (response.ok) {
           const data = await response.json();
           const readSaved = localStorage.getItem('readNoticeIds');

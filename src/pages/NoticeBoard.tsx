@@ -50,7 +50,7 @@ export default function NoticeBoard() {
       // Use the production domain directly for APK to avoid local fetch errors
       const baseUrl = Capacitor.getPlatform() === 'web' 
         ? '' 
-        : 'https://polyguid.vercel.app';
+        : 'https://ais-pre-ycflp7quzujcyjbcxjg2ft-740046178869.asia-east1.run.app';
       
       console.log('Fetching notices from:', `${baseUrl}/api/bteb-notices`);
         
