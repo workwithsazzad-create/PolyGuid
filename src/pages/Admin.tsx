@@ -172,7 +172,7 @@ export default function Admin() {
       // 2. Fallback to server API (Local)
       const baseUrl = Capacitor.getPlatform() === 'web' 
         ? '' 
-        : 'https://ais-pre-ycflp7quzujcyjbcxjg2ft-740046178869.asia-east1.run.app';
+        : 'https://polyguid.vercel.app';
       const res = await fetch(`${baseUrl}/api/webhook-logs`);
       const data = await res.json();
       setWebhookLogs(data.logs || []);

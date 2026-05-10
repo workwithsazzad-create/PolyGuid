@@ -43,7 +43,11 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
-  app.use(cors());
+  app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  }));
   app.use(express.urlencoded({ extended: true }));
   app.use(express.text({ type: '*/*' })); // Catch raw text/xml/etc
 
