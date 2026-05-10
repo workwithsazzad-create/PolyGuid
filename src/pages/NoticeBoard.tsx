@@ -43,18 +43,29 @@ export default function NoticeBoard() {
     setLoading(true);
     setError(null);
     try {
-      // Full absolute URL for Android APK
+      // Use the production domain directly for APK to avoid local fetch errors
       const baseUrl = Capacitor.getPlatform() === 'web' 
         ? '' 
-        : 'https://ais-pre-ycflp7quzujcyjbcxjg2ft-740046178869.asia-east1.run.app';
+        : 'https://polyguid.vercel.app';
+      
+      console.log('Fetching notices from:', `${baseUrl}/api/bteb-notices`);
         
-      const response = await fetch(`${baseUrl}/api/bteb-notices`);
-      if (!response.ok) throw new Error('Failed to fetch notices');
+      const response = await fetch(`${baseUrl}/api/bteb-notices`, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
       const data = await response.json();
       setNotices(data);
       setLastUpdated(new Date());
     } catch (err: any) {
-      setError(err.message);
+      console.error('Notice Fetch Error:', err);
+      setError(err.message || 'নোটিশ লোড করতে সমস্যা হয়েছে');
     } finally {
       setLoading(false);
     }

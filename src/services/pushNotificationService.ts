@@ -11,6 +11,20 @@ export const PushNotificationService = {
     }
 
     try {
+      // Create a notification channel for Android (Crucial for Android 8+)
+      if (Capacitor.getPlatform() === 'android') {
+        const channelId = 'fcm_fallback_notification_channel';
+        await LocalNotifications.createChannel({
+          id: channelId,
+          name: 'General Notifications',
+          description: 'Used for important updates and results',
+          importance: 5, // Max importance for popup
+          visibility: 1, // Public
+          vibration: true
+        });
+        console.log('Notification channel created');
+      }
+
       // Request permission to use push notifications
       const status = await PushNotifications.checkPermissions();
       
@@ -61,6 +75,7 @@ export const PushNotificationService = {
             id: new Date().getTime(),
             schedule: { at: new Date(Date.now() + 100) },
             sound: 'default',
+            channelId: 'fcm_fallback_notification_channel',
             extra: notification.data
           }
         ]

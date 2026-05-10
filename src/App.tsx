@@ -270,20 +270,17 @@ function AppContent() {
                 await PushNotificationService.init();
                 // Check status again after init
                 setTimeout(async () => {
-                  let isGranted = false;
                   if (Capacitor.getPlatform() !== 'web') {
                     const { PushNotifications } = await import('@capacitor/push-notifications');
+                    const { LocalNotifications } = await import('@capacitor/local-notifications');
                     const status = await PushNotifications.checkPermissions();
-                    isGranted = status.receive === 'granted';
-                  } else {
-                    isGranted = 'Notification' in window && Notification.permission === 'granted';
+                    const lStatus = await LocalNotifications.checkPermissions();
+                    
+                    if (status.receive === 'granted' || lStatus.display === 'granted') {
+                      setShowPermissionGate(false);
+                    }
                   }
-                  if (isGranted) setShowPermissionGate(false);
-                  else {
-                    // It might be denied or ignored. 
-                    // We don't want to block the user forever, but we want to encourage permission.
-                  }
-                }, 1000);
+                }, 1500);
               }}
               className="w-full bg-[var(--primary)] text-white font-black py-4 rounded-xl shadow-lg shadow-[var(--primary)]/20 active:scale-95"
             >
