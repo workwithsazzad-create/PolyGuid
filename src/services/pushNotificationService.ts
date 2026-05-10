@@ -29,24 +29,32 @@ export const PushNotificationService = {
     // Request permission to use push notifications
     try {
       const status = await PushNotifications.checkPermissions();
-      console.log('Current Push Status:', status.receive);
+      console.log('Push Notification Current Status:', status.receive);
 
       if (status.receive !== 'granted') {
+        console.log('Requesting push permissions...');
         const result = await PushNotifications.requestPermissions();
+        console.log('Push permission result:', result.receive);
+        
         if (result.receive === 'granted') {
+          console.log('Permission granted. Registering...');
           PushNotifications.register();
         } else {
-          console.warn('Push permission denied after request');
+          console.warn('Push permission denied or prompt ignored:', result.receive);
         }
       } else {
         // Already granted, just register
+        console.log('Permission already granted. Registering...');
         PushNotifications.register();
       }
       
-      // Also request Local Notifications permission
-      await LocalNotifications.requestPermissions();
+      // Also request Local Notifications permission (required for foreground on some platforms)
+      const localStatus = await LocalNotifications.checkPermissions();
+      if (localStatus.display !== 'granted') {
+        await LocalNotifications.requestPermissions();
+      }
     } catch (e) {
-      console.error('Error in Push init:', e);
+      console.error('CRITICAL: Error in Push init:', e);
     }
 
     // On success, we should be able to receive notifications

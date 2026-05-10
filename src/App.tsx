@@ -271,31 +271,53 @@ function AppContent() {
           <p className="text-gray-500 text-sm mb-10 leading-relaxed px-4">
             আপনার কোর্সের গুরুত্বপূর্ণ আপডেট ও পরীক্ষার রুটিন সাথে সাথে পেতে নোটিফিকেশন এলাও করা প্রয়োজন।
           </p>
-          <button
-            onClick={async () => {
-              await PushNotificationService.init();
-              setShowPermissionGate(false);
-            }}
-            className="w-full bg-[var(--primary)] text-white font-black py-4 rounded-xl shadow-lg shadow-[var(--primary)]/20 active:scale-95 mb-4"
-          >
-            এগিয়ে যান
-          </button>
           
-          <button
-            onClick={async () => {
-              await PushNotificationService.sendTestNotification();
-            }}
-            className="w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl active:scale-95 mb-4"
-          >
-            চেক করুন (টেস্ট নোটিফিকেশন)
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={async () => {
+                await PushNotificationService.init();
+                // Check status again after init
+                setTimeout(async () => {
+                  let isGranted = false;
+                  if (Capacitor.getPlatform() !== 'web') {
+                    const { PushNotifications } = await import('@capacitor/push-notifications');
+                    const status = await PushNotifications.checkPermissions();
+                    isGranted = status.receive === 'granted';
+                  } else {
+                    isGranted = 'Notification' in window && Notification.permission === 'granted';
+                  }
+                  if (isGranted) setShowPermissionGate(false);
+                  else {
+                    // It might be denied or ignored. 
+                    // We don't want to block the user forever, but we want to encourage permission.
+                  }
+                }, 1000);
+              }}
+              className="w-full bg-[var(--primary)] text-white font-black py-4 rounded-xl shadow-lg shadow-[var(--primary)]/20 active:scale-95"
+            >
+              এগিয়ে যান (এলাও করুন)
+            </button>
+            
+            <button
+              onClick={async () => {
+                await PushNotificationService.sendTestNotification();
+              }}
+              className="w-full bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 font-bold py-3 rounded-xl active:scale-95"
+            >
+              সিস্টেম চেক করুন
+            </button>
 
-          <button 
-            onClick={() => setShowPermissionGate(false)}
-            className="mt-4 text-xs text-gray-400 font-bold"
-          >
-            পরে করবো
-          </button>
+            <button 
+              onClick={() => setShowPermissionGate(false)}
+              className="mt-4 text-xs text-gray-400 font-bold w-full py-2"
+            >
+              পরে করবো (অ্যাপে প্রবেশ করুন)
+            </button>
+          </div>
+          
+          <p className="mt-8 text-[10px] text-gray-400 px-6">
+            যদি পারমিশন না আসে, তবে ফোনের Settings {'>'} Apps {'>'} PolyGuid {'>'} Notifications-এ গিয়ে ম্যানুয়ালি অন করুন।
+          </p>
         </div>
       </div>
     );

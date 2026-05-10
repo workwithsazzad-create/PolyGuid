@@ -13,6 +13,7 @@ import {
   Clock
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { Capacitor } from '@capacitor/core';
 
 interface Notice {
   id: string;
@@ -42,7 +43,12 @@ export default function NoticeBoard() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/bteb-notices');
+      // On mobile, relative URLs fail. We need the absolute domain.
+      const baseUrl = Capacitor.getPlatform() !== 'web' 
+        ? 'https://polyguid.vercel.app' // Fallback to production URL
+        : '';
+        
+      const response = await fetch(`${baseUrl}/api/bteb-notices`);
       if (!response.ok) throw new Error('Failed to fetch notices');
       const data = await response.json();
       setNotices(data);
