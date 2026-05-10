@@ -156,20 +156,12 @@ function AppContent() {
     }, 5000); // 5s absolute fallback
 
     const initPush = async (session: any) => {
-      let isGranted = false;
-      let isDenied = false;
-      
-      if (Capacitor.getPlatform() !== 'web') {
-        const { PushNotifications } = await import('@capacitor/push-notifications');
-        const status = await PushNotifications.checkPermissions();
-        isGranted = status.receive === 'granted';
-        isDenied = status.receive === 'denied';
-      } else {
-        isGranted = 'Notification' in window && Notification.permission === 'granted';
-        isDenied = 'Notification' in window && Notification.permission === 'denied';
-      }
+      if (Capacitor.getPlatform() === 'web') return; // Completely skip for web/PC
 
-      if (!isGranted) {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const status = await PushNotifications.checkPermissions();
+      
+      if (status.receive !== 'granted') {
         setShowPermissionGate(true);
       } else {
         PushNotificationService.init();

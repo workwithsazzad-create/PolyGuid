@@ -43,10 +43,10 @@ export default function NoticeBoard() {
     setLoading(true);
     setError(null);
     try {
-      // On mobile, relative URLs fail. We need the absolute domain.
-      const baseUrl = Capacitor.getPlatform() !== 'web' 
-        ? 'https://polyguid.vercel.app' // Fallback to production URL
-        : '';
+      // Full absolute URL for Android APK
+      const baseUrl = Capacitor.getPlatform() === 'web' 
+        ? '' 
+        : 'https://ais-pre-ycflp7quzujcyjbcxjg2ft-740046178869.asia-east1.run.app';
         
       const response = await fetch(`${baseUrl}/api/bteb-notices`);
       if (!response.ok) throw new Error('Failed to fetch notices');

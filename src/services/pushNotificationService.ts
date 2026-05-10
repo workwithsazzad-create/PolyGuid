@@ -6,46 +6,21 @@ import { Capacitor } from '@capacitor/core';
 export const PushNotificationService = {
   async init() {
     if (Capacitor.getPlatform() === 'web') {
-      if ('Notification' in window) {
-        console.log('Web Notification permission status:', Notification.permission);
-        try {
-          const permission = await Notification.requestPermission();
-          console.log('Result of Web Notification request:', permission);
-          if (permission === 'granted') {
-            new Notification('স্বাগতম!', {
-              body: 'আপনি এখন থেকে সকল গুরুত্বপূর্ণ আপডেট পাবেন।',
-              icon: '/hero.png'
-            });
-          }
-        } catch (e) {
-          console.error('Error requesting web notification permission:', e);
-        }
-      } else {
-        console.warn('Push notifications / Notifications API not supported on this browser.');
-      }
+      console.log('Push notifications are skipped on web platform.');
       return;
     }
 
-    // Request permission to use push notifications
     try {
+      // Request permission to use push notifications
       const status = await PushNotifications.checkPermissions();
-      console.log('Push Notification Current Status:', status.receive);
-
+      
       if (status.receive !== 'granted') {
-        console.log('Requesting push permissions...');
         const result = await PushNotifications.requestPermissions();
-        console.log('Push permission result:', result.receive);
-        
         if (result.receive === 'granted') {
-          console.log('Permission granted. Registering...');
-          PushNotifications.register();
-        } else {
-          console.warn('Push permission denied or prompt ignored:', result.receive);
+          await PushNotifications.register();
         }
       } else {
-        // Already granted, just register
-        console.log('Permission already granted. Registering...');
-        PushNotifications.register();
+        await PushNotifications.register();
       }
       
       // Also request Local Notifications permission (required for foreground on some platforms)
@@ -53,72 +28,54 @@ export const PushNotificationService = {
       if (localStatus.display !== 'granted') {
         await LocalNotifications.requestPermissions();
       }
-    } catch (e) {
-      console.error('CRITICAL: Error in Push init:', e);
-    }
 
+      this.setupListeners();
+    } catch (e) {
+      console.error('Push Notification Initialization Error:', e);
+    }
+  },
+
+  async setupListeners() {
     // On success, we should be able to receive notifications
     PushNotifications.addListener('registration', async (token) => {
       console.log('Push registration success, token: ' + token.value);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        // Save token to your profiles table
-        const { error } = await supabase
+        await supabase
           .from('profiles')
           .update({ push_token: token.value })
           .eq('id', session.user.id);
-          
-        if (error) {
-          console.error('Error saving push token:', error);
-        } else {
-          console.log('Push token saved to Supabase');
-        }
       }
     });
 
-    // Some error occurred
-    PushNotifications.addListener('registrationError', (error: any) => {
-      console.error('Error on registration: ' + JSON.stringify(error));
-    });
-
-    // Show us the notification payload if the app is open on our device
+    // Handle incoming notifications (Foreground)
     PushNotifications.addListener('pushNotificationReceived', async (notification) => {
-      console.log('Push received in foreground: ' + JSON.stringify(notification));
+      console.log('Foreground Push received:', notification);
       
-      // If the app is in the foreground, manually trigger a local notification 
-      // so the user sees it "outside" the app (system-level)
       await LocalNotifications.schedule({
         notifications: [
           {
-            title: notification.title || 'নতুন নোটিফিকেশন',
+            title: notification.title || 'নতুন আপডেট',
             body: notification.body || '',
             id: new Date().getTime(),
             schedule: { at: new Date(Date.now() + 100) },
             sound: 'default',
-            attachments: [],
             extra: notification.data
           }
         ]
       });
     });
 
-    // Method called when tapping on a notification
+    // Handle notification tap
     PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-      console.log('Push action performed: ' + JSON.stringify(notification));
+      console.log('Notification tapped:', notification);
     });
   },
 
   async sendTestNotification() {
     if (Capacitor.getPlatform() === 'web') {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('টেস্ট নোটিফিকেশন', {
-          body: 'এটি একটি টেস্ট নোটিফিকেশন। আপনার সিস্টেম ঠিকভাবে কাজ করছে।',
-          icon: '/hero.png'
-        });
-      } else {
-        alert('Web notifications not granted or supported.');
-      }
+      alert('সিস্টেম চেক: আপনার ব্রাউজারে নোটিফিকেশন বন্ধ আছে বা এটি শুধু অ্যাপের জন্য প্রযোজ্য।');
       return;
     }
 
