@@ -51,7 +51,9 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
         const response = await fetch('/api/bteb-notices');
         if (response.ok) {
           const data = await response.json();
-          const newOnes = data.filter((n: any) => n.isNew).length;
+          const readSaved = localStorage.getItem('readNoticeIds');
+          const readIds = readSaved ? JSON.parse(readSaved) : [];
+          const newOnes = data.filter((n: any) => n.isNew && !readIds.includes(n.id)).length;
           setNewNoticeCount(newOnes);
         }
       } catch (e) {
@@ -59,9 +61,22 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       }
     };
     fetchNotices();
+
+    const handleNoticeCountRefresh = (e: any) => {
+      if (e.detail?.count !== undefined) {
+        setNewNoticeCount(e.detail.count);
+      } else {
+        fetchNotices();
+      }
+    };
+    window.addEventListener('notice-count-changed', handleNoticeCountRefresh);
+
     // Poll every 5 minutes
     const interval = setInterval(fetchNotices, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notice-count-changed', handleNoticeCountRefresh);
+    };
   }, []);
 
   useEffect(() => {
@@ -285,7 +300,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
               </span>
             )}
             {item.name === 'Notice Board' && newNoticeCount > 0 && (
-              <span className="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm animate-bounce">
+              <span className="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm animate-pulse">
                 {newNoticeCount}
               </span>
             )}

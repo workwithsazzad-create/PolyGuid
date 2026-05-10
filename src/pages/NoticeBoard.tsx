@@ -38,6 +38,10 @@ export default function NoticeBoard() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [readNoticeIds, setReadNoticeIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('readNoticeIds');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const fetchNotices = async () => {
     setLoading(true);
@@ -63,6 +67,9 @@ export default function NoticeBoard() {
       const data = await response.json();
       setNotices(data);
       setLastUpdated(new Date());
+
+      // Update badge count manually based on new items not in readNoticeIds
+      updateBadgeCount(data, readNoticeIds);
     } catch (err: any) {
       console.error('Notice Fetch Error:', err);
       setError(err.message || 'নোটিশ লোড করতে সমস্যা হয়েছে');
@@ -71,9 +78,29 @@ export default function NoticeBoard() {
     }
   };
 
+  const updateBadgeCount = (allNotices: Notice[], readIds: string[]) => {
+    const unread = allNotices.filter(n => n.isNew && !readIds.includes(n.id)).length;
+    window.dispatchEvent(new CustomEvent('notice-count-changed', { detail: { count: unread } }));
+  };
+
   useEffect(() => {
     fetchNotices();
   }, []);
+
+  const markAllAsRead = () => {
+    const allIds = notices.map(n => n.id);
+    setReadNoticeIds(allIds);
+    localStorage.setItem('readNoticeIds', JSON.stringify(allIds));
+    updateBadgeCount(notices, allIds);
+  };
+
+  const markAsRead = (id: string) => {
+    if (readNoticeIds.includes(id)) return;
+    const newReadIds = [...readNoticeIds, id];
+    setReadNoticeIds(newReadIds);
+    localStorage.setItem('readNoticeIds', JSON.stringify(newReadIds));
+    updateBadgeCount(notices, newReadIds);
+  };
 
   const filteredNotices = notices.filter(notice => 
     notice.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -93,6 +120,14 @@ export default function NoticeBoard() {
               <p className="text-[10px] sm:text-sm text-gray-500 font-medium">BTEB Official Notice Updates</p>
             </div>
           </div>
+          {notices.some(n => n.isNew && !readNoticeIds.includes(n.id)) && (
+            <button 
+              onClick={markAllAsRead}
+              className="mt-2 sm:mt-0 text-[#32CD32] hover:text-[#28a428] text-sm font-bold tracking-tight px-2 py-1 transition-colors relative z-10"
+            >
+              Mark all as read
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -144,6 +179,34 @@ export default function NoticeBoard() {
                       </div>
                     ))}
                   </div>
+                ) : error ? (
+                  <div className="py-20 text-center space-y-6 px-6">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/10 rounded-full text-red-500 mb-2">
+                      <Info size={32} />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-bold text-[var(--text)]">নোটিশ লোড করা সম্ভব হয়নি</h3>
+                      <p className="text-sm text-gray-500 font-medium max-w-xs mx-auto">
+                        {error}. ইন্টারনেট কানেকশন চেক করুন অথবা কিছুক্ষণ পর আবার চেষ্টা করুন।
+                      </p>
+                    </div>
+                    <button 
+                      onClick={fetchNotices}
+                      className="px-8 py-3 bg-[var(--primary)] text-white font-bold rounded-2xl shadow-lg shadow-[var(--primary)]/20 active:scale-95 transition-all text-sm"
+                    >
+                      আবার চেষ্টা করুন
+                    </button>
+                    <div className="pt-4">
+                      <a 
+                        href="https://bteb.gov.bd/site/view/notices" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#32CD32] font-bold underline"
+                      >
+                        সরাসরি BTEB ওয়েবসাইট দেখুন
+                      </a>
+                    </div>
+                  </div>
                 ) : filteredNotices.length > 0 ? (
                   filteredNotices.map((notice, idx) => (
                     <motion.div
@@ -152,16 +215,20 @@ export default function NoticeBoard() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.05 }}
                       key={notice.id}
-                      className="group border-b border-black/5 dark:border-white/5 last:border-0"
+                      className={cn(
+                        "group border-b border-black/5 dark:border-white/5 last:border-0",
+                        readNoticeIds.includes(notice.id) && "opacity-60"
+                      )}
                     >
                       <a 
                         href={notice.link} 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        onClick={() => markAsRead(notice.id)}
                         className="flex items-start gap-4 p-4 rounded-2xl hover:bg-[#32CD32]/5 transition-all w-full text-left relative overflow-hidden"
                       >
                         <div className="shrink-0 mt-1">
-                          {notice.isNew ? (
+                          {notice.isNew && !readNoticeIds.includes(notice.id) ? (
                             <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center text-red-500">
                               <TrendingUp size={18} />
                             </div>
@@ -177,13 +244,16 @@ export default function NoticeBoard() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-tighter">
                               {notice.date}
                             </span>
-                            {notice.isNew && (
+                            {notice.isNew && !readNoticeIds.includes(notice.id) && (
                               <span className="bg-red-500 text-white text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded shadow-[0_2px_10px_rgba(239,68,68,0.3)] animate-pulse">
                                 NEW
                               </span>
                             )}
                           </div>
-                          <h3 className="text-sm md:text-lg font-semibold text-[var(--text)] group-hover:text-[#32CD32] transition-colors leading-snug md:leading-normal">
+                          <h3 className={cn(
+                            "text-sm md:text-lg font-semibold text-[var(--text)] group-hover:text-[#32CD32] transition-colors leading-snug md:leading-normal",
+                            readNoticeIds.includes(notice.id) && "font-medium"
+                          )}>
                             {notice.title}
                           </h3>
                         </div>

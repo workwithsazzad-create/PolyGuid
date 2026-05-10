@@ -53,20 +53,30 @@ export default function Notifications() {
   }, []);
 
   const markAsRead = async (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    window.dispatchEvent(new CustomEvent('notifications-changed'));
+    const current = notifications.find(n => n.id === id);
+    if (!current || current.read) return;
+
+    const newNotifications = notifications.map(n => n.id === id ? { ...n, read: true } : n);
+    setNotifications(newNotifications);
+    
+    // Update badge count instantly
+    const unreadCount = newNotifications.filter(n => !n.read).length;
+    window.dispatchEvent(new CustomEvent('notifications-changed', { detail: { count: unreadCount } }));
+    
     await supabase.from('notifications').update({ read: true }).eq('id', id);
-    window.dispatchEvent(new CustomEvent('notifications-changed'));
   };
 
   const markAllAsRead = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
     
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    window.dispatchEvent(new CustomEvent('notifications-changed'));
+    const newNotifications = notifications.map(n => ({ ...n, read: true }));
+    setNotifications(newNotifications);
+    
+    // Reset badge count instantly
+    window.dispatchEvent(new CustomEvent('notifications-changed', { detail: { count: 0 } }));
+    
     await supabase.from('notifications').update({ read: true }).eq('user_id', session.user.id).eq('read', false);
-    window.dispatchEvent(new CustomEvent('notifications-changed'));
   };
 
   const getIcon = (type: string) => {
@@ -88,24 +98,23 @@ export default function Notifications() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-3xl font-black text-[var(--text)] flex items-center gap-2 sm:gap-3">
-            <Bell className="text-[#32CD32] hidden sm:block" />
-            Notifications
-          </h1>
-          <p className="text-[10px] sm:text-sm text-gray-500 mt-0.5">আপনার সকল নোটিফিকেশন এখানে দেখতে পাবেন</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-3xl font-black text-[var(--text)] flex items-center gap-2 sm:gap-3">
+              <Bell className="text-[#32CD32] hidden sm:block" />
+              Notifications
+            </h1>
+            <p className="text-[10px] sm:text-sm text-gray-500 mt-0.5 font-medium">আপনার সকল নোটিফিকেশন এখানে দেখতে পাবেন</p>
+          </div>
+          {notifications.some(n => !n.read) && (
+            <button
+              onClick={markAllAsRead}
+              className="text-[#32CD32] hover:text-[#28a428] text-sm font-bold tracking-tight px-3 py-1.5 transition-all bg-[#32CD32]/5 hover:bg-[#32CD32]/10 rounded-full"
+            >
+              Mark all as read
+            </button>
+          )}
         </div>
-        {notifications.some(n => !n.read) && (
-          <button
-            onClick={markAllAsRead}
-            className="flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl transition-all font-medium text-sm text-[var(--text)]"
-          >
-            <Check size={16} />
-            Mark all read
-          </button>
-        )}
-      </div>
 
       <div className="space-y-4">
         {notifications.length > 0 ? (

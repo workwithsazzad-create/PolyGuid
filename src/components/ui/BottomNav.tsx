@@ -59,9 +59,13 @@ export default function BottomNav() {
       fetchNotificationCount(userId);
 
       // Listen for manual triggers
-      const handleBadgeRefresh = () => {
-        fetchMessageCount(userId);
-        fetchNotificationCount(userId);
+      const handleBadgeRefresh = (e: any) => {
+        if (e.detail?.count !== undefined) {
+          setUnreadNotificationCount(e.detail.count);
+        } else {
+          fetchMessageCount(userId);
+          fetchNotificationCount(userId);
+        }
       };
       window.addEventListener('unread-count-changed', handleBadgeRefresh);
       window.addEventListener('notifications-changed', handleBadgeRefresh);
