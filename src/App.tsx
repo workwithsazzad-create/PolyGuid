@@ -14,6 +14,7 @@ import SemesterCourses from './pages/SemesterCourses';
 import CoursesPage from './pages/CoursesPage';
 import SavedItems from './pages/SavedItems';
 import ResultViewer from './pages/ResultViewer';
+import BookList from './pages/BookList';
 import OrderHistory from './pages/OrderHistory';
 import About from './pages/info/About';
 import Privacy from './pages/info/Privacy';
@@ -343,7 +344,7 @@ function AppContent() {
           {/* Layer Routes (Standalone Pages) */}
           <Route path="/marketplace" element={<div className="p-8 max-w-4xl mx-auto"><h1 className="text-3xl font-bold font-sans"><span className="text-[#32CD32]">P</span>oly<span className="text-[#00BFFF]">G</span>uid Marketplace</h1><p className="text-gray-500 mt-4 leading-relaxed">শীঘ্রই আসছে: এখান থেকে আপনি আপনার প্রয়োজনীয় ইঞ্জিনিয়ারিং বই কেনা-বেচা করতে পারবেন।</p></div>} />
           <Route path="/books-pdf" element={<CoursesPage />} />
-          <Route path="/book-list" element={<CoursesPage />} />
+          <Route path="/book-list" element={<BookList />} />
           <Route path="/notices" element={<NoticeBoard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/more" element={<More />} />

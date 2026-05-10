@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/src/components/ThemeProvider';
 import { 
   User, Edit2, Lock, LayoutDashboard, Bell, ShieldCheck, 
-  History, Moon, Sun, Info, MessageSquare, LogOut, FileText, ChevronRight, CheckCircle2, ChevronDown
+  History, Moon, Sun, Info, MessageSquare, LogOut, FileText, ChevronRight, CheckCircle2, ChevronDown, BookOpen
 } from 'lucide-react';
 import GlassmorphicCard from '@/src/components/ui/GlassmorphicCard';
 
@@ -213,6 +213,7 @@ export default function More() {
         <section className="px-4">
           <div className="bg-white dark:bg-[#1a1b1e] rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
             <MenuOption icon={LayoutDashboard} label="ড্যাশবোর্ড" onClick={() => navigate('/dashboard')} color="bg-blue-500" />
+            <MenuOption icon={BookOpen} label="বইয়ের তালিকা" onClick={() => navigate('/book-list')} color="bg-orange-500" />
             <MenuOption icon={FileText} label="নোটিশ বোর্ড" onClick={() => navigate('/notices')} color="bg-emerald-500" />
             {isAdmin && <MenuOption icon={ShieldCheck} label="অ্যাডমিন প্যানেল" onClick={() => navigate('/admin')} color="bg-purple-500" />}
             <MenuOption icon={History} label="পেমেন্ট ও অর্ডার হিস্ট্রি" onClick={() => navigate('/orders')} color="bg-amber-500" /> 

@@ -39,7 +39,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
     { name: 'Home', icon: Home, path: '/home' },
     { name: 'Student Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Message', icon: MessageSquare, path: '/messages' },
-    { name: 'Notice Board', icon: BookOpen, path: '/notices' },
+    { name: 'Notice Board', icon: FileText, path: '/notices' },
     { name: 'Notifications', icon: Bell, path: '/notifications' },
     { name: 'Order History', icon: History, path: '/orders' },
     { name: 'Profile', icon: User, path: '/profile' },

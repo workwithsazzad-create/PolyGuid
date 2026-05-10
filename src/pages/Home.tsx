@@ -597,7 +597,7 @@ export default function Home() {
             icon: List,
             color: "text-orange-500",
             bg: "bg-orange-500/5",
-            path: "/courses",
+            path: "/book-list",
           },
         ].map((item, i) => (
           <motion.div
