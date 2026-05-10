@@ -130,7 +130,7 @@ export default function Dashboard() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col gap-6 sm:gap-8 pb-12"
+      className="flex flex-col gap-6 sm:gap-8 pb-12 px-4 lg:px-0"
     >
       <header className="flex flex-col gap-0.5 sm:gap-2">
         <h1 className="text-[19px] sm:text-3xl font-bold text-[var(--text)] leading-tight">Welcome back{userName ? `, ${userName}` : '!'}</h1>

@@ -51,7 +51,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       try {
         const baseUrl = Capacitor.getPlatform() === 'web' 
           ? '' 
-          : 'https://polyguid.vercel.app';
+          : 'https://ais-pre-ycflp7quzujcyjbcxjg2ft-740046178869.asia-east1.run.app';
           
         const response = await fetch(`${baseUrl}/api/bteb-notices`);
         if (response.ok) {

@@ -140,10 +140,14 @@ function AppContent() {
     // Capacitor Hardware Back Button Support
     try {
       CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-        if(!canGoBack){
+        const path = window.location.pathname;
+        if (path === '/home' || path === '/' || path === '/login') {
           CapacitorApp.exitApp();
-        } else {
+        } else if (canGoBack) {
           window.history.back();
+        } else {
+          // If no history but not on home, go to home
+          window.location.href = '/home';
         }
       });
     } catch(e) {
