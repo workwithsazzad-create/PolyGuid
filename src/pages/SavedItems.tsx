@@ -102,7 +102,7 @@ export default function SavedItems() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col gap-6 lg:gap-8 pb-12 w-full max-w-4xl mx-auto"
+      className="flex flex-col gap-6 lg:gap-8 pb-12 w-full max-w-4xl mx-auto px-6 lg:px-0"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

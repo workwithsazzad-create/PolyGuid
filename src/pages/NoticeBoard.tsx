@@ -50,7 +50,7 @@ export default function NoticeBoard() {
       // Use the production domain directly for APK to avoid local fetch errors
       const baseUrl = Capacitor.getPlatform() === 'web' 
         ? '' 
-        : 'https://ais-pre-ycflp7quzujcyjbcxjg2ft-740046178869.asia-east1.run.app';
+        : 'https://polyguid.vercel.app';
       
       console.log('Fetching notices from:', `${baseUrl}/api/bteb-notices`);
         
@@ -107,7 +107,7 @@ export default function NoticeBoard() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700 px-4 lg:px-0">
+    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700 px-6 lg:px-0">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
         <div className="space-y-1 sm:space-y-2">
