@@ -1,10 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, MapPin, Phone, Facebook, Youtube, Instagram, Globe } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/src/lib/supabase';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [settings, setSettings] = useState({
+    contact_email: "workwithsazzad@gmail.com",
+    contact_phone: "09677723301",
+    contact_address: "৭৮ গ্রিন রোড, ঢাকা ১২১৫",
+    social_fb: "#",
+    social_ig: "#",
+    social_yt: "#",
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('site_settings').select('key, value').in('key', [
+        'contact_email', 'contact_phone', 'contact_address', 'social_fb', 'social_ig', 'social_yt'
+      ]);
+      if (data) {
+        const newSettings = { ...settings };
+        data.forEach(item => {
+          if (item.value) (newSettings as any)[item.key] = item.value;
+        });
+        setSettings(newSettings);
+      }
+    };
+    fetchSettings();
+  }, []);
   const logoUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7hXz1Z0A1iE_7mZ0z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z/s1600/PolyGuid%20Logo.png";
 
   return (
@@ -25,9 +50,9 @@ const Footer = () => {
           </p>
           <div className="flex items-center gap-4">
             {[
-              { icon: Facebook, link: '#', color: 'hover:text-blue-500' },
-              { icon: Instagram, link: '#', color: 'hover:text-pink-500' },
-              { icon: Youtube, link: '#', color: 'hover:text-red-500' },
+              { icon: Facebook, link: settings.social_fb, color: 'hover:text-blue-500' },
+              { icon: Instagram, link: settings.social_ig, color: 'hover:text-pink-500' },
+              { icon: Youtube, link: settings.social_yt, color: 'hover:text-red-500' },
             ].map((social, i) => (
               <motion.a
                 key={i}
@@ -84,8 +109,8 @@ const Footer = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400 uppercase font-bold tracking-tighter">Email Us</span>
-                <a href="mailto:workwithsazzad@gmail.com" className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-semibold">
-                  workwithsazzad@gmail.com
+                <a href={`mailto:${settings.contact_email}`} className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-semibold">
+                  {settings.contact_email}
                 </a>
               </div>
             </li>
@@ -96,7 +121,7 @@ const Footer = () => {
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400 uppercase font-bold tracking-tighter">Head Office</span>
                 <span className="text-sm text-gray-500 dark:text-gray-400 font-semibold leading-tight">
-                  ৭৮ গ্রিন রোড, ঢাকা ১২১৫
+                  {settings.contact_address}
                 </span>
               </div>
             </li>
@@ -106,8 +131,8 @@ const Footer = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400 uppercase font-bold tracking-tighter">Call Now</span>
-                <a href="tel:09677723301" className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-semibold">
-                  09677723301
+                <a href={`tel:${settings.contact_phone}`} className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors font-semibold">
+                  {settings.contact_phone}
                 </a>
               </div>
             </li>

@@ -16,6 +16,7 @@ export default function More() {
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [contactEmail, setContactEmail] = useState("workwithsazzad@gmail.com");
 
   // Password change state
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -43,6 +44,11 @@ export default function More() {
           
         setProfile(profileData);
         setIsAdmin(profileData?.role === 'admin' || session.user.email?.includes('admin'));
+      }
+      
+      const { data: emailData } = await supabase.from('site_settings').select('value').eq('key', 'contact_email').maybeSingle();
+      if (emailData?.value) {
+        setContactEmail(emailData.value);
       }
     } catch (e) {
       console.error("Error fetching more page data", e);
@@ -238,7 +244,7 @@ export default function More() {
             </button>
             
             <MenuOption icon={Info} label="অ্যাপ ইনফো" onClick={() => navigate('/about')} color="bg-cyan-500" />
-            <a href="mailto:workwithsazzad@gmail.com" className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 transition">
+            <a href={`mailto:${contactEmail}`} className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 transition">
               <div className="flex items-center gap-4">
                 <div className="w-9 h-9 rounded-full px-0 flex items-center justify-center text-white bg-red-500">
                   <MessageSquare size={18} />

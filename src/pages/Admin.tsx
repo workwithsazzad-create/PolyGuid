@@ -37,7 +37,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 
 type AdminTab =
   | "courses"
-  | "banner"
+  | "pages"
   | "analytics"
   | "transactions"
   | "pdf"
@@ -48,6 +48,7 @@ type AdminTab =
 
 import AdminCourses from "../components/admin/AdminCourses";
 import AdminUsers from "../components/admin/AdminUsers";
+import AdminPages from "../components/admin/AdminPages";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<AdminTab>("courses");
@@ -321,7 +322,7 @@ export default function Admin() {
 
   const tabs = [
     { id: "courses", label: "Courses", icon: BookOpen },
-    { id: "banner", label: "Banner", icon: Layout },
+    { id: "pages", label: "Manage Pages", icon: Layout },
     { id: "analytics", label: "Analytics", icon: FileText },
     { id: "transactions", label: "Transactions", icon: DollarSign },
     { id: "pdf", label: "PDFs", icon: FileText },
@@ -782,83 +783,7 @@ export default function Admin() {
 
           {activeTab === "users" && <AdminUsers />}
 
-          {activeTab === "banner" && (
-            <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center">
-                  <Layout className="text-[var(--primary)]" size={22} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-[var(--text)]">
-                    Home Page Hero Banner
-                  </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Manage the main banner image shown to students</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-6">
-                <div className="relative pt-2">
-                  <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 transition-all tracking-wider">Banner Image URL*</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                      <Paperclip size={18} />
-                    </div>
-                    <input
-                      required
-                      type="url"
-                      value={bannerUrl}
-                      onChange={(e) => setBannerUrl(e.target.value)}
-                      placeholder="Paste Google Drive share link or direct image URL..."
-                      className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 pl-10 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-                    />
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-1.5 px-1 leading-relaxed">
-                    Recommended size: 1200 x 400 pixels. High quality Google Drive links are supported automatically.
-                  </p>
-                </div>
-
-                {bannerUrl && (
-                  <div className="mt-2 space-y-2">
-                    <div className="flex items-center justify-between px-1">
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Preview</p>
-                      <span className="text-[10px] text-green-500 font-bold px-2 py-0.5 bg-green-500/10 rounded-full">Active View</span>
-                    </div>
-                    <div className="relative rounded-xl overflow-hidden border border-black/10 dark:border-white/10 flex items-center justify-center bg-black/5 dark:bg-white/5 shadow-inner">
-                      <img
-                        src={getDirectLink(bannerUrl)}
-                        alt="Preview"
-                        referrerPolicy="no-referrer"
-                        className="w-full h-auto"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1200&auto=format&fit=crop';
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {statusMsg && (
-                  <div
-                    className={`p-4 rounded-xl text-sm font-bold flex items-center gap-3 ${statusMsg.type === "success" ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"}`}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${statusMsg.type === "success" ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
-                    {statusMsg.text}
-                  </div>
-                )}
-
-                <button
-                  onClick={handleBannerApply}
-                  disabled={isSaving || !bannerUrl}
-                  className="w-full bg-[var(--primary)] text-white font-black py-4 rounded-xl hover:bg-[#28a428] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 active:scale-[0.98]"
-                >
-                  {isSaving
-                    ? "Upgrading Site Server..."
-                    : "Apply Changes to Banner"}
-                </button>
-              </div>
-            </GlassmorphicCard>
-          )}
+          {activeTab === "pages" && <AdminPages />}
 
           {activeTab === "analytics" && (
             <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
