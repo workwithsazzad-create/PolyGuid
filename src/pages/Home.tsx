@@ -180,6 +180,7 @@ export default function Home() {
             "stat_polytechnics",
             "donation_number",
             "pinned_courses",
+            "pinned_pdfs",
           ]);
 
         const donationsPromise = supabase
@@ -224,11 +225,17 @@ export default function Home() {
         }
 
         let pinnedMap: Record<string, number> = {};
+        let pinnedPdfsMap: Record<string, number> = {};
         if (statsData) {
           statsData.forEach((item: any) => {
             if (item.key === "pinned_courses") {
               try {
                 pinnedMap = JSON.parse(item.value);
+              } catch (e) {}
+            }
+            if (item.key === "pinned_pdfs") {
+              try {
+                pinnedPdfsMap = JSON.parse(item.value);
               } catch (e) {}
             }
           });
@@ -247,6 +254,7 @@ export default function Home() {
             classes: c.classes_count,
             categories: c.categories || [],
             pinned_position: pinnedMap[c.id] || null,
+            pinned_pdf_position: pinnedPdfsMap[c.id] || null,
           }));
           setAllCourses(processedCourses);
           newCache.allCourses = processedCourses;
@@ -485,7 +493,7 @@ export default function Home() {
               color: "text-red-500",
               bgColor: "bg-red-50 dark:bg-red-900/20",
               shadowColor: "shadow-red-500/20",
-              route: "/saved-items",
+              route: "/books-pdf",
             },
             {
               name: "Book List",
@@ -590,7 +598,7 @@ export default function Home() {
             icon: FileText,
             color: "text-red-500",
             bg: "bg-red-500/5",
-            path: "/saved",
+            path: "/books-pdf",
           },
           {
             name: "Book List",
@@ -707,7 +715,7 @@ export default function Home() {
             জনপ্রিয় বই সমূহ
           </h2>
           <button
-            onClick={() => navigate("/book-list")}
+            onClick={() => navigate("/books-pdf")}
             className="text-[9px] sm:text-[10px] font-black text-[var(--primary)] hover:underline uppercase tracking-wider"
           >
             সবগুলো দেখুন
@@ -718,9 +726,11 @@ export default function Home() {
           {/* We will filter books from courses that have 'বই' or 'Book' category, or show placeholder */}
           {allCourses.filter(
             (c) =>
-              c.categories?.includes("বই") ||
-              c.categories?.includes("Book") ||
-              c.title?.includes("বই"),
+              c.pinned_pdf_position !== null && (
+                      c.categories?.includes("বই") ||
+                      c.categories?.includes("Book") ||
+                      c.title?.includes("বই")
+                    ),
           ).length > 0 ? (
             <>
               <div
@@ -735,10 +745,13 @@ export default function Home() {
                 {allCourses
                   .filter(
                     (c) =>
+                      c.pinned_pdf_position !== null && (
                       c.categories?.includes("বই") ||
                       c.categories?.includes("Book") ||
-                      c.title?.includes("বই"),
+                      c.title?.includes("বই")
+                    ),
                   )
+                  .sort((a, b) => (a.pinned_pdf_position || 99) - (b.pinned_pdf_position || 99))
                   .map((course, i) => (
                     <div
                       key={i}
@@ -746,6 +759,7 @@ export default function Home() {
                     >
                       <CourseCard
                         {...course}
+                        isBook={true}
                         isEnrolled={enrollments.some(
                           (e) => e.course_id === course.id,
                         )}

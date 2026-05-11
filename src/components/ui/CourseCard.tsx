@@ -14,11 +14,12 @@ interface CourseCardProps {
   thumbnail: string;
   classes?: number;
   isEnrolled?: boolean;
+  isBook?: boolean;
 }
 
 import { Link } from 'react-router-dom';
 
-export default function CourseCard({ id, title, description, price, originalPrice, thumbnail, classes = 12, isEnrolled = false }: CourseCardProps) {
+export default function CourseCard({ id, title, description, price, originalPrice, thumbnail, classes = 12, isEnrolled = false, isBook = false }: CourseCardProps) {
   const hasDiscount = Boolean(originalPrice && originalPrice > price);
   const discountPercent = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
@@ -28,7 +29,7 @@ export default function CourseCard({ id, title, description, price, originalPric
         hoverEffect 
         className="flex flex-col gap-1.5 p-1.5 sm:p-2.5 h-full cursor-pointer bg-white dark:bg-[#1a1a1a] border-none shadow-sm hover:shadow-md transition-all rounded-xl"
       >
-        <div className="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100">
+        <div className={`relative ${isBook ? 'aspect-[1/1.43]' : 'aspect-[16/9]'} rounded-lg overflow-hidden bg-gray-100`}>
           <img 
             src={getDirectLink(thumbnail)} 
             alt={title} 

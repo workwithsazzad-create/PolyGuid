@@ -49,6 +49,7 @@ type AdminTab =
 import AdminCourses from "../components/admin/AdminCourses";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminPages from "../components/admin/AdminPages";
+import AdminPdfs from "../components/admin/AdminPdfs";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<AdminTab>("courses");
@@ -1099,26 +1100,7 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === "pdf" && (
-            <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
-                  <FileText className="text-red-500" size={18} />
-                </div>
-                <h2 className="text-lg font-bold text-[var(--text)]">
-                  Add PDF Book
-                </h2>
-              </div>
-              <div className="flex flex-col items-center justify-center py-12 border border-dashed border-black/10 dark:border-white/10 rounded-xl">
-                <p className="text-gray-500 text-sm">
-                  PDF Management coming soon...
-                </p>
-                <button className="mt-4 text-[var(--primary)] text-sm font-bold flex items-center gap-1">
-                  <Plus size={16} /> Add First PDF
-                </button>
-              </div>
-            </GlassmorphicCard>
-          )}
+          {activeTab === "pdf" && <AdminPdfs />}
 
           {activeTab === "youtube" && (
             <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
