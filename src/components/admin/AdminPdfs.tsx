@@ -347,14 +347,17 @@ export default function AdminPdfs() {
           onClick={() => {
             setEditingPdfId(null);
             setPdfForm({
+              type: 'pdf',
               title: '',
               thumbnail: '',
-              classes: 0,
+              pdfLink: '',
+              affiliateLink: '',
               isFree: true,
               originalPrice: 0,
               price: 0,
-              categories: [],
-              description: ''
+              categories: ['বই'],
+              description: '',
+              fakeUserCount: 0
             });
             setIsAddingPdf(true);
           }}
@@ -609,14 +612,14 @@ export default function AdminPdfs() {
 
                     setPdfForm({
                       type: affiliateMatch ? 'affiliate' : 'pdf',
-                      title: pdf.title,
-                      thumbnail: pdf.thumbnail_url,
+                      title: pdf.title || '',
+                      thumbnail: pdf.thumbnail_url || '',
                       pdfLink: '', // Will fetch below
                       affiliateLink: affiliateMatch ? affiliateMatch[1] : '',
-                      isFree: pdf.is_free,
+                      isFree: pdf.is_free ?? true,
                       originalPrice: pdf.original_price || 0,
                       price: pdf.price || 0,
-                      categories: pdf.categories || [],
+                      categories: pdf.categories || ['বই'],
                       description: cleanDesc,
                       fakeUserCount: metaMatch ? parseInt(metaMatch[1]) : 0
                     });

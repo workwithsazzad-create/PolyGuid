@@ -34,14 +34,22 @@ export default function MarketplaceMyPosts() {
   };
 
   const markAsSold = async (id: string) => {
-    if (!window.confirm('Are you sure the book is sold? This will completely permanently delete it from the marketplace.')) return;
+    if (!window.confirm('Are you sure the book is sold? This will permanently delete it from the marketplace.')) return;
     try {
-       const { error } = await supabase.from('marketplace_books').delete().eq('id', id);
+       const { data: { session } } = await supabase.auth.getSession();
+       if (!session) return alert('Session expired, please login again');
+
+       const { error } = await supabase
+         .from('marketplace_books')
+         .delete()
+         .eq('id', id)
+         .eq('user_id', session.user.id);
+
        if (error) throw error;
        setBooks(prev => prev.filter(b => b.id !== id));
-    } catch (e) {
+    } catch (e: any) {
        console.error(e);
-       alert('Failed to delete');
+       alert('Failed to delete: ' + (e.message || 'Unknown error'));
     }
   };
 

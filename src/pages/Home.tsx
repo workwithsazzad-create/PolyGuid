@@ -160,54 +160,52 @@ export default function Home() {
             .subscribe();
         }
 
-        const coursesPromise = supabase
-          .from("courses")
-          .select("*")
-          .order("created_at", { ascending: false });
+        let coursesRes, bannerRes, statsRes, donationsRes;
 
-        const bannerPromise = supabase
-          .from("site_settings")
-          .select("key, value")
-          .eq("key", "home_banner")
-          .maybeSingle();
+        try {
+          coursesRes = await supabase
+            .from("courses")
+            .select("*")
+            .order("created_at", { ascending: false });
+        } catch (e) {
+          coursesRes = { data: null, error: e };
+        }
 
-        const statsPromise = supabase
-          .from("site_settings")
-          .select("key, value")
-          .in("key", [
-            "stat_courses",
-            "stat_students",
-            "stat_polytechnics",
-            "donation_number",
-            "pinned_courses",
-            "pinned_pdfs",
-          ]);
+        try {
+          bannerRes = await supabase
+            .from("site_settings")
+            .select("key, value")
+            .eq("key", "home_banner")
+            .maybeSingle();
+        } catch (e) {
+          bannerRes = { data: null, error: e };
+        }
 
-        const donationsPromise = supabase
-          .from("donations")
-          .select("*")
-          .eq("status", "approved")
-          .order("created_at", { ascending: false });
+        try {
+          statsRes = await supabase
+            .from("site_settings")
+            .select("key, value")
+            .in("key", [
+              "stat_courses",
+              "stat_students",
+              "stat_polytechnics",
+              "donation_number",
+              "pinned_courses",
+              "pinned_pdfs",
+            ]);
+        } catch (e) {
+          statsRes = { data: null, error: e };
+        }
 
-        const [coursesRes, bannerRes, statsRes, donationsRes] =
-          await Promise.all([
-            Promise.resolve(coursesPromise).catch((e) => ({
-              data: null,
-              error: e,
-            })),
-            Promise.resolve(bannerPromise).catch((e) => ({
-              data: null,
-              error: e,
-            })),
-            Promise.resolve(statsPromise).catch((e) => ({
-              data: null,
-              error: e,
-            })),
-            Promise.resolve(donationsPromise).catch((e) => ({
-              data: null,
-              error: e,
-            })),
-          ]);
+        try {
+          donationsRes = await supabase
+            .from("donations")
+            .select("*")
+            .eq("status", "approved")
+            .order("created_at", { ascending: false });
+        } catch (e) {
+          donationsRes = { data: null, error: e };
+        }
 
         const coursesData = coursesRes.data;
         const bannerData = bannerRes.data;

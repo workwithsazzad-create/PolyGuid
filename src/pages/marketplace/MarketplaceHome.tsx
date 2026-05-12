@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/src/lib/supabase';
-import { Search, MapPin, Plus, List, ArrowLeft } from 'lucide-react';
+import { Search, MapPin, Plus, List, ArrowLeft, Eye } from 'lucide-react';
 import CourseCard from '@/src/components/ui/CourseCard';
 import MarketplaceBookCard from './MarketplaceBookCard';
 
@@ -17,6 +17,12 @@ export default function MarketplaceHome() {
   const [polyguidBooks, setPolyguidBooks] = useState<any[]>([]);
   const [userBooks, setUserBooks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const DISTRICTS = [
+    "Dhaka", "Rangpur", "Rajshahi", "Sylhet", "Chittagong", "Khulna", "Barisal", "Bogra", "Dinajpur", "Mymensingh"
+  ];
+
+  const SEMESTERS = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
   useEffect(() => {
     fetchBooks();
@@ -58,7 +64,7 @@ export default function MarketplaceHome() {
       // 2. Fetch User Books
       let userQuery = supabase
         .from('marketplace_books')
-        .select(`*, user:user_id(id)`)
+        .select('*')
         .order('created_at', { ascending: false });
         
       if (district) userQuery = userQuery.eq('district', district);
@@ -154,10 +160,65 @@ export default function MarketplaceHome() {
                     <h2 className="text-lg sm:text-xl font-bold text-[var(--text)]">অন্যান্য ইউজারদের বই</h2>
                     <span className="text-xs text-gray-500 font-bold px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-full">{filteredUsers.length}টি বই</span>
                   </div>
+                  
+                  {/* Filters for User Books */}
+                  <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar">
+                    <select 
+                      value={district} 
+                      onChange={e => setDistrict(e.target.value)}
+                      className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold outline-none flex-shrink-0"
+                    >
+                      <option value="">সকল জেলা</option>
+                      {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+
+                    <select 
+                      value={semester} 
+                      onChange={e => setSemester(e.target.value)}
+                      className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold outline-none flex-shrink-0"
+                    >
+                      <option value="">সকল সেমিস্টার</option>
+                      {SEMESTERS.map(s => <option key={s} value={s}>{s} Semester</option>)}
+                    </select>
+                  </div>
+
                   {filteredUsers.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+                    <div className="flex flex-col gap-3">
                       {filteredUsers.map(book => (
-                        <MarketplaceBookCard key={book.id} book={book} />
+                        <div 
+                          key={book.id}
+                          onClick={() => navigate(`/marketplace/book/${book.id}`)}
+                          className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-3 flex gap-4 border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                        >
+                          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gray-100 dark:bg-white/5 rounded-xl overflow-hidden flex-shrink-0 shadow-inner">
+                            <img src={book.image_url} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          </div>
+                          <div className="flex-1 flex flex-col justify-between py-0.5">
+                            <div>
+                               <div className="flex items-center justify-between mb-1">
+                                 <h3 className="text-sm sm:text-lg font-black text-[var(--text)] line-clamp-1 group-hover:text-[#00c48c] transition-colors">{book.title}</h3>
+                                 <span className="text-sm sm:text-xl font-black text-[#00c48c]">৳{book.price}</span>
+                               </div>
+                               <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">{book.department} • Semester {book.semester}</p>
+                               <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                                {book.description || "বইটি এখন পর্যন্ত খুব ভালো কন্ডিশন এ আছে চাইলে নিতে পারেন।"}
+                               </p>
+                            </div>
+                            <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-gray-400 font-bold pt-2 border-t border-black/5 dark:border-white/5">
+                              <div className="flex items-center gap-1">
+                                <MapPin size={12} className="text-[#00c48c]" />
+                                <span>{book.district}, {book.upazila}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span>{new Date(book.created_at).toLocaleDateString()}</span>
+                                <div className="flex items-center gap-1">
+                                  <Eye size={12} />
+                                  <span>{book.views || 0}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : (

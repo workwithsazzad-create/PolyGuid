@@ -103,9 +103,10 @@ export default function CourseDetails() {
 
   const handleEnroll = async () => {
     // Increment the fake count in the description safely without blocking for any buy action
+    // jotojon user buy now e click korbe ekta kore user barte thakbe fake er pore
     try {
-      const { data } = await supabase.from('courses').select('description').eq('id', id).single();
-      if (data && data.description) {
+      const { data, error: fetchError } = await supabase.from('courses').select('description').eq('id', id).single();
+      if (!fetchError && data && data.description) {
          const match = data.description.match(/\[meta:fake_user_count:(\d+)\]/);
          const currentFake = match ? parseInt(match[1]) : 0;
          let newDesc = data.description;
@@ -115,13 +116,14 @@ export default function CourseDetails() {
            newDesc += `\n\n[meta:fake_user_count:1]`;
          }
          await supabase.from('courses').update({ description: newDesc }).eq('id', id);
+         
+         // Update local state immediately for visual feedback
+         setCourse(prev => prev ? {...prev, totalUsers: (prev.totalUsers || 0) + 1} : prev);
       }
     } catch(e) {
-      console.error(e);
+      console.error('Error incrementing user count:', e);
     }
     
-    setCourse(prev => prev ? {...prev, totalUsers: (prev.totalUsers || 0) + 1} : prev);
-
     if (course?.affiliateLink) {
       window.open(course.affiliateLink, '_blank');
       return;
