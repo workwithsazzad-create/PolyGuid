@@ -49,9 +49,13 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
   useEffect(() => {
     const fetchNotices = async () => {
       try {
-        const baseUrl = Capacitor.getPlatform() === 'web' 
-          ? '' 
-          : 'https://polyguid.vercel.app';
+        const isWeb = Capacitor.getPlatform() === 'web' || 
+                     (typeof window !== 'undefined' && 
+                      (window.location.hostname === 'localhost' || 
+                       window.location.hostname.includes('run.app') || 
+                       window.location.hostname.includes('ais-dev-')));
+        
+        const baseUrl = isWeb ? '' : 'https://polyguid.vercel.app';
           
         const response = await fetch(`${baseUrl}/api/bteb-notices`);
         if (response.ok) {

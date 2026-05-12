@@ -42,16 +42,20 @@ export default function PdfBooksPage() {
       }
 
       if (data) {
-        setCourses(data.map(c => ({
-          id: c.id,
-          title: c.title,
-          description: c.description,
-          price: c.price,
-          originalPrice: c.original_price,
-          thumbnail: c.thumbnail_url || "https://placehold.co/1000x1430/1a1a1a/e11d48?text=New+Book",
-          classes: c.classes_count,
-          categories: c.categories || []
-        })));
+        setCourses(
+          data
+            .filter(c => !c.description?.includes('[meta:affiliate_link:'))
+            .map(c => ({
+              id: c.id,
+              title: c.title,
+              description: c.description,
+              price: c.price,
+              originalPrice: c.original_price,
+              thumbnail: c.thumbnail_url || "https://placehold.co/1000x1430/1a1a1a/e11d48?text=New+Book",
+              classes: c.classes_count,
+              categories: c.categories || []
+            }))
+        );
       }
     } catch (err) {
       console.error('Error fetching books:', err);
@@ -96,13 +100,13 @@ export default function PdfBooksPage() {
 
       {/* Course Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
           {[...Array(10)].map((_, i) => (
             <div key={i} className="aspect-[1/1.43] bg-gray-100 dark:bg-white/5 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : filteredCourses.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
           {filteredCourses.map((course) => (
             <CourseCard 
               key={course.id} 

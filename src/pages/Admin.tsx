@@ -172,9 +172,13 @@ export default function Admin() {
       }
 
       // 2. Fallback to server API (Local)
-      const baseUrl = Capacitor.getPlatform() === 'web' 
-        ? '' 
-        : 'https://polyguid.vercel.app';
+      const isWeb = Capacitor.getPlatform() === 'web' || 
+                   (typeof window !== 'undefined' && 
+                    (window.location.hostname === 'localhost' || 
+                     window.location.hostname.includes('run.app') || 
+                     window.location.hostname.includes('ais-dev-')));
+      
+      const baseUrl = isWeb ? '' : 'https://polyguid.vercel.app';
       const res = await fetch(`${baseUrl}/api/webhook-logs`);
       const data = await res.json();
       setWebhookLogs(data.logs || []);
@@ -323,10 +327,10 @@ export default function Admin() {
 
   const tabs = [
     { id: "courses", label: "Courses", icon: BookOpen },
+    { id: "pdf", label: "Books", icon: BookOpen },
     { id: "pages", label: "Manage Pages", icon: Layout },
     { id: "analytics", label: "Analytics", icon: FileText },
     { id: "transactions", label: "Transactions", icon: DollarSign },
-    { id: "pdf", label: "PDFs", icon: FileText },
     { id: "youtube", label: "YouTube", icon: Youtube },
     { id: "users", label: "Manage Users", icon: Users },
     { id: "results", label: "Result Parser", icon: FileCheck },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import GlassmorphicCard from './GlassmorphicCard';
-import { PlayCircle, BookOpen } from 'lucide-react';
+import { PlayCircle, BookOpen, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getDirectLink } from '@/src/lib/utils';
 
@@ -15,21 +15,27 @@ interface CourseCardProps {
   classes?: number;
   isEnrolled?: boolean;
   isBook?: boolean;
+  affiliateLink?: string;
 }
 
 import { Link } from 'react-router-dom';
 
-export default function CourseCard({ id, title, description, price, originalPrice, thumbnail, classes = 12, isEnrolled = false, isBook = false }: CourseCardProps) {
+export default function CourseCard({ id, title, description, price, originalPrice, thumbnail, classes = 12, isEnrolled = false, isBook = false, affiliateLink }: CourseCardProps) {
   const hasDiscount = Boolean(originalPrice && originalPrice > price);
   const discountPercent = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  
+  const affiliateMatch = description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
+  const actualAffiliateLink = affiliateLink || (affiliateMatch ? affiliateMatch[1] : null);
+
+  const CardWrapper = ({ children, className }: any) => <Link to={`/course/${id}`} className={className}>{children}</Link>;
 
   return (
-    <Link to={`/course/${id}`} className="block h-full no-underline">
+    <CardWrapper className="block h-full no-underline">
       <GlassmorphicCard 
         hoverEffect 
-        className="flex flex-col gap-1.5 p-1.5 sm:p-2.5 h-full cursor-pointer bg-white dark:bg-[#1a1a1a] border-none shadow-sm hover:shadow-md transition-all rounded-xl"
+        className="flex flex-col gap-0.5 p-1 sm:p-1.5 h-full cursor-pointer bg-white dark:bg-[#1a1a1a] border-none shadow-sm hover:shadow-md transition-all rounded-xl"
       >
-        <div className={`relative ${isBook ? 'aspect-[1/1.43]' : 'aspect-[16/9]'} rounded-lg overflow-hidden bg-gray-100`}>
+        <div className={`relative ${isBook ? 'aspect-[1/1.3]' : 'aspect-[16/9]'} rounded-lg overflow-hidden bg-gray-100`}>
           <img 
             src={getDirectLink(thumbnail)} 
             alt={title} 
@@ -41,41 +47,49 @@ export default function CourseCard({ id, title, description, price, originalPric
               {discountPercent}% OFF
             </CourseBadge>
           )}
-          <div className="absolute top-1.5 right-1.5">
-             <div className="w-6 h-6 rounded-full bg-white/90 backdrop-blur shadow-sm flex items-center justify-center text-gray-400">
-                <BookOpen size={12} />
-             </div>
-          </div>
+          {isBook && (
+            <div className="absolute top-1.5 right-1.5 bg-white/95 dark:bg-black/80 backdrop-blur text-[var(--primary)] text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 border border-white/20 dark:border-white/10 z-10 uppercase tracking-wider">
+              {actualAffiliateLink ? <BookOpen size={10} /> : <FileText size={10} />}
+              {actualAffiliateLink ? 'Hard Copy' : 'PDF Book'}
+            </div>
+          )}
+          {!isBook && (
+            <div className="absolute top-1.5 right-1.5">
+               <div className="w-5 h-5 rounded-full bg-white/90 dark:bg-black/80 backdrop-blur shadow-sm flex items-center justify-center text-gray-500 dark:text-gray-300">
+                  <PlayCircle size={10} />
+               </div>
+            </div>
+          )}
         </div>
         
-        <div className="flex flex-col gap-1 p-1">
-          <h3 className="text-[10px] sm:text-[12px] font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight h-[2.5em]">
+        <div className="flex flex-col gap-0.5 p-0.5">
+          <h3 className="text-[9px] sm:text-[11px] font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight h-[2.1em] overflow-hidden">
             {title}
           </h3>
           
           <div className="flex items-center gap-1 mt-auto">
-            <span className="text-[11px] sm:text-xs font-black text-[var(--primary)]">
+            <span className="text-[10px] sm:text-[11px] font-black text-[var(--primary)]">
               ৳{price}
             </span>
             {hasDiscount && (
-              <span className="text-[8px] sm:text-[9px] text-gray-400 line-through">
+              <span className="text-[7.5px] sm:text-[8px] text-gray-400 line-through">
                 ৳{originalPrice}
               </span>
             )}
           </div>
           
           <div 
-            className={`w-full py-1.5 sm:py-1.5 rounded-md font-black text-[9px] sm:text-[10px] uppercase tracking-wider text-center transition-all shadow-none ${
+            className={`w-full py-0.5 sm:py-1 rounded-md font-black text-[8.5px] sm:text-[9.5px] uppercase tracking-wider text-center transition-all shadow-none ${
               isEnrolled 
                 ? 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10' 
                 : 'bg-[var(--primary)] text-white'
             }`}
           >
-            {isEnrolled ? 'Enrolled' : 'Enroll'}
+            {isEnrolled ? (isBook ? 'Purchased' : 'Enrolled') : (isBook ? 'Buy Now' : 'Enroll')}
           </div>
         </div>
       </GlassmorphicCard>
-    </Link>
+    </CardWrapper>
   );
 }
 

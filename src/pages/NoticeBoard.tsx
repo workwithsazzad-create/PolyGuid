@@ -47,10 +47,14 @@ export default function NoticeBoard() {
     setLoading(true);
     setError(null);
     try {
-      // Use the production domain directly for APK to avoid local fetch errors
-      const baseUrl = Capacitor.getPlatform() === 'web' 
-        ? '' 
-        : 'https://polyguid.vercel.app';
+      // Use relative path for web/dev environments
+      const isWeb = Capacitor.getPlatform() === 'web' || 
+                   (typeof window !== 'undefined' && 
+                    (window.location.hostname === 'localhost' || 
+                     window.location.hostname.includes('run.app') || 
+                     window.location.hostname.includes('ais-dev-')));
+      
+      const baseUrl = isWeb ? '' : 'https://polyguid.vercel.app';
       
       console.log('Fetching notices from:', `${baseUrl}/api/bteb-notices`);
         

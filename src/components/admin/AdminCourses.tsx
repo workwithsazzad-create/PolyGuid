@@ -365,7 +365,11 @@ export default function AdminCourses() {
     if (error) {
       console.error('Error fetching courses:', error);
     } else {
-      setCourses(courseData ? courseData.map((c: any) => ({...c, pinned_position: (pMap as any)[c.id] || null})) : []);
+      // Filter out books
+      const filtered = (courseData || []).filter((c: any) => 
+        !(c.categories?.includes("বই") || c.categories?.includes("Book") || c.title?.includes("বই"))
+      );
+      setCourses(filtered.map((c: any) => ({...c, pinned_position: (pMap as any)[c.id] || null})));
     }
     setLoading(false);
   };

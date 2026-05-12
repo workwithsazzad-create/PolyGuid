@@ -9,8 +9,35 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
 );
+
+// Connection test helper
+export const checkSupabaseConnection = async () => {
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
+    return { ok: false, message: 'Supabase credentials missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Settings.' };
+  }
+  
+  try {
+    const { error } = await supabase.from('courses').select('id').limit(1);
+    if (error) {
+      if (error.message.includes('Failed to fetch')) {
+        return { ok: false, message: 'Supabase is unreachable (Failed to fetch). Check your URL and internet.' };
+      }
+      return { ok: false, message: error.message };
+    }
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, message: err.message || 'Connection failed' };
+  }
+};
 
 /**
  * SQL Schema for Supabase:

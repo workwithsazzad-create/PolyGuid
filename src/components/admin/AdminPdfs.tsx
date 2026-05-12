@@ -16,9 +16,11 @@ export default function AdminPdfs() {
   const [isAddingPdf, setIsAddingPdf] = useState(false);
   const [editingPdfId, setEditingPdfId] = useState<string | null>(null);
   const [pdfForm, setPdfForm] = useState({
+    type: 'pdf',
     title: '',
     thumbnail: '',
     pdfLink: '',
+    affiliateLink: '',
     isFree: true,
     originalPrice: 0,
     price: 0,
@@ -54,7 +56,7 @@ export default function AdminPdfs() {
     const { data, error } = await supabase
       .from('course_content')
       .select('*')
-      .eq('pdf_id', pdfId)
+      .eq('course_id', pdfId)
       .order('created_at', { ascending: true });
     
     if (error) {
@@ -91,13 +93,16 @@ export default function AdminPdfs() {
     const { data: pdfData, error } = await supabase
       .from('courses')
       .select('*')
-      .contains('categories', ['বই'])
       .order('created_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching pdfs:', error);
     } else {
-      setPdfs(pdfData ? pdfData.map((c: any) => ({...c, pinned_position: (pMap as any)[c.id] || null})) : []);
+      // Filter for books only
+      const filtered = (pdfData || []).filter((c: any) => 
+        c.categories?.includes("বই") || c.categories?.includes("Book") || c.title?.includes("বই")
+      );
+      setPdfs(filtered.map((c: any) => ({...c, pinned_position: (pMap as any)[c.id] || null})));
     }
     setLoading(false);
   };
@@ -157,8 +162,9 @@ export default function AdminPdfs() {
     e.preventDefault();
     setLoading(true);
     
-    const cleanDesc = pdfForm.description.replace(/\[meta:fake_user_count:\d+\]/, '').trim();
+    const cleanDesc = pdfForm.description.replace(/\[meta:fake_user_count:\d+\]/g, '').replace(/\[meta:affiliate_link:[^\]]+\]/g, '').trim();
     const metaString = `\n\n[meta:fake_user_count:${pdfForm.fakeUserCount}]`;
+    const affiliateString = pdfForm.type === 'affiliate' ? `\n[meta:affiliate_link:${pdfForm.affiliateLink}]` : '';
     
     const pdfData = {
       title: pdfForm.title,
@@ -167,7 +173,7 @@ export default function AdminPdfs() {
       original_price: pdfForm.originalPrice,
       price: pdfForm.price,
       categories: ['বই'],
-      description: cleanDesc + metaString
+      description: cleanDesc + metaString + affiliateString
     };
 
     let savedCourseId = editingPdfId;
@@ -203,7 +209,7 @@ export default function AdminPdfs() {
       }
     }
 
-    if (savedCourseId && pdfForm.pdfLink) {
+    if (savedCourseId && pdfForm.type === 'pdf' && pdfForm.pdfLink) {
       // Manage PDF content link
       const { data: existingContent } = await supabase.from('course_content').select('id').eq('course_id', savedCourseId).eq('type', 'pdf').maybeSingle();
       
@@ -219,11 +225,14 @@ export default function AdminPdfs() {
             is_paid: !pdfForm.isFree
          });
       }
+    } else if (savedCourseId && pdfForm.type === 'affiliate') {
+      // For affiliate, we might want to clean up existing pdf links if it was changed from pdf to affiliate
+      await supabase.from('course_content').delete().eq('course_id', savedCourseId).eq('type', 'pdf');
     }
 
     setIsAddingPdf(false);
     setEditingPdfId(null);
-    setPdfForm({ title: '', thumbnail: '', pdfLink: '', isFree: true, originalPrice: 0, price: 0, categories: [], description: '', fakeUserCount: 0 });
+    setPdfForm({ type: 'pdf', title: '', thumbnail: '', pdfLink: '', affiliateLink: '', isFree: true, originalPrice: 0, price: 0, categories: [], description: '', fakeUserCount: 0 });
     setLoading(false);
   };
 
@@ -247,7 +256,7 @@ export default function AdminPdfs() {
     const { data: contents } = await supabase
       .from('course_content')
       .select('type')
-      .eq('pdf_id', pdfId)
+      .eq('course_id', pdfId)
       .eq('type', 'video');
     
     const count = contents?.length || 0;
@@ -267,7 +276,7 @@ export default function AdminPdfs() {
     setLoading(true);
     
     const contentData = {
-      pdf_id: selectedPdf.id,
+      course_id: selectedPdf.id,
       type: contentForm.type,
       title: contentForm.title,
       available_from: contentForm.available_from,
@@ -373,6 +382,19 @@ export default function AdminPdfs() {
             <div className="p-6 overflow-y-auto max-h-[85vh] custom-scrollbar">
               <form onSubmit={handleCreatePdf} className="flex flex-col gap-6">
                  <div className="relative pt-2">
+                    <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 transition-all">Book Type*</label>
+                    <select 
+                      required
+                      value={pdfForm.type}
+                      onChange={(e) => setPdfForm({...pdfForm, type: e.target.value})}
+                      className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="pdf" className="bg-white dark:bg-[#1a1a1a]">PDF Book</option>
+                      <option value="affiliate" className="bg-white dark:bg-[#1a1a1a]">Affiliate Book</option>
+                    </select>
+                  </div>
+
+                 <div className="relative pt-2">
                     <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 transition-all">Book Title*</label>
                     <input 
                       required
@@ -401,6 +423,7 @@ export default function AdminPdfs() {
                     </div>
                   </div>
                   
+                  {pdfForm.type === 'pdf' && (
                   <div className="relative pt-2">
                     <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-[var(--primary)] uppercase z-10 transition-all">PDF Drive Link*</label>
                     <input 
@@ -412,6 +435,21 @@ export default function AdminPdfs() {
                       className="w-full bg-transparent border-2 border-[var(--primary)]/50 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:border-[var(--primary)] shadow-[0_0_15px_rgba(34,197,94,0.1)]"
                     />
                   </div>
+                  )}
+
+                  {pdfForm.type === 'affiliate' && (
+                  <div className="relative pt-2">
+                    <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-[var(--primary)] uppercase z-10 transition-all">Affiliate Link*</label>
+                    <input 
+                      required
+                      type="url" 
+                      value={pdfForm.affiliateLink}
+                      onChange={(e) => setPdfForm({...pdfForm, affiliateLink: e.target.value})}
+                      placeholder="https://rokomari.com/book/..."
+                      className="w-full bg-transparent border-2 border-[var(--primary)]/50 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:border-[var(--primary)] shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                    />
+                  </div>
+                  )}
 
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
@@ -460,7 +498,7 @@ export default function AdminPdfs() {
                       value={pdfForm.fakeUserCount} 
                       onChange={(e) => setPdfForm({...pdfForm, fakeUserCount: parseInt(e.target.value) || 0})} 
                       placeholder="e.g. 500"
-                      className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     />
                   </div>
                   
@@ -565,20 +603,23 @@ export default function AdminPdfs() {
                     e.stopPropagation(); 
                     setEditingPdfId(pdf.id);
                     const metaMatch = pdf.description?.match(/\[meta:fake_user_count:(\d+)\]/);
-                    const cleanDesc = pdf.description?.replace(/\[meta:fake_user_count:\d+\]/, '').trim();
+                    const affiliateMatch = pdf.description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
+                    let cleanDesc = pdf.description?.replace(/\[meta:fake_user_count:\d+\]/g, '') || '';
+                    cleanDesc = cleanDesc.replace(/\[meta:affiliate_link:[^\]]+\]/g, '').trim();
 
-                    
-  setPdfForm({
-    title: pdf.title,
-    thumbnail: pdf.thumbnail_url,
-    pdfLink: '', // Will fetch below
-    isFree: pdf.is_free,
-    originalPrice: pdf.original_price || 0,
-    price: pdf.price || 0,
-    categories: pdf.categories || [],
-    description: cleanDesc || '',
-    fakeUserCount: fakeCount
-  });
+                    setPdfForm({
+                      type: affiliateMatch ? 'affiliate' : 'pdf',
+                      title: pdf.title,
+                      thumbnail: pdf.thumbnail_url,
+                      pdfLink: '', // Will fetch below
+                      affiliateLink: affiliateMatch ? affiliateMatch[1] : '',
+                      isFree: pdf.is_free,
+                      originalPrice: pdf.original_price || 0,
+                      price: pdf.price || 0,
+                      categories: pdf.categories || [],
+                      description: cleanDesc,
+                      fakeUserCount: metaMatch ? parseInt(metaMatch[1]) : 0
+                    });
   
   // Fetch existing pdf link
   supabase.from('course_content').select('url').eq('course_id', pdf.id).eq('type', 'pdf').maybeSingle().then(({data}) => {

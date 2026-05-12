@@ -665,7 +665,7 @@ export default function Home() {
                   .map((course, i) => (
                     <div
                       key={i}
-                      className="min-w-[140px] sm:min-w-[200px] max-w-[150px] sm:max-w-[220px] snap-start"
+                      className="min-w-[130px] sm:min-w-[180px] max-w-[140px] sm:max-w-[200px] snap-start"
                     >
                       <CourseCard
                         {...course}
@@ -755,7 +755,7 @@ export default function Home() {
                   .map((course, i) => (
                     <div
                       key={i}
-                      className="min-w-[140px] sm:min-w-[200px] max-w-[150px] sm:max-w-[220px] snap-start"
+                      className="min-w-[130px] sm:min-w-[180px] max-w-[140px] sm:max-w-[200px] snap-start"
                     >
                       <CourseCard
                         {...course}

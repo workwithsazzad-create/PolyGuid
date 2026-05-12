@@ -34,6 +34,11 @@ import Notifications from './pages/Notifications';
 import More from './pages/More';
 import BottomNav from './components/ui/BottomNav';
 
+import MarketplaceHome from './pages/marketplace/MarketplaceHome';
+import MarketplacePost from './pages/marketplace/MarketplacePost';
+import MarketplaceMyPosts from './pages/marketplace/MarketplaceMyPosts';
+import MarketplaceBookDetails from './pages/marketplace/MarketplaceBookDetails';
+
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { prefetchHomeData } from './services/dataService';
@@ -343,7 +348,10 @@ function AppContent() {
           <Route path="/profile" element={<Profile />} />
           
           {/* Layer Routes (Standalone Pages) */}
-          <Route path="/marketplace" element={<div className="p-8 max-w-4xl mx-auto"><h1 className="text-3xl font-bold font-sans"><span className="text-[#32CD32]">P</span>oly<span className="text-[#00BFFF]">G</span>uid Marketplace</h1><p className="text-gray-500 mt-4 leading-relaxed">শীঘ্রই আসছে: এখান থেকে আপনি আপনার প্রয়োজনীয় ইঞ্জিনিয়ারিং বই কেনা-বেচা করতে পারবেন।</p></div>} />
+          <Route path="/marketplace" element={<MarketplaceHome />} />
+          <Route path="/marketplace/post" element={<MarketplacePost />} />
+          <Route path="/marketplace/my-posts" element={<MarketplaceMyPosts />} />
+          <Route path="/marketplace/book/:id" element={<MarketplaceBookDetails />} />
           <Route path="/books-pdf" element={<PdfBooksPage />} />
           <Route path="/book-list" element={<BookList />} />
           <Route path="/notices" element={<NoticeBoard />} />

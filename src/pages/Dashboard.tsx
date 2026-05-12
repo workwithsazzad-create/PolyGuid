@@ -10,6 +10,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [purchasedBooks, setPurchasedBooks] = useState<any[]>([]);
   const [savedVideos, setSavedVideos] = useState<any[]>([]);
   const [savedPdfs, setSavedPdfs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +36,7 @@ export default function Dashboard() {
             setUserName(profile.full_name);
           }
 
-          // Fetch Enrolled Courses
+          // Fetch Enrolled Items
           const { data: enrollments } = await supabase
             .from('enrollments')
             .select(`
@@ -45,14 +46,18 @@ export default function Dashboard() {
             .eq('user_id', user.id);
           
           if (enrollments) {
-            setEnrolledCourses(enrollments.map(e => {
+            const allItems = enrollments.map(e => {
               const course = Array.isArray(e.courses) ? e.courses[0] : e.courses;
               return {
                 ...course,
                 thumbnail: course?.thumbnail_url || "https://placehold.co/600x400/1a1a1a/32CD32?text=Enrolled",
-                classes: course?.classes_count
+                classes: course?.classes_count,
+                isBook: course?.categories?.includes("বই") || course?.categories?.includes("Book") || course?.title?.includes("বই")
               };
-            }));
+            });
+            
+            setEnrolledCourses(allItems.filter(i => !i.isBook));
+            setPurchasedBooks(allItems.filter(i => i.isBook));
           }
 
           // Fetch Saved Items
@@ -198,7 +203,7 @@ export default function Dashboard() {
             onClick={() => navigate('/home')}
             className="text-xs sm:text-base text-[var(--primary)] hover:underline flex items-center gap-0.5 sm:gap-1 font-bold shrink-0"
           >
-            View All <ChevronRight size={16} className="w-3 h-3 sm:w-4 sm:h-4" />
+            সবগুলো দেখুন <ChevronRight size={16} className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
         </div>
         
@@ -227,6 +232,39 @@ export default function Dashboard() {
               >
                 Explore Courses
               </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Bottom Section: Purchased Books */}
+      <section className="flex flex-col gap-4 sm:gap-6">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-[16px] sm:text-2xl font-bold text-[var(--text)] whitespace-nowrap overflow-hidden text-ellipsis leading-tight">আপনার কেনা বইসমূহ</h2>
+          <button 
+            onClick={() => navigate('/books-pdf')}
+            className="text-xs sm:text-base text-[var(--primary)] hover:underline flex items-center gap-0.5 sm:gap-1 font-bold shrink-0"
+          >
+            সবগুলো দেখুন <ChevronRight size={16} className="w-3 h-3 sm:w-4 sm:h-4" />
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+          {purchasedBooks.length > 0 ? (
+            purchasedBooks.map((course, index) => (
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <CourseCard {...course} isEnrolled={true} isBook={true} />
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full py-10 text-center bg-black/5 dark:bg-white/5 rounded-3xl border border-black/10 dark:border-white/10 flex flex-col items-center gap-3">
+              <Book size={40} className="text-gray-400" strokeWidth={1} />
+              <p className="text-sm text-gray-500">আপনার কেনা কোনো বই এখানে নেই</p>
             </div>
           )}
         </div>

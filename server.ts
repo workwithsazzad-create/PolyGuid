@@ -51,6 +51,10 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.text({ type: '*/*' })); // Catch raw text/xml/etc
 
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
+  });
+
   app.get("/api/webhook-logs", (req, res) => {
     res.json({
       logs: getWebhookLogs(),
