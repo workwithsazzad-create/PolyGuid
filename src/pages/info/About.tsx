@@ -21,10 +21,10 @@ export default function About() {
       >
         <h1 className="text-3xl font-bold text-[var(--text)] mb-8 text-center italic">আমাদের সম্পর্কে</h1>
 
-        <GlassmorphicCard className="p-8 sm:p-12 min-h-[300px]">
+        <GlassmorphicCard className="p-5 sm:p-12 min-h-[300px]">
           <div 
             dangerouslySetInnerHTML={{ __html: content }} 
-            className="prose dark:prose-invert max-w-none w-full text-gray-700 dark:text-gray-300 leading-relaxed font-medium" 
+            className="prose dark:prose-invert max-w-none w-full text-gray-700 dark:text-gray-300 leading-relaxed font-medium break-words overflow-hidden" 
           />
         </GlassmorphicCard>
       </motion.div>

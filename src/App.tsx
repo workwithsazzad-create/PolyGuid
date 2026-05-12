@@ -64,6 +64,19 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
   const navigate = useNavigate();
 
   const isMessageConversation = location.pathname === '/messages' && searchParams.has('userId');
+  const hasOwnHeader = [
+    '/home',
+    '/marketplace',
+    '/marketplace/post',
+    '/marketplace/my-posts',
+    '/marketplace/book',
+    '/course/',
+    '/play/',
+    '/pdf/',
+    '/notifications',
+    '/notices',
+    '/messages'
+  ].some(path => location.pathname.startsWith(path));
 
   return (
     <div className={cn("flex min-h-screen lg:pb-0", isMessageConversation ? "pb-0" : "pb-16")}>

@@ -8,6 +8,7 @@ import {
   FileText,
   List,
   Users,
+  BadgeCheck,
   Building2,
   PlayCircle,
   Heart,
@@ -440,8 +441,8 @@ export default function Home() {
           </span>
         </div>
 
-        {/* Profile and Greeting */}
-        <div className="flex items-center gap-4 mb-2">
+        {/* Profile and Greeting (Hidden on mobile as per request) */}
+        <div className="hidden sm:flex items-center gap-4 mb-6">
           <div className="w-14 h-14 rounded-full flex flex-shrink-0 items-center justify-center overflow-hidden border-2 border-white dark:border-[#333] bg-white dark:bg-black shadow-sm">
             {profile?.avatar_url ? (
               <img
@@ -453,13 +454,18 @@ export default function Home() {
               <User size={28} className="text-[#32CD32]" />
             )}
           </div>
-          <div className="flex flex-col">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-              {getGreeting()}, {profile?.full_name || "শিক্ষার্থী"}
-            </h2>
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight break-words">
+                {getGreeting()}, {profile?.full_name || "শিক্ষার্থী"}
+              </h2>
+              {(profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuid')) && (
+                <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={16} />
+              )}
+            </div>
             <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-500 dark:text-gray-400">
               <Building2 size={12} className="text-[#32CD32]" />
-              <span className="font-semibold">
+              <span className="font-semibold truncate">
                 {profile?.polytechnic_name || "পলিটেকনিক তথ্য নেই"}
               </span>
             </div>

@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import GlassmorphicCard from '@/src/components/ui/GlassmorphicCard';
 import CourseCard from '@/src/components/ui/CourseCard';
-import { Youtube, FileText, ChevronRight, Play, Eye, Star, Book } from 'lucide-react';
+import { Youtube, FileText, ChevronRight, Play, Eye, Star, Book, BadgeCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -15,25 +15,24 @@ export default function Dashboard() {
   const [savedPdfs, setSavedPdfs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [profile, setProfile] = useState<any>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) {
-          console.warn('Auth check failed:', authError.message);
-          return;
-        }
+        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          // Fetch User Name
-          const { data: profile } = await supabase
+          // Fetch Profile
+          const { data: profileData } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('*')
             .eq('id', user.id)
             .single();
           
-          if (profile?.full_name) {
-            setUserName(profile.full_name);
+          setProfile(profileData);
+          if (profileData?.full_name) {
+            setUserName(profileData.full_name);
           }
 
           // Fetch Enrolled Items
@@ -137,9 +136,31 @@ export default function Dashboard() {
       animate={{ opacity: 1 }}
       className="flex flex-col gap-6 sm:gap-8 pb-12 px-6 lg:px-0"
     >
-      <header className="flex flex-col gap-0.5 sm:gap-2">
-        <h1 className="text-[19px] sm:text-3xl font-bold text-[var(--text)] leading-tight">Welcome back{userName ? `, ${userName}` : '!'}</h1>
-        <p className="text-[11px] sm:text-base text-gray-500 dark:text-gray-400">Continue your learning journey with the best resources.</p>
+      <header className="hidden sm:flex items-center gap-4">
+        <div className="w-14 h-14 rounded-full flex flex-shrink-0 items-center justify-center overflow-hidden border-2 border-white dark:border-[#333] bg-white dark:bg-black shadow-sm">
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt="Profile"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-[#32CD32]/10 flex items-center justify-center">
+              <span className="text-[#32CD32] font-black text-xl">{userName?.charAt(0) || 'P'}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <h1 className="text-lg sm:text-3xl font-bold text-[var(--text)] leading-tight break-words">
+              Welcome back{userName ? `, ${userName}` : '!'}
+            </h1>
+            {(profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuid')) && (
+              <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={16} />
+            )}
+          </div>
+          <p className="text-[11px] sm:text-base text-gray-500 dark:text-gray-400">Continue your learning journey with the best resources.</p>
+        </div>
       </header>
 
       {/* Top Section: Saved Items Links */}

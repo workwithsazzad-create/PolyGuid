@@ -152,7 +152,7 @@ const ContentModal = ({
               </div>
 
               <div className="flex justify-end gap-3 mt-4">
-                <button type="submit" disabled={loading} className="bg-[#00c48c] text-white font-medium py-2 px-6 rounded-md hover:bg-[#00a375] transition-colors disabled:opacity-50">
+                <button type="submit" disabled={loading} className="bg-[#32CD32] text-white font-medium py-2 px-6 rounded-md hover:bg-[#28a428] transition-colors disabled:opacity-50">
                   {loading ? 'Submitting...' : 'Submit'}
                 </button>
                 <button type="button" onClick={onClose} className="bg-[#ff4d4f] text-white font-medium py-2 px-6 rounded-md hover:bg-[#d9363e] transition-colors">
@@ -261,7 +261,7 @@ const ContentModal = ({
                 </div>
 
                 <div className="flex justify-end gap-3 mt-4">
-                  <button type="submit" disabled={loading} className="bg-[#00c48c] text-white font-medium py-2 px-6 rounded-md hover:bg-[#00a375] transition-colors disabled:opacity-50">
+                  <button type="submit" disabled={loading} className="bg-[#32CD32] text-white font-medium py-2 px-6 rounded-md hover:bg-[#28a428] transition-colors disabled:opacity-50">
                     {loading ? 'Submitting...' : 'Submit'}
                   </button>
                   <button type="button" onClick={onClose} className="bg-[#ff4d4f] text-white font-medium py-2 px-6 rounded-md hover:bg-[#d9363e] transition-colors">

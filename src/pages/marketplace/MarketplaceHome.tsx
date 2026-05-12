@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/src/lib/supabase';
-import { Search, MapPin, Plus, List, ArrowLeft, Eye } from 'lucide-react';
+import { Search, MapPin, Plus, List, Eye } from 'lucide-react';
 import CourseCard from '@/src/components/ui/CourseCard';
 import MarketplaceBookCard from './MarketplaceBookCard';
 
@@ -19,7 +19,7 @@ export default function MarketplaceHome() {
   const [isLoading, setIsLoading] = useState(true);
 
   const DISTRICTS = [
-    "Dhaka", "Rangpur", "Rajshahi", "Sylhet", "Chittagong", "Khulna", "Barisal", "Bogra", "Dinajpur", "Mymensingh"
+    "Bagerhat", "Bandarban", "Barguna", "Barisal", "Bhola", "Bogra", "Brahmanbaria", "Chandpur", "Chapainawabganj", "Chattogram", "Chuadanga", "Comilla", "Cox's Bazar", "Dhaka", "Dinajpur", "Faridpur", "Feni", "Gaibandha", "Gazipur", "Gopalganj", "Habiganj", "Jamalpur", "Jashore", "Jhalokati", "Jhenaidah", "Joypurhat", "Khagrachari", "Khulna", "Kishoreganj", "Kurigram", "Kushtia", "Lakshmipur", "Lalmonirhat", "Madaripur", "Magura", "Manikganj", "Meherpur", "Moulvibazar", "Munshiganj", "Mymensingh", "Naogaon", "Narail", "Narayanganj", "Narsingdi", "Natore", "Netrokona", "Nilphamari", "Noakhali", "Pabna", "Panchagarh", "Patuakhali", "Pirojpur", "Rajbari", "Rajshahi", "Rangamati", "Rangpur", "Satkhira", "Shariatpur", "Sherpur", "Sirajganj", "Sunamganj", "Sylhet", "Tangail", "Thakurgaon"
   ];
 
   const SEMESTERS = ["1", "2", "3", "4", "5", "6", "7", "8"];
@@ -65,6 +65,7 @@ export default function MarketplaceHome() {
       let userQuery = supabase
         .from('marketplace_books')
         .select('*')
+        .eq('status', 'active')
         .order('created_at', { ascending: false });
         
       if (district) userQuery = userQuery.eq('district', district);
@@ -97,9 +98,6 @@ export default function MarketplaceHome() {
       <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#121212]/90 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
-             <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 lg:hidden">
-                <ArrowLeft size={20} className="text-gray-700 dark:text-gray-300" />
-             </button>
              <div>
                 <h1 className="text-lg sm:text-2xl font-black text-[var(--text)] tracking-tight">Marketplace</h1>
                 <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Buy and sell engineering books</p>
@@ -126,7 +124,7 @@ export default function MarketplaceHome() {
               placeholder="বইয়ের নাম অথবা ঠিকানা দিয়ে খুঁজুন..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#00c48c] text-sm font-medium shadow-sm"
+              className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#32CD32] text-sm font-medium shadow-sm"
             />
           </div>
 
@@ -166,7 +164,7 @@ export default function MarketplaceHome() {
                     <select 
                       value={district} 
                       onChange={e => setDistrict(e.target.value)}
-                      className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold outline-none flex-shrink-0"
+                      className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-[10px] sm:text-xs font-bold outline-none flex-shrink-0"
                     >
                       <option value="">সকল জেলা</option>
                       {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -175,7 +173,7 @@ export default function MarketplaceHome() {
                     <select 
                       value={semester} 
                       onChange={e => setSemester(e.target.value)}
-                      className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold outline-none flex-shrink-0"
+                      className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-[10px] sm:text-xs font-bold outline-none flex-shrink-0"
                     >
                       <option value="">সকল সেমিস্টার</option>
                       {SEMESTERS.map(s => <option key={s} value={s}>{s} Semester</option>)}
@@ -183,42 +181,9 @@ export default function MarketplaceHome() {
                   </div>
 
                   {filteredUsers.length > 0 ? (
-                    <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
                       {filteredUsers.map(book => (
-                        <div 
-                          key={book.id}
-                          onClick={() => navigate(`/marketplace/book/${book.id}`)}
-                          className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-3 flex gap-4 border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                        >
-                          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gray-100 dark:bg-white/5 rounded-xl overflow-hidden flex-shrink-0 shadow-inner">
-                            <img src={book.image_url} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          </div>
-                          <div className="flex-1 flex flex-col justify-between py-0.5">
-                            <div>
-                               <div className="flex items-center justify-between mb-1">
-                                 <h3 className="text-sm sm:text-lg font-black text-[var(--text)] line-clamp-1 group-hover:text-[#00c48c] transition-colors">{book.title}</h3>
-                                 <span className="text-sm sm:text-xl font-black text-[#00c48c]">৳{book.price}</span>
-                               </div>
-                               <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">{book.department} • Semester {book.semester}</p>
-                               <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-2 leading-relaxed">
-                                {book.description || "বইটি এখন পর্যন্ত খুব ভালো কন্ডিশন এ আছে চাইলে নিতে পারেন।"}
-                               </p>
-                            </div>
-                            <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-gray-400 font-bold pt-2 border-t border-black/5 dark:border-white/5">
-                              <div className="flex items-center gap-1">
-                                <MapPin size={12} className="text-[#00c48c]" />
-                                <span>{book.district}, {book.upazila}</span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span>{new Date(book.created_at).toLocaleDateString()}</span>
-                                <div className="flex items-center gap-1">
-                                  <Eye size={12} />
-                                  <span>{book.views || 0}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        <MarketplaceBookCard key={book.id} book={book} />
                       ))}
                     </div>
                   ) : (
@@ -235,7 +200,7 @@ export default function MarketplaceHome() {
       <div className="fixed bottom-20 lg:bottom-10 right-4 lg:right-10 z-40">
         <button
           onClick={() => navigate('/marketplace/post')}
-          className="w-14 h-14 bg-[#00c48c] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,196,140,0.4)] hover:scale-105 active:scale-95 transition-all"
+          className="w-14 h-14 bg-[#32CD32] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(50,205,50,0.4)] hover:scale-105 active:scale-95 transition-all text-center"
         >
           <Plus size={28} />
         </button>
