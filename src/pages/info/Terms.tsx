@@ -19,7 +19,7 @@ export default function Terms() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-4xl mx-auto w-full px-4 pt-10"
       >
-        <h1 className="text-3xl font-bold text-[var(--text)] mb-8 text-center italic">ব্যবহারকারীর শর্তাবলি</h1>
+        <h1 className="text-3xl font-bold text-[var(--text)] mb-8 text-center">ব্যবহারকারীর শর্তাবলি</h1>
         
         <GlassmorphicCard className="p-8 sm:p-12 min-h-[300px]">
           <div 

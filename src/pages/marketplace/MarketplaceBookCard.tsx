@@ -1,9 +1,10 @@
 import React from 'react';
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, BadgeCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MarketplaceBookCard({ book }: { book: any; key?: any }) {
   const navigate = useNavigate();
+  const isVerified = book.profiles?.is_verified || book.profiles?.role === 'admin';
 
   return (
     <div 
@@ -19,6 +20,11 @@ export default function MarketplaceBookCard({ book }: { book: any; key?: any }) 
         {book.status === 'sold' && (
           <div className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest z-10">
             Sold
+          </div>
+        )}
+        {isVerified && (
+          <div className="absolute top-2 right-2 bg-blue-500 text-white p-0.5 rounded-full z-10">
+            <BadgeCheck size={10} className="fill-blue-500 text-white" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />

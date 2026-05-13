@@ -20,7 +20,7 @@ export default function Privacy() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-4xl mx-auto w-full px-4 pt-10"
       >
-        <h1 className="text-3xl font-bold text-[var(--text)] mb-8 text-center italic">প্রাইভেসি পলিসি</h1>
+        <h1 className="text-3xl font-bold text-[var(--text)] mb-8 text-center">প্রাইভেসি পলিসি</h1>
 
         <GlassmorphicCard className="p-8 sm:p-12 min-h-[300px]">
           <div 

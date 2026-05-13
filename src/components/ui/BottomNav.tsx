@@ -148,9 +148,9 @@ export default function BottomNav() {
 
   const navItems = [
     { name: 'Home', icon: Home, path: '/home' },
-    { name: 'Dashboard', icon: BookOpen, path: '/dashboard' },
     { name: 'Inbox', icon: MessageSquare, path: '/messages', badge: unreadCount },
     { name: 'Notification', icon: Bell, path: '/notifications', badge: unreadNotificationCount },
+    { name: 'Profile', icon: LayoutGrid, path: '/profile' },
     { name: 'More', icon: LayoutGrid, path: '/more' },
   ];
 

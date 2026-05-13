@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/src/components/ThemeProvider';
 import { 
   User, Edit2, Lock, LayoutDashboard, Bell, ShieldCheck, 
-  History, Moon, Sun, Info, MessageSquare, LogOut, FileText, ChevronRight, CheckCircle2, ChevronDown, BookOpen
+  History, Moon, Sun, Info, MessageSquare, LogOut, FileText, ChevronRight, CheckCircle2, ChevronDown, BookOpen,
+  BadgeCheck
 } from 'lucide-react';
 import GlassmorphicCard from '@/src/components/ui/GlassmorphicCard';
 
@@ -28,6 +29,36 @@ export default function More() {
 
   useEffect(() => {
     fetchData();
+    
+    // Real-time subscription for profile changes
+    let profileSubscription: any = null;
+    
+    const setupProfileSubscription = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        profileSubscription = supabase
+          .channel(`more_profile_${session.user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "profiles",
+              filter: `id=eq.${session.user.id}`,
+            },
+            (payload) => {
+              setProfile(payload.new);
+            }
+          )
+          .subscribe();
+      }
+    };
+    
+    setupProfileSubscription();
+    
+    return () => {
+      if (profileSubscription) supabase.removeChannel(profileSubscription);
+    };
   }, []);
 
   const fetchData = async () => {
@@ -134,7 +165,12 @@ export default function More() {
                   )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">{profile?.full_name || 'Student Name'}</h3>
+                  <h3 className="font-semibold text-lg flex items-center gap-1.5">
+                    {profile?.full_name || 'Student Name'}
+                    {(profile?.is_verified || profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuid')) && (
+                      <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-5 h-5 shrink-0" size={18} />
+                    )}
+                  </h3>
                   <p className="text-sm text-gray-500">{profile?.phone || 'No phone provided'}</p>
                 </div>
               </div>
@@ -220,6 +256,7 @@ export default function More() {
           <div className="bg-white dark:bg-[#1a1b1e] rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
             <MenuOption icon={LayoutDashboard} label="ড্যাশবোর্ড" onClick={() => navigate('/dashboard')} color="bg-blue-500" />
             <MenuOption icon={BookOpen} label="বইয়ের তালিকা" onClick={() => navigate('/book-list')} color="bg-orange-500" />
+            <MenuOption icon={ShieldCheck} label="ভেরিফিকেশন আবেদন" onClick={() => navigate('/verify-account')} color="bg-blue-400" />
             <MenuOption icon={FileText} label="নোটিশ বোর্ড" onClick={() => navigate('/notices')} color="bg-emerald-500" />
             {isAdmin && <MenuOption icon={ShieldCheck} label="অ্যাডমিন প্যানেল" onClick={() => navigate('/admin')} color="bg-purple-500" />}
             <MenuOption icon={History} label="পেমেন্ট ও অর্ডার হিস্ট্রি" onClick={() => navigate('/orders')} color="bg-amber-500" /> 

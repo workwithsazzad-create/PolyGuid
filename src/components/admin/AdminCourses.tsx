@@ -703,7 +703,7 @@ export default function AdminCourses() {
             {courseContents.length === 0 && !isAddingContent && (
               <div className="flex flex-col items-center justify-center py-20 text-gray-500 opacity-50">
                 <FileText size={48} strokeWidth={1} />
-                <p className="mt-4 font-medium italic">No materials added to this course yet.</p>
+                <p className="mt-4 font-medium">No materials added to this course yet.</p>
               </div>
             )}
           </div>

@@ -64,7 +64,16 @@ export default function MarketplaceHome() {
       // 2. Fetch User Books
       let userQuery = supabase
         .from('marketplace_books')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id!left (
+            id,
+            full_name,
+            avatar_url,
+            is_verified,
+            role
+          )
+        `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
         
@@ -160,7 +169,7 @@ export default function MarketplaceHome() {
                   </div>
                   
                   {/* Filters for User Books */}
-                  <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar">
+                  <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar items-center">
                     <select 
                       value={district} 
                       onChange={e => setDistrict(e.target.value)}
@@ -178,6 +187,15 @@ export default function MarketplaceHome() {
                       <option value="">সকল সেমিস্টার</option>
                       {SEMESTERS.map(s => <option key={s} value={s}>{s} Semester</option>)}
                     </select>
+
+                    {(district || semester) && (
+                      <button 
+                        onClick={() => { setDistrict(''); setSemester(''); }}
+                        className="text-[10px] font-bold text-[#32CD32] whitespace-nowrap px-2"
+                      >
+                        Clear
+                      </button>
+                    )}
                   </div>
 
                   {filteredUsers.length > 0 ? (

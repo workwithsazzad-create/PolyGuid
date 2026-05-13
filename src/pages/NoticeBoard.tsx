@@ -288,7 +288,7 @@ export default function NoticeBoard() {
 function Logo({ theme, size, showText, className }: any) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="w-8 h-8 bg-[#32CD32] rounded-lg flex items-center justify-center text-white font-bold italic">
+      <div className="w-8 h-8 bg-[#32CD32] rounded-lg flex items-center justify-center text-white font-bold">
         P
       </div>
     </div>

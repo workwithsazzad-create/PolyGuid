@@ -119,7 +119,7 @@ export default function Messages() {
       if (otherUserIds.size > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, role')
+          .select('id, full_name, avatar_url, role, is_verified')
           .in('id', Array.from(otherUserIds));
           
         if (!profilesError && profilesData) {
@@ -128,7 +128,7 @@ export default function Messages() {
               const u = uniqueUsersMap.get(p.id);
               u.full_name = p.full_name || 'Student';
               u.avatar_url = p.avatar_url;
-              u.is_admin = p.role === 'admin';
+              u.is_verified = p.is_verified || p.role === 'admin';
             }
           });
         }
@@ -506,7 +506,7 @@ export default function Messages() {
                       <div className="flex justify-between items-center gap-1">
                         <h4 className={`text-sm truncate flex items-center gap-1 ${conv.unread ? 'font-black text-[var(--text)]' : 'font-semibold text-gray-600 dark:text-gray-300'}`}>
                             {conv.full_name}
-                            {conv.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                            {conv.is_verified && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
                         </h4>
                         {conv.unread && <div className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full shrink-0"></div>}
                       </div>
@@ -541,7 +541,7 @@ export default function Messages() {
                   </div>
                   <div className="flex items-center gap-1 truncate">
                     <h3 className="font-bold text-[var(--text)] truncate">{selectedUser.full_name}</h3>
-                    {selectedUser.is_admin && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                    {selectedUser.is_verified && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
                   </div>
                 </div>
                 <div className="relative" ref={dropdownRef}>

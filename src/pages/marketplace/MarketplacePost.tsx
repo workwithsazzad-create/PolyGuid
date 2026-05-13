@@ -33,6 +33,10 @@ export default function MarketplacePost() {
   const [showDeptDropdown, setShowDeptDropdown] = useState(false);
   const deptInputRef = useRef<HTMLInputElement>(null);
 
+  const [semSearch, setSemSearch] = useState('');
+  const [showSemDropdown, setShowSemDropdown] = useState(false);
+  const semInputRef = useRef<HTMLInputElement>(null);
+
   const [distSearch, setDistSearch] = useState('');
   const [showDistDropdown, setShowDistDropdown] = useState(false);
   const distInputRef = useRef<HTMLInputElement>(null);
@@ -43,16 +47,23 @@ export default function MarketplacePost() {
       if (deptInputRef.current && !deptInputRef.current.contains(event.target as Node)) {
         setShowDeptDropdown(false);
       }
+      if (semInputRef.current && !semInputRef.current.contains(event.target as Node)) {
+        setShowSemDropdown(false);
+      }
       if (distInputRef.current && !distInputRef.current.contains(event.target as Node)) {
         setShowDistDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [deptInputRef, distInputRef]);
+  }, [deptInputRef, semInputRef, distInputRef]);
 
   const filteredDepartments = ALL_DEPARTMENTS.filter(d => 
     d.toLowerCase().includes(deptSearch.toLowerCase())
+  );
+
+  const filteredSemesters = [1,2,3,4,5,6,7,8].map(s => s.toString()).filter(s => 
+    s.includes(semSearch)
   );
 
   const filteredDistricts = DISTRICTS.filter(d => 
@@ -154,16 +165,41 @@ export default function MarketplacePost() {
         <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-5 sm:p-8 border border-black/5 dark:border-white/10 shadow-sm">
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="space-y-2">
+              <div className="space-y-2 relative" ref={semInputRef}>
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Select Semester</label>
-                <select 
-                  value={formData.semester} 
-                  onChange={e => setFormData({...formData, semester: e.target.value})}
+                <input 
+                  type="text"
+                  placeholder="Type semester (1-8)..."
+                  value={semSearch}
+                  onChange={e => {
+                    setSemSearch(e.target.value);
+                    setFormData({...formData, semester: ''});
+                    setShowSemDropdown(true);
+                  }}
+                  onFocus={() => setShowSemDropdown(true)}
                   className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32]"
-                >
-                  <option value="" disabled>Choose semester</option>
-                  {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>{s} Semester</option>)}
-                </select>
+                />
+                {(showSemDropdown && semSearch) && (
+                  <div className="absolute top-full left-0 right-0 mt-2 max-h-40 overflow-y-auto bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-20">
+                    {filteredSemesters.length > 0 ? (
+                      filteredSemesters.map((s, i) => (
+                        <div 
+                          key={i}
+                          className="px-4 py-3 text-sm font-medium text-[var(--text)] hover:bg-[#32CD32] hover:text-white cursor-pointer transition-colors"
+                          onClick={() => {
+                            setFormData({...formData, semester: s});
+                            setSemSearch(s + " Semester");
+                            setShowSemDropdown(false);
+                          }}
+                        >
+                          {s} Semester
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-500">No semesters found</div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="space-y-2 relative" ref={deptInputRef}>
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Select Department</label>

@@ -273,7 +273,7 @@ export default function Home() {
           // Fetch profile for mobile greeting
           const { data: profileData } = await supabase
             .from("profiles")
-            .select("full_name, avatar_url, polytechnic_name")
+            .select("full_name, avatar_url, polytechnic_name, role, is_verified, phone")
             .eq("id", session.user.id)
             .single();
           if (profileData) {
@@ -429,21 +429,11 @@ export default function Home() {
       </div>
 
       {/* Mobile Greeting and Features (Mobile Only) */}
-      <div className="lg:hidden w-full bg-gradient-to-br from-indigo-50/50 via-white to-green-50/50 dark:from-[#1a1a1a] dark:via-black dark:to-[#112211] pt-4 pb-10 px-4 rounded-b-[2rem] shadow-sm mb-4 border-b border-black/5 dark:border-white/5">
+      <div className="lg:hidden w-full bg-gradient-to-br from-indigo-50/50 via-white to-green-50/50 dark:from-[#1a1a1a] dark:via-black dark:to-[#112211] pt-4 pb-8 px-4 rounded-b-[2rem] shadow-sm mb-4 border-b border-black/5 dark:border-white/5">
         
-        {/* Branding - Absolute corner alignment */}
-        <div className="flex justify-start items-center mb-6">
-          <span className="text-xl font-bold tracking-tight font-sans">
-            <span className="text-[#32CD32]">P</span>
-            <span className="text-gray-900 dark:text-white">oly</span>
-            <span className="text-[#32CD32]">G</span>
-            <span className="text-gray-900 dark:text-white">uid</span>
-          </span>
-        </div>
-
-        {/* Profile and Greeting (Hidden on mobile as per request) */}
-        <div className="hidden sm:flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-full flex flex-shrink-0 items-center justify-center overflow-hidden border-2 border-white dark:border-[#333] bg-white dark:bg-black shadow-sm">
+        {/* Profile and Greeting - Restored as per user request 4 */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-full flex flex-shrink-0 items-center justify-center overflow-hidden border-2 border-white dark:border-[#333] bg-white dark:bg-black shadow-sm">
             {profile?.avatar_url ? (
               <img
                 src={profile.avatar_url}
@@ -451,20 +441,18 @@ export default function Home() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <User size={28} className="text-[#32CD32]" />
+              <User size={24} className="text-[#32CD32]" />
             )}
           </div>
           <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight break-words">
-                {getGreeting()}, {profile?.full_name || "শিক্ষার্থী"}
-              </h2>
-              {(profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuid')) && (
+            <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight flex items-center gap-1.5">
+              {getGreeting()}, {profile?.full_name || "শিক্ষার্থী"}
+              {(profile?.is_verified || profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuid')) && (
                 <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={16} />
               )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-              <Building2 size={12} className="text-[#32CD32]" />
+            </h2>
+            <div className="flex items-center gap-1 mt-0.5 text-[10px] text-gray-500 dark:text-gray-400">
+              <Building2 size={10} className="text-[#32CD32]" />
               <span className="font-semibold truncate">
                 {profile?.polytechnic_name || "পলিটেকনিক তথ্য নেই"}
               </span>
@@ -472,11 +460,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Feature Grid - Even more space and smaller refined buttons */}
-        <div className="grid grid-cols-4 gap-2 mt-8 px-2">
+        {/* Feature Grid - 4 items in one line for mobile */}
+        <div className="grid grid-cols-4 gap-2 px-1">
           {[
             {
-              name: "Book Buy/Sell",
+              name: "Marketplace",
               icon: BookOpen,
               color: "text-blue-600",
               bgColor: "bg-blue-50 dark:bg-blue-900/20",
@@ -511,14 +499,14 @@ export default function Home() {
             <div
               key={idx}
               onClick={() => navigate(item.route)}
-              className="flex flex-col items-center gap-2.5 text-center cursor-pointer group"
+              className="flex flex-col items-center gap-1.5 text-center cursor-pointer group"
             >
               <div
-                className={`w-[54px] h-[54px] xs:w-[62px] xs:h-[62px] rounded-full flex justify-center items-center ${item.bgColor} shadow-xl ${item.shadowColor} active:scale-95 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl border border-white/40 dark:border-white/5 shadow-black/5`}
+                className={`w-[48px] h-[48px] rounded-full flex justify-center items-center ${item.bgColor} shadow-lg ${item.shadowColor} active:scale-95 transition-all duration-300 border border-white/40 dark:border-white/5`}
               >
-                <item.icon size={22} className={`${item.color} group-hover:scale-110 transition-transform`} />
+                <item.icon size={20} className={`${item.color}`} />
               </div>
-              <span className="text-[10px] xs:text-[11px] font-bold text-gray-700 dark:text-gray-300 leading-tight tracking-tight">
+              <span className="text-[9px] font-bold text-gray-700 dark:text-gray-300 leading-tight">
                 {item.name}
               </span>
             </div>
@@ -830,16 +818,16 @@ export default function Home() {
       </section>
 
       {/* 6. Words for Students (Description) - Full Width Compact */}
-      <section className="hidden lg:block px-4 max-w-7xl mx-auto w-full">
+      <section className="px-4 max-w-7xl mx-auto w-full">
         <div className="bg-black/5 dark:bg-white/10 rounded-[20px] sm:rounded-[32px] p-5 sm:p-8 md:p-10">
           <div className="flex flex-col gap-4 sm:gap-6">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-8 bg-[var(--primary)] rounded-full" />
-              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] leading-tight">
+              <h2 className="text-lg sm:text-2xl font-bold text-[var(--text)] leading-tight">
                 শিক্ষার্থীদের উদ্দেশ্যে কিছু কথা
               </h2>
             </div>
-            <div className="space-y-4 text-xs sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed text-justify font-medium">
+            <div className="space-y-4 text-[10px] sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed text-justify font-medium">
               <p>
                 PolyGuid (পলিগাইড)-এর পক্ষ থেকে তোমাদের সবাইকে জানাই আন্তরিক
                 অভিনন্দন। আমরা বিশ্বাস করি, আজকের পলিটেকনিক শিক্ষার্থীরাই আগামী

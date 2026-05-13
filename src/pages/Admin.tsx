@@ -27,9 +27,11 @@ import {
   Database,
   Users,
   Bell,
+  ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/src/lib/supabase";
 import { getDirectLink } from "@/src/lib/utils";
+import { useNavigate } from "react-router-dom";
 import * as pdfjs from "pdfjs-dist";
 
 // Initialize PDF.js worker
@@ -44,14 +46,17 @@ type AdminTab =
   | "youtube"
   | "users"
   | "results"
-  | "notifications";
+  | "notifications"
+  | "verifications";
 
 import AdminCourses from "../components/admin/AdminCourses";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminPages from "../components/admin/AdminPages";
 import AdminPdfs from "../components/admin/AdminPdfs";
+import AdminVerifications from "../components/admin/AdminVerifications";
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AdminTab>("courses");
   const [isPremium, setIsPremium] = useState(false);
   const [bannerUrl, setBannerUrl] = useState("");
@@ -331,6 +336,7 @@ export default function Admin() {
     { id: "pages", label: "Manage Pages", icon: Layout },
     { id: "analytics", label: "Analytics", icon: FileText },
     { id: "transactions", label: "Transactions", icon: DollarSign },
+    { id: "verifications", label: "Verifications", icon: ShieldCheck },
     { id: "youtube", label: "YouTube", icon: Youtube },
     { id: "users", label: "Manage Users", icon: Users },
     { id: "results", label: "Result Parser", icon: FileCheck },
@@ -762,7 +768,9 @@ export default function Admin() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as AdminTab)}
+              onClick={() => {
+                setActiveTab(tab.id as AdminTab);
+              }}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap snap-start shrink-0 ${
                 activeTab === tab.id
                   ? "bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/25 scale-100 sm:scale-105 z-10"
@@ -789,6 +797,8 @@ export default function Admin() {
           {activeTab === "users" && <AdminUsers />}
 
           {activeTab === "pages" && <AdminPages />}
+
+          {activeTab === "verifications" && <AdminVerifications />}
 
           {activeTab === "analytics" && (
             <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
@@ -993,7 +1003,7 @@ export default function Admin() {
                               {d.type === 'course' ? (
                                 <span className="text-blue-500 font-semibold">{d.courses?.title || 'Unknown Course'}</span>
                               ) : (
-                                <span className="text-gray-400 italic">Self Donation</span>
+                                <span className="text-gray-400">Self Donation</span>
                               )}
                             </td>
                             <td className="px-4 py-3 font-mono text-xs">

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '@/src/lib/supabase';
-import { User, Mail, Phone, MapPin, Building2, Camera, Loader2, Edit2, Check, X, BadgeCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Mail, Phone, MapPin, Building2, Camera, Loader2, Edit2, Check, X, BadgeCheck, ShieldCheck } from 'lucide-react';
 import GlassmorphicCard from '@/src/components/ui/GlassmorphicCard';
 
 interface UserProfile {
@@ -11,9 +12,11 @@ interface UserProfile {
   polytechnic_name: string | null;
   avatar_url: string | null;
   role?: string | null;
+  is_verified?: boolean | null;
 }
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -172,19 +175,30 @@ export default function Profile() {
     >
       <header className="mb-4 sm:mb-8 flex justify-between items-center sm:items-start">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text)]">My Profile</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-1">Manage your personal information and settings.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text)]">আমার প্রোফাইল</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-1">আপনার তথ্য এবং সেটিংস ম্যানেজ করুন।</p>
         </div>
         
-        {/* Edit Button moved outside the card */}
-        {!isEditing && (
-          <button 
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-black/5 dark:bg-white/10 hover:bg-[var(--primary)]/20 text-gray-600 dark:text-gray-300 hover:text-[var(--primary)] rounded-lg transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-          >
-            <Edit2 size={14} /> Edit
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {!profile?.is_verified && (
+            <button 
+              onClick={() => navigate('/verify-account')}
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 rounded-lg transition-colors font-medium text-sm whitespace-nowrap border border-blue-500/20"
+            >
+              <ShieldCheck size={14} /> ভেরিফিকেশন আবেদন
+            </button>
+          )}
+
+          {/* Edit Button moved outside the card */}
+          {!isEditing && (
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-black/5 dark:bg-white/10 hover:bg-[var(--primary)]/20 text-gray-600 dark:text-gray-300 hover:text-[var(--primary)] rounded-lg transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
+            >
+              <Edit2 size={14} /> এডিট
+            </button>
+          )}
+        </div>
       </header>
 
       <GlassmorphicCard className="p-4 sm:p-8 relative">
@@ -209,7 +223,7 @@ export default function Profile() {
                 ) : (
                   <>
                     <Camera className="text-white mb-1" size={24} />
-                    <span className="text-white text-xs font-medium">Change</span>
+                    <span className="text-white text-xs font-medium">পরিবর্তন</span>
                   </>
                 )}
                 <input 
@@ -233,7 +247,7 @@ export default function Profile() {
             ) : (
               <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] text-center flex items-center justify-center gap-1">
                 {profile?.full_name || 'Student'}
-                {profile?.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={16} />}
+                {(profile?.is_verified || profile?.role === 'admin') && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={16} />}
               </h2>
             )}
           </div>
@@ -252,7 +266,7 @@ export default function Profile() {
                 <Phone size={18} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Phone (Primary ID)</p>
+                <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">ফোন নম্বর (প্রাথমিক আইডি)</p>
                 {isEditing ? (
                   <input
                     type="tel"
@@ -273,7 +287,7 @@ export default function Profile() {
                 <MapPin size={18} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Address</p>
+                <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">ঠিকানা</p>
                 {isEditing ? (
                   <input
                     type="text"
@@ -293,7 +307,7 @@ export default function Profile() {
                 <Building2 size={18} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Polytechnic Institute</p>
+                <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">পলিটেকনিক ইনস্টিটিউট</p>
                 {isEditing ? (
                   <input
                     type="text"
@@ -326,7 +340,7 @@ export default function Profile() {
                   className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-[var(--text)] font-semibold text-xs sm:text-sm transition-colors flex items-center gap-1.5"
                   disabled={saving}
                 >
-                  <X size={16} /> Cancel
+                  <X size={16} /> বাতিল
                 </button>
                 <button
                   onClick={handleSaveProfile}
@@ -334,7 +348,7 @@ export default function Profile() {
                   className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-[var(--primary)] hover:bg-[#28a428] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center gap-1.5 shadow-md shadow-[var(--primary)]/20"
                 >
                   {saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
-                  Save
+                  সেভ
                 </button>
               </div>
             )}
