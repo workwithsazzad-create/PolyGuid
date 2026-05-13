@@ -28,17 +28,17 @@ export default function Logo({
   // Adjust Logo image wrapper class based on text presence
   const imgWrapperClassName = cn(
     "relative flex items-center transition-all",
-    showText ? "h-20 sm:h-24" : "h-[40px] w-[150px]" 
+    showText ? "h-20 sm:h-24 lg:h-28" : "h-[40px] w-[150px]" 
   );
 
   const imgClassName = cn(
     "h-full w-auto object-contain transition-all",
-    !showText ? "max-w-none absolute left-0 top-0 scale-[1.3]" : "relative",
+    !showText ? "max-w-none absolute left-0 top-0 scale-[1.3]" : "relative z-10",
     customImgClassName
   );
 
   return (
-    <div className={cn("flex flex-col items-start", className)}>
+    <div className={cn("flex flex-col items-center w-fit mx-auto", className)}>
       <div className={imgWrapperClassName}>
         {!imgError ? (
           <img 
@@ -46,6 +46,7 @@ export default function Logo({
             alt="PolyGuid Logo" 
             referrerPolicy="no-referrer"
             className={imgClassName}
+            style={{ paddingTop: '0px', paddingLeft: '2px', marginLeft: '0px', marginTop: '-100px' }}
             onError={() => setImgError(true)}
           />
         ) : (
@@ -61,13 +62,15 @@ export default function Logo({
         )}
       </div>
       {!imgError && showText && (
-        <p className={cn(
-          "font-bold text-[8.5px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.18em] uppercase opacity-70 leading-none whitespace-nowrap",
-          theme === 'light' ? "text-gray-600" : "text-gray-400",
+        <div className={cn(
+          "w-full flex justify-between font-bold text-[7.5px] sm:text-[10px] lg:text-[12px] uppercase leading-none whitespace-nowrap px-0.5",
+          "text-gray-500 dark:text-gray-400",
           customTextClassName
-        )}>
-          Your Learning Partner
-        </p>
+        )} style={{ marginTop: '-70px', marginLeft: '-5px', marginRight: '-6px', marginBottom: '63px' }}>
+          {"YOUR LEARNING PARTNER".split("").map((char, i) => (
+            <span key={i} className={char === " " ? "inline-block w-1" : ""}>{char}</span>
+          ))}
+        </div>
       )}
     </div>
   );

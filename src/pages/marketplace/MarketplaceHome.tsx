@@ -62,31 +62,40 @@ export default function MarketplaceHome() {
       }
 
       // 2. Fetch User Books
+      const { data: { session } } = await supabase.auth.getSession();
+      
       let userQuery = supabase
         .from('marketplace_books')
         .select(`
           *,
-          profiles:user_id!left (
-            id,
-            full_name,
-            avatar_url,
-            is_verified,
-            role
-          )
+          profiles(*)
         `)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+        .eq('status', 'active');
         
       if (district) userQuery = userQuery.eq('district', district);
       if (semester) userQuery = userQuery.eq('semester', semester);
       if (department) userQuery = userQuery.eq('department', department);
 
-      const { data: usersBooksList } = await userQuery;
-      if (usersBooksList) {
+      userQuery = userQuery.order('created_at', { ascending: false });
+
+      const { data: usersBooksList, error: userBooksError } = await userQuery;
+      
+      if (userBooksError) {
+        console.error('Error fetching marketplace books:', userBooksError);
+        // If join fails, try a simple select
+        if (userBooksError.message.includes('relationship')) {
+          const { data: simpleList } = await supabase
+            .from('marketplace_books')
+            .select('*')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+          if (simpleList) setUserBooks(simpleList);
+        }
+      } else if (usersBooksList) {
         setUserBooks(usersBooksList);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Marketplace Home Fetch Error:', e);
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +173,7 @@ export default function MarketplaceHome() {
                 {/* User Books Section */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg sm:text-xl font-bold text-[var(--text)]">অন্যান্য ইউজারদের বই</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-[var(--text)]">বইয়ের মার্কেটপ্লেস</h2>
                     <span className="text-xs text-gray-500 font-bold px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-full">{filteredUsers.length}টি বই</span>
                   </div>
                   

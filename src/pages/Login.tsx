@@ -165,7 +165,7 @@ export default function Login({ session }: { session?: any }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-between h-[85vh] py-6 relative"
+      className="flex flex-col items-center justify-start h-screen py-10 relative overflow-hidden"
     >
       {/* Moving Background Elements - Only for Welcome Screen */}
       <motion.div 
@@ -187,17 +187,18 @@ export default function Login({ session }: { session?: any }) {
         className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" 
       />
 
-      <div className="flex flex-col items-center relative z-10">
-        <Logo theme={theme} className="scale-125 mb-8" />
-        <p className="text-gray-400 text-center text-xs sm:text-sm mt-6 px-10 leading-relaxed max-w-sm">
-          সেরা একাডেমিক রিসোর্স ও অভিজ্ঞ শিক্ষকদের সাথে নিজের পড়াশোনাকে নিয়ে যান অনন্য উচ্চতায়।
+      <div className="flex flex-col items-center relative z-10 w-full mt-[10vh] sm:mt-[12vh]">
+        <Logo theme={theme} className="scale-[1.2] mb-4" />
+        <p className="text-gray-500 dark:text-gray-400 text-center text-[11px] sm:text-[13px] mt-10 px-8 sm:px-10 leading-relaxed max-w-sm font-medium">
+          বাংলাদেশের প্রথম কমিউনিটি বেসড লার্নিং প্ল্যাটফর্ম। আমাদের লক্ষ্য দক্ষ ইঞ্জিনিয়ার তৈরি করা।
         </p>
       </div>
 
-      <div className="w-full max-w-sm px-8 relative z-10">
+      <div className="w-full max-w-sm px-8 relative z-10 mt-auto mb-16 sm:mb-20">
         <button
           onClick={() => setStep('IDENTIFY')}
-          className="w-full bg-[var(--primary)] text-white font-black py-3 rounded-full transition-all shadow-lg shadow-[var(--primary)]/30 active:scale-95 text-base sm:text-lg"
+          className="w-full bg-[var(--primary)] text-white font-black rounded-full transition-all shadow-lg shadow-[var(--primary)]/30 active:scale-95 text-base sm:text-lg"
+          style={{ marginTop: '0px', marginLeft: '0px', marginRight: '0px', marginBottom: '-14px', paddingTop: '8px', paddingBottom: '8px' }}
         >
           লগইন করুন/ অ্যাকাউন্ট খুলুন
         </button>
