@@ -221,7 +221,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-[16px] sm:text-2xl font-bold text-[var(--text)] whitespace-nowrap overflow-hidden text-ellipsis leading-tight">আপনার ভর্তি হওয়া কোর্সসমূহ</h2>
           <button 
-            onClick={() => navigate('/home')}
+            onClick={() => navigate('/courses')}
             className="text-xs sm:text-base text-[var(--primary)] hover:underline flex items-center gap-0.5 sm:gap-1 font-bold shrink-0"
           >
             সবগুলো দেখুন <ChevronRight size={16} className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -248,7 +248,7 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-500">আপনার পছন্দের কোর্সটি বেছে নিন এবং আজই পড়াশোনা শুরু করুন!</p>
               </div>
               <button 
-                onClick={() => navigate('/home')}
+                onClick={() => navigate('/courses')}
                 className="mt-2 bg-[var(--primary)] text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20 active:scale-95 transition-all text-sm hidden sm:block"
               >
                 Explore Courses

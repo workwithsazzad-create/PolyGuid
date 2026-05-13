@@ -817,17 +817,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. Words for Students (Description) - Full Width Compact */}
-      <section className="px-4 max-w-7xl mx-auto w-full">
-        <div className="bg-black/5 dark:bg-white/10 rounded-[20px] sm:rounded-[32px] p-5 sm:p-8 md:p-10">
-          <div className="flex flex-col gap-4 sm:gap-6">
+
+      {/* 6. Words for Students (Description) - Full Width Compact (Desktop Only) */}
+      <section className="px-4 max-w-7xl mx-auto w-full hidden lg:block">
+        <div className="bg-black/5 dark:bg-white/10 rounded-[32px] p-10">
+          <div className="flex flex-col gap-6">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-8 bg-[var(--primary)] rounded-full" />
-              <h2 className="text-lg sm:text-2xl font-bold text-[var(--text)] leading-tight">
+              <h2 className="text-2xl font-bold text-[var(--text)] leading-tight">
                 শিক্ষার্থীদের উদ্দেশ্যে কিছু কথা
               </h2>
             </div>
-            <div className="space-y-4 text-[10px] sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed text-justify font-medium">
+            <div className="space-y-4 text-base text-gray-600 dark:text-gray-400 leading-relaxed text-justify font-medium">
               <p>
                 PolyGuid (পলিগাইড)-এর পক্ষ থেকে তোমাদের সবাইকে জানাই আন্তরিক
                 অভিনন্দন। আমরা বিশ্বাস করি, আজকের পলিটেকনিক শিক্ষার্থীরাই আগামী

@@ -36,8 +36,9 @@ export default function More() {
     const setupProfileSubscription = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        const channelName = `more_profile_${session.user.id}_${Math.random().toString(36).substring(7)}`;
         profileSubscription = supabase
-          .channel(`more_profile_${session.user.id}`)
+          .channel(channelName)
           .on(
             "postgres_changes",
             {

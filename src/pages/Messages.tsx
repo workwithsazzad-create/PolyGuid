@@ -156,6 +156,17 @@ export default function Messages() {
   };
 
   useEffect(() => {
+    if (!initialUserId) {
+      if (selectedUser) setSelectedUser(null);
+    } else {
+      if (conversations.length > 0 && (!selectedUser || selectedUser.id !== initialUserId)) {
+        const target = conversations.find(c => c.id === initialUserId);
+        if (target) setSelectedUser(target);
+      }
+    }
+  }, [initialUserId, conversations, selectedUser]);
+
+  useEffect(() => {
     let channel: any;
     if (selectedUser && user) {
       fetchMessages(selectedUser.id);
@@ -526,12 +537,6 @@ export default function Messages() {
               {/* Chat Header */}
               <div className="p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center justify-between gap-3 shadow-sm shrink-0 z-10">
                 <div className="flex items-center gap-3">
-                  <button 
-                    className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[var(--primary)]"
-                    onClick={() => selectUser(null)}
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
                     {selectedUser.avatar_url ? (
                       <img src={selectedUser.avatar_url} alt={selectedUser.full_name} className="w-full h-full object-cover" />

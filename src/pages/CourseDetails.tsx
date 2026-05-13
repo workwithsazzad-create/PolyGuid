@@ -176,12 +176,12 @@ export default function CourseDetails() {
         <ChevronLeft size={20} /> Back to Home
       </button>
 
-      <GlassmorphicCard className="p-6 md:p-8 flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-        <div className="w-full md:w-1/3 aspect-video bg-black/20 rounded-xl overflow-hidden flex-shrink-0 relative">
+      <GlassmorphicCard className="p-4 sm:p-6 md:p-8 flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-start">
+        <div className="w-full md:w-[45%] lg:w-[40%] aspect-video md:aspect-[4/3] bg-black/5 dark:bg-white/5 rounded-xl overflow-hidden flex-shrink-0 relative flex items-center justify-center">
           <img 
             src={getDirectLink(course.thumbnail)} 
             alt={course.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
@@ -190,8 +190,8 @@ export default function CourseDetails() {
           />
         </div>
         
-        <div className="flex flex-col gap-2 sm:gap-4 flex-1">
-          <h1 className="text-xl md:text-3xl font-black text-[var(--text)] leading-tight">{course.title}</h1>
+        <div className="flex flex-col gap-2 sm:gap-4 flex-1 w-full">
+          <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black text-[var(--text)] leading-tight break-words">{course.title}</h1>
           <div className="flex items-center gap-4 text-[10px] sm:text-sm text-gray-500 font-bold uppercase tracking-wider">
             {!(course.categories?.includes("বই") || course.categories?.includes("Book") || course.affiliateLink) && (
               <span className="flex items-center gap-1"><PlayCircle size={14}/> {course.classes} Classes</span>
@@ -202,16 +202,16 @@ export default function CourseDetails() {
           </div>
           
           {!isEnrolled && (
-            <div className="flex flex-col mt-4">
+            <div className="flex flex-col mt-2 sm:mt-4">
               {course.affiliateLink && course.totalUsers > 0 && (
-                <div className="flex items-center gap-1.5 text-sm font-bold text-red-500 mb-2">
-                  <Users size={16} />
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-red-500 mb-2">
+                  <Users size={14} className="sm:w-4 sm:h-4" />
                   <span>{course.totalUsers} Students Bought</span>
                 </div>
               )}
               <button 
                 onClick={handleEnroll}
-                className="bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-[var(--primary)]/20 w-fit"
+                className="bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold py-1.5 px-5 sm:py-3 sm:px-8 text-xs sm:text-base rounded-xl sm:rounded-xl transition-all shadow-lg shadow-[var(--primary)]/20 w-fit"
               >
                 {(course.categories?.includes("বই") || course.categories?.includes("Book") || course.affiliateLink) 
                   ? (course.isFree && !course.affiliateLink ? 'Get Book for Free' : 'Buy Now') 

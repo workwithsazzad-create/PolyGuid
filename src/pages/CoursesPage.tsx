@@ -55,10 +55,14 @@ export default function CoursesPage() {
       }
 
       if (data) {
-        let filtered = data;
+        let filtered = data.filter(c => 
+          !c.categories?.includes("বই") && 
+          !c.categories?.includes("Book") && 
+          !c.title?.includes("বই")
+        );
         
         if (currentCategory !== 'সবগুলো') {
-          filtered = data.filter(c => {
+          filtered = filtered.filter(c => {
             if (currentCategory === 'ফ্রি') {
               return c.is_free === true;
             }
