@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Clock, BadgeCheck } from 'lucide-react';
+import { MapPin, Clock, BadgeCheck, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MarketplaceBookCard({ book }: { book: any; key?: any }) {
@@ -42,8 +42,23 @@ export default function MarketplaceBookCard({ book }: { book: any; key?: any }) 
         <p className="text-[8px] sm:text-[9px] text-gray-500 font-medium line-clamp-1 mb-2 uppercase tracking-wider">
           {book.department}
         </p>
+
+        {/* Seller Info */}
+        <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-black/5 dark:border-white/5">
+          <div className="w-4 h-4 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
+            {book.profiles?.avatar_url ? (
+              <img src={book.profiles.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
+            ) : (
+              <User size={10} className="text-gray-400" />
+            )}
+          </div>
+          <span className="text-[8px] sm:text-[9px] font-bold text-gray-600 dark:text-gray-400 truncate flex items-center gap-1">
+            {book.profiles?.full_name || 'Anonymous'}
+            {isVerified && <BadgeCheck size={10} className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full" />}
+          </span>
+        </div>
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[7px] sm:text-[8px] text-gray-400 font-bold pt-2 border-t border-black/5 dark:border-white/5 gap-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[7px] sm:text-[8px] text-gray-400 font-bold mt-auto gap-1">
           <div className="flex items-center gap-1">
             <MapPin size={9} />
             <span className="truncate max-w-[60px]">{book.district}</span>

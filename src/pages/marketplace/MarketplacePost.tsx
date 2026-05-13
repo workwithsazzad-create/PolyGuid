@@ -165,41 +165,27 @@ export default function MarketplacePost() {
         <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-5 sm:p-8 border border-black/5 dark:border-white/10 shadow-sm">
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="space-y-2 relative" ref={semInputRef}>
+              <div className="space-y-2">
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Select Semester</label>
-                <input 
-                  type="text"
-                  placeholder="Type semester (1-8)..."
-                  value={semSearch}
-                  onChange={e => {
-                    setSemSearch(e.target.value);
-                    setFormData({...formData, semester: ''});
-                    setShowSemDropdown(true);
-                  }}
-                  onFocus={() => setShowSemDropdown(true)}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32]"
-                />
-                {(showSemDropdown && semSearch) && (
-                  <div className="absolute top-full left-0 right-0 mt-2 max-h-40 overflow-y-auto bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-20">
-                    {filteredSemesters.length > 0 ? (
-                      filteredSemesters.map((s, i) => (
-                        <div 
-                          key={i}
-                          className="px-4 py-3 text-sm font-medium text-[var(--text)] hover:bg-[#32CD32] hover:text-white cursor-pointer transition-colors"
-                          onClick={() => {
-                            setFormData({...formData, semester: s});
-                            setSemSearch(s + " Semester");
-                            setShowSemDropdown(false);
-                          }}
-                        >
-                          {s} Semester
-                        </div>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-sm text-gray-500">No semesters found</div>
-                    )}
+                <div className="relative">
+                  <select 
+                    value={formData.semester}
+                    onChange={e => setFormData({ ...formData, semester: e.target.value })}
+                    className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32] appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled className="text-gray-400">Select Semester</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                      <option key={s} value={s.toString()} className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">
+                        {s}{s === 1 ? 'st' : s === 2 ? 'nd' : s === 3 ? 'rd' : 'th'} Semester
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
-                )}
+                </div>
               </div>
               <div className="space-y-2 relative" ref={deptInputRef}>
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Select Department</label>

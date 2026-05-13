@@ -137,7 +137,7 @@ export default function PaymentModal({
                 <div className="flex justify-center gap-6 items-center opacity-80 group-hover:opacity-100 transition-opacity">
                   <img src="https://download.logo.wine/logo/BKash/BKash-Icon-Logo.wine.png" alt="bKash" className="h-6 sm:h-8 grayscale group-hover:grayscale-0 transition-all" />
                   <img src="https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png" alt="Nagad" className="h-6 sm:h-8 grayscale group-hover:grayscale-0 transition-all" />
-                  <img src="https://seeklogo.com/images/D/dutch-bangla-rocket-logo-B4D104E17A-seeklogo.com.png" alt="Rocket" className="h-6 sm:h-8 grayscale group-hover:grayscale-0 transition-all" />
+                  <img src="https://images.seeklogo.com/logo-png/31/1/dutch-bangla-rocket-logo-png_seeklogo-317692.png" alt="Rocket" className="h-6 sm:h-8 grayscale group-hover:grayscale-0 rounded transition-all" />
                 </div>
               </div>
 

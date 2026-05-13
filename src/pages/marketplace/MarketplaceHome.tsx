@@ -64,35 +64,112 @@ export default function MarketplaceHome() {
       // 2. Fetch User Books
       const { data: { session } } = await supabase.auth.getSession();
       
-      let userQuery = supabase
-        .from('marketplace_books')
-        .select(`
-          *,
-          profiles(*)
-        `)
-        .eq('status', 'active');
-        
-      if (district) userQuery = userQuery.eq('district', district);
-      if (semester) userQuery = userQuery.eq('semester', semester);
-      if (department) userQuery = userQuery.eq('department', department);
-
-      userQuery = userQuery.order('created_at', { ascending: false });
-
-      const { data: usersBooksList, error: userBooksError } = await userQuery;
-      
-      if (userBooksError) {
-        console.error('Error fetching marketplace books:', userBooksError);
-        // If join fails, try a simple select
-        if (userBooksError.message.includes('relationship')) {
-          const { data: simpleList } = await supabase
+      const fetchWithFallback = async () => {
+        try {
+          // Try with join first, selecting only public profile fields
+          const { data, error } = await supabase
+            .from('marketplace_books')
+            .select(`
+              *,
+              profiles (
+                id,
+                full_name,
+                avatar_url,
+                role,
+                is_verified
+              )
+            `)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+            
+          if (error) {
+            console.warn('Join fetch errored:', error);
+            throw error;
+          }
+          return data;
+        } catch (err) {
+          console.warn('Join fetch failed, using manual multi-fetch:', err);
+          
+          // 1. Fetch books
+          const { data: books, error: booksError } = await supabase
             .from('marketplace_books')
             .select('*')
             .eq('status', 'active')
             .order('created_at', { ascending: false });
-          if (simpleList) setUserBooks(simpleList);
+          
+          if (booksError || !books) {
+            console.error('Simple books fetch failed:', booksError);
+            return [];
+          }
+
+          // 2. Fetch profiles for these books
+          const userIds = [...new Set(books.map(b => b.user_id))];
+          if (userIds.length > 0) {
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('id, full_name, avatar_url, role, is_verified')
+              .in('id', userIds);
+            
+            const profilesMap = profiles?.reduce((acc: any, p: any) => {
+              acc[p.id] = p;
+              return acc;
+            }, {});
+
+            return books.map(b => ({
+              ...b,
+              profiles: profilesMap ? profilesMap[b.user_id] : null
+            }));
+          }
+          
+          return books;
         }
-      } else if (usersBooksList) {
-        setUserBooks(usersBooksList);
+      };
+
+      let initialBooks = await fetchWithFallback();
+      
+      // Apply filters manually if needed or via query
+      // To keep it simple and efficient, let's stick to query filters if they work
+      if (district || semester || department) {
+        let filteredQuery = supabase
+          .from('marketplace_books')
+          .select(`
+            *,
+            profiles (
+              id,
+              full_name,
+              avatar_url,
+              role,
+              is_verified
+            )
+          `)
+          .eq('status', 'active');
+          
+        if (district) filteredQuery = filteredQuery.eq('district', district);
+        if (semester) filteredQuery = filteredQuery.eq('semester', semester);
+        if (department) filteredQuery = filteredQuery.eq('department', department);
+        
+        filteredQuery = filteredQuery.order('created_at', { ascending: false });
+        
+        const { data: filteredData, error: filterError } = await filteredQuery;
+        
+        if (filterError) {
+          // Fallback for filtered query too
+          let simpleFiltered = supabase
+            .from('marketplace_books')
+            .select('*')
+            .eq('status', 'active');
+          if (district) simpleFiltered = simpleFiltered.eq('district', district);
+          if (semester) simpleFiltered = simpleFiltered.eq('semester', semester);
+          if (department) simpleFiltered = simpleFiltered.eq('department', department);
+          simpleFiltered = simpleFiltered.order('created_at', { ascending: false });
+          
+          const { data: sData } = await simpleFiltered;
+          if (sData) setUserBooks(sData);
+        } else if (filteredData) {
+          setUserBooks(filteredData);
+        }
+      } else {
+        setUserBooks(initialBooks || []);
       }
     } catch (e) {
       console.error('Marketplace Home Fetch Error:', e);

@@ -62,31 +62,65 @@ export default function AdminVerifications() {
     }
   };
 
-  const handleAction = async (appId: string, userId: string, newStatus: 'approved' | 'rejected') => {
+  const handleAction = async (appId: string, userId: string, actionType: 'approved' | 'rejected' | 'delete') => {
     setProcessing(appId);
     setConfirmModal(prev => ({ ...prev, show: false }));
     try {
-      if (newStatus === 'approved') {
-        const { error: appError } = await supabase
-          .from('verification_applications')
-          .update({ status: 'approved', updated_at: new Date().toISOString() })
-          .eq('id', appId);
-        
-        if (appError) throw appError;
-
+      if (actionType === 'approved') {
+        // First update the profile
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ is_verified: true })
           .eq('id', userId);
         
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile update error:", profileError);
+          // If it's a permission error, guide the user
+          const errorMsg = profileError.code === '42501' ? "SQL Permission Error: Supabase SQL Editor এ গিয়ে রুলস আপডেট করুন।" : profileError.message;
+          throw new Error(`Profile update failed: ${errorMsg}`);
+        }
+
+        // Then update the application status
+        const { error: appError } = await supabase
+          .from('verification_applications')
+          .update({ status: 'approved' })
+          .eq('id', appId);
+        
+        if (appError) throw appError;
+
+        // Send verification approved notification
+        const { error: notifError } = await supabase.from('notifications').insert([{
+          user_id: userId,
+          title: 'Account Verified! ✅',
+          body: 'অভিনন্দন! আপনার অ্যাকাউন্টের ভেরিফিকেশন সফল হয়েছে। এখন আপনার নামের পাশে ব্লু-ব্যাজ দেখা যাবে। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!',
+          type: 'verification_approved'
+        }]);
+
+        if (notifError) console.error("Notification Error:", notifError);
+
         alert("ভেরিফিকেশন সফলভাবে অ্যাপ্রুভ হয়েছে!");
-      } else {
-        // Find application to get file paths
+      } else if (actionType === 'rejected') {
+        const { error: appError } = await supabase
+          .from('verification_applications')
+          .update({ status: 'rejected' })
+          .eq('id', appId);
+        
+        if (appError) throw appError;
+
+        // Ensure profile is not verified
+        await supabase.from('profiles').update({ is_verified: false }).eq('id', userId);
+        alert("আবেদনটি রিজেক্ট করা হয়েছে।");
+      } else if (actionType === 'delete') {
+        // Find application to get file paths for storage cleanup
         const app = applications.find(a => a.id === appId) || selectedApp;
         
         if (app) {
-          // Delete files from storage
+          // If we are deleting an APPROVED application, we should probably revoke the badge
+          // as per "delete kori tar blue badges jeno chole jay"
+          if (app.status === 'approved') {
+            await supabase.from('profiles').update({ is_verified: false }).eq('id', app.user_id);
+          }
+
           try {
             const getFilePath = (url: string) => {
               if (!url) return null;
@@ -104,28 +138,24 @@ export default function AdminVerifications() {
               await supabase.storage.from('verifications').remove(filesToRemove);
             }
           } catch (storageErr) {
-            console.error("Storage deletion error (non-fatal):", storageErr);
+            console.error("Storage deletion error:", storageErr);
           }
         }
 
-        // Delete the record
         const { error: delError } = await supabase
           .from('verification_applications')
           .delete()
           .eq('id', appId);
         
         if (delError) throw delError;
-
-        // Ensure profile is not verified
-        await supabase.from('profiles').update({ is_verified: false }).eq('id', userId);
-        alert("আবেদনটি রিজেক্ট করা হয়েছে।");
+        alert("রেকর্ডটি ডিলিট করা হয়েছে।");
       }
 
       setApplications(prev => prev.filter(app => app.id !== appId));
       setSelectedApp(null);
     } catch (err: any) {
-      console.error("Action error:", err);
-      alert("Error: " + (err.message || "Something went wrong"));
+      console.error("Action error detail:", err);
+      alert(`${actionType === 'approved' ? 'অ্যাপ্রুভ' : 'অ্যাকশন'} করতে সমস্যা হয়েছে: ${err.message || "Unknown Error"}. অ্যাডমিন পারমিশন চেক করুন।`);
     } finally {
       setProcessing(null);
     }
@@ -148,15 +178,43 @@ export default function AdminVerifications() {
     }
   };
 
+  const [selectedManualUser, setSelectedManualUser] = useState<any>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (showManualModal) {
+      handleSearchUser();
+      setSelectedManualUser(null);
+      setShowSuggestions(false);
+    }
+  }, [showManualModal]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchPhone.length >= 3) {
+        handleSearchUser();
+        setShowSuggestions(true);
+      } else if (searchPhone.length === 0) {
+        setFoundUsers([]);
+        setShowSuggestions(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchPhone]);
+
   const handleSearchUser = async () => {
-    if (!searchPhone || searchPhone.length < 5) return;
+    if (!searchPhone || searchPhone.trim() === '') {
+      setFoundUsers([]);
+      setSearching(false);
+      return;
+    }
     setSearching(true);
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .ilike('phone', `%${searchPhone}%`)
-        .limit(5);
+        .or(`phone.ilike.%${searchPhone}%,full_name.ilike.%${searchPhone}%`)
+        .limit(15);
       
       if (error) throw error;
       setFoundUsers(data || []);
@@ -167,19 +225,98 @@ export default function AdminVerifications() {
     }
   };
 
-  const toggleManualVerification = async (userId: string, currentStatus: boolean) => {
+  const handleManualVerify = async (user: any) => {
+    const userId = user.id;
+    setProcessing(userId);
+    try {
+      // Always set to verified for this action if not already
+      const newStatus = !user.is_verified;
+
+      // 1. Update Profile status
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ is_verified: newStatus })
+        .eq('id', userId);
+      
+      if (profileError) throw profileError;
+
+      // 2. Sync with verification_applications
+      if (newStatus) {
+        // If we are VERIFYING
+        const { data: existingApp } = await supabase
+          .from('verification_applications')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (existingApp) {
+          await supabase
+            .from('verification_applications')
+            .update({ 
+               status: 'approved', 
+               full_name: user.full_name || 'Manual Verified' 
+            })
+            .eq('id', existingApp.id);
+        } else {
+          await supabase
+            .from('verification_applications')
+            .insert({
+              user_id: userId,
+              status: 'approved',
+              full_name: user.full_name || 'Manual Verified',
+              phone_number: user.phone || '',
+              id_card_front_url: 'manual',
+              id_card_back_url: 'manual'
+            });
+        }
+        
+        await supabase.from('notifications').insert([{
+          user_id: userId,
+          title: 'Account Verified! ✅',
+          body: 'অভিনন্দন! আপনার অ্যাকাউন্টের ভেরিফিকেশন সফল হয়েছে। এখন আপনার নামের পাশে ব্লু-ব্যাজ দেখা যাবে। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!',
+          type: 'verification_approved'
+        }]);
+        
+        alert("ইউজার সফলভাবে ভেরিফাই করা হয়েছে!");
+      } else {
+        // If we are REVOKING
+        await supabase
+          .from('verification_applications')
+          .update({ status: 'rejected' })
+          .eq('user_id', userId);
+        alert("ভেরিফিকেশন রিলিজ করা হয়েছে!");
+      }
+      
+      // Update UI state
+      setFoundUsers(prev => prev.map(u => u.id === userId ? { ...u, is_verified: newStatus } : u));
+      fetchApplications();
+      setShowManualModal(false);
+      setSelectedManualUser(null);
+      setSearchPhone('');
+    } catch (err: any) {
+      console.error("Manual Verify Error Detail:", err);
+      if (err.code === '42501') {
+        alert("SQL Permission Error: আপনার Supabase Dashboard > SQL Editor এ গিয়ে এডমিন পারমিশন SQL কোডটি রান করুন।");
+      } else {
+        alert(`অ্যাকশন টি সফল হয়নি: ${err.message || "Unknown error"}`);
+      }
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const revokeBadgeAction = async (userId: string) => {
+    if (!window.confirm("আপনি কি এই ইউজার এর ব্লু ব্যাজ ডিলিট করতে চান?")) return;
     setProcessing(userId);
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_verified: !currentStatus })
+        .update({ is_verified: false })
         .eq('id', userId);
-      
       if (error) throw error;
-      
-      setFoundUsers(prev => prev.map(u => u.id === userId ? { ...u, is_verified: !currentStatus } : u));
-    } catch (err: any) {
-      console.error(err.message);
+      setFoundUsers(prev => prev.map(u => u.id === userId ? { ...u, is_verified: false } : u));
+    } catch (e: any) {
+      alert("Failed to revoke: " + e.message);
     } finally {
       setProcessing(null);
     }
@@ -275,7 +412,10 @@ export default function AdminVerifications() {
                           {app.profiles?.avatar_url ? <img src={app.profiles.avatar_url} className="w-full h-full object-cover" /> : <User size={14} className="text-gray-400 m-2" />}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-[var(--text)]">{app.full_name}</p>
+                          <div className="flex items-center gap-1">
+                            <p className="text-sm font-bold text-[var(--text)]">{app.full_name}</p>
+                            {(app.profiles?.is_verified || app.profiles?.role === 'admin') && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={14} />}
+                          </div>
                           <p className="text-[10px] text-gray-500 font-medium">{app.profiles?.polytechnic_name || 'Student'}</p>
                         </div>
                       </div>
@@ -321,7 +461,7 @@ export default function AdminVerifications() {
                                   show: true,
                                   type: 'reject',
                                   title: 'Confirm Rejection',
-                                  message: `Are you sure you want to reject and delete the application for ${app.full_name}?`,
+                                  message: `Are you sure you want to reject the application for ${app.full_name}?`,
                                   action: () => handleAction(app.id, app.user_id, 'rejected')
                                 });
                               }}
@@ -341,7 +481,7 @@ export default function AdminVerifications() {
                                 type: 'delete',
                                 title: 'Confirm Deletion',
                                 message: `Are you sure you want to delete this record for ${app.full_name}?`,
-                                action: () => handleAction(app.id, app.user_id, 'rejected')
+                                action: () => handleAction(app.id, app.user_id, 'delete')
                               });
                             }}
                             disabled={processing === app.id}
@@ -542,66 +682,145 @@ export default function AdminVerifications() {
       </AnimatePresence>
 
       {/* Manual Verification Modal */}
-      {showManualModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowManualModal(false)} />
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative w-full max-w-md bg-white dark:bg-[#1a1a1a] rounded-[32px] p-6 sm:p-8 shadow-2xl border border-black/5 dark:border-white/10"
-          >
-             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black text-[var(--text)] ">Manual Verify User</h2>
-                <button onClick={() => setShowManualModal(false)} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-[var(--text)]"><X size={20} /></button>
-             </div>
+      <AnimatePresence>
+        {showManualModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+              onClick={() => setShowManualModal(false)} 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-[#1a1a1a] rounded-[2.5rem] p-8 shadow-2xl border-4 border-[#32CD32]/20"
+            >
+               <button 
+                  onClick={() => setShowManualModal(false)}
+                  className="absolute top-6 right-6 p-2 text-gray-400 hover:text-red-500 transition-colors"
+               >
+                  <X size={20} />
+               </button>
 
-             <div className="space-y-4">
-                <div className="relative">
-                  <input 
-                    type="tel"
-                    placeholder="Search by phone number..."
-                    value={searchPhone}
-                    onChange={e => setSearchPhone(e.target.value)}
-                    className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 pr-12 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] outline-none text-[var(--text)]"
-                  />
-                  <button 
-                    onClick={handleSearchUser}
-                    disabled={searching}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#32CD32] text-white rounded-xl active:scale-90 transition-all"
-                  >
-                    {searching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
-                  </button>
-                </div>
+               <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-[#32CD32]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#32CD32]">
+                     <BadgeCheck size={32} />
+                  </div>
+                  <h2 className="text-xl font-black text-[var(--text)]">Manual Verify User</h2>
+                  <p className="text-xs font-bold text-gray-500 mt-1">Search and approve user badge</p>
+               </div>
 
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                  {foundUsers.map(user => (
-                    <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-xl border border-black/5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white dark:bg-white/5 flex items-center justify-center border border-black/5 overflow-hidden">
-                           {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-gray-400" />}
+               <div className="space-y-6">
+                  <div className="relative">
+                     <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400">
+                        <Search size={18} />
+                     </div>
+                     <input 
+                        type="text"
+                        placeholder="Type phone or name..."
+                        value={searchPhone}
+                        onChange={(e) => {
+                          setSearchPhone(e.target.value);
+                          setSelectedManualUser(null);
+                        }}
+                        className="w-full h-14 bg-gray-50 dark:bg-white/5 border-2 border-black/5 hover:border-[#32CD32]/30 focus:border-[#32CD32] rounded-2xl pl-12 pr-12 text-sm font-bold transition-all outline-none"
+                     />
+                     {searching && (
+                        <div className="absolute right-4 top-4">
+                           <Loader2 size={24} className="text-[#32CD32] animate-spin" />
                         </div>
-                        <div>
-                          <p className="text-xs font-black text-[var(--text)]  leading-none mb-1">{user.full_name || 'No Name'}</p>
-                          <p className="text-[10px] font-bold text-gray-500 ">{user.phone}</p>
-                        </div>
+                     )}
+
+                     {/* Suggestions List */}
+                     <AnimatePresence>
+                       {showSuggestions && foundUsers.length > 0 && !selectedManualUser && (
+                         <motion.div 
+                           initial={{ opacity: 0, y: -10 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           exit={{ opacity: 0, y: -10 }}
+                           className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#242424] rounded-2xl shadow-xl border border-black/5 overflow-hidden z-50 max-h-60 overflow-y-auto"
+                         >
+                            {foundUsers.map(user => (
+                              <div 
+                                key={user.id}
+                                onClick={() => {
+                                  setSelectedManualUser(user);
+                                  setSearchPhone(`${user.full_name || 'No Name'} -- ${user.phone}`);
+                                  setShowSuggestions(false);
+                                }}
+                                className="p-4 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer border-b border-black/5 last:border-0 transition-colors"
+                              >
+                                <p className="text-xs font-black text-[var(--text)] mb-0.5">{user.full_name || 'No Name'}</p>
+                                <p className="text-[10px] font-bold text-gray-500">{user.phone}</p>
+                              </div>
+                            ))}
+                         </motion.div>
+                       )}
+                     </AnimatePresence>
+                  </div>
+
+                  {selectedManualUser && (
+                    <div className="animate-in fade-in zoom-in duration-300">
+                      <div className="p-4 bg-[#32CD32]/5 rounded-2xl border-2 border-[#32CD32]/20 flex items-center justify-between">
+                         <div>
+                            <p className="text-[10px] font-black uppercase text-[#32CD32] mb-1">Selected User</p>
+                            <p className="text-sm font-black text-[var(--text)]">{selectedManualUser.full_name}</p>
+                            <p className="text-[11px] font-bold text-gray-500">{selectedManualUser.phone}</p>
+                         </div>
+                         <button 
+                           onClick={() => {
+                             setSelectedManualUser(null);
+                             setSearchPhone('');
+                           }}
+                           className="p-2 text-gray-400 hover:text-red-500"
+                         >
+                           <X size={16} />
+                         </button>
                       </div>
+
                       <button 
-                         onClick={() => toggleManualVerification(user.id, user.is_verified)}
-                         disabled={processing === user.id}
-                         className={`p-2 rounded-xl transition-all ${user.is_verified ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-200 dark:bg-white/10 text-gray-500'}`}
+                         onClick={() => handleManualVerify(selectedManualUser)}
+                         disabled={processing === selectedManualUser.id}
+                         className={`w-full h-14 rounded-2xl font-black text-sm transition-all active:scale-95 mt-6 flex items-center justify-center gap-2 ${
+                           selectedManualUser.is_verified 
+                             ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-500/20' 
+                             : 'bg-[#32CD32] hover:bg-[#28a428] text-white shadow-[#32CD32]/20'
+                         } shadow-xl`}
                       >
-                         {processing === user.id ? <Loader2 size={16} className="animate-spin" /> : <BadgeCheck size={16} />}
+                         {processing === selectedManualUser.id ? (
+                           <Loader2 size={20} className="animate-spin" />
+                         ) : (
+                           <>
+                             {selectedManualUser.is_verified ? (
+                               <>
+                                 <X size={20} />
+                                 Release Verification
+                               </>
+                             ) : (
+                               <>
+                                 <BadgeCheck size={20} />
+                                 Verify Now
+                               </>
+                             )}
+                           </>
+                         )}
                       </button>
                     </div>
-                  ))}
-                  {foundUsers.length === 0 && !searching && searchPhone && (
-                    <p className="text-center py-4 text-xs font-bold text-gray-400 ">No users found</p>
                   )}
-                </div>
-             </div>
-          </motion.div>
-        </div>
-      )}
+
+                  {!selectedManualUser && !searching && searchPhone.length >= 3 && foundUsers.length === 0 && (
+                    <div className="text-center py-4">
+                       <p className="text-xs font-bold text-gray-400">No users found</p>
+                    </div>
+                  )}
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

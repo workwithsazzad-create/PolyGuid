@@ -180,14 +180,12 @@ export default function Profile() {
         </div>
         
         <div className="flex items-center gap-2">
-          {!profile?.is_verified && (
-            <button 
-              onClick={() => navigate('/verify-account')}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 rounded-lg transition-colors font-medium text-sm whitespace-nowrap border border-blue-500/20"
-            >
-              <ShieldCheck size={14} /> ভেরিফিকেশন আবেদন
-            </button>
-          )}
+          <button 
+            onClick={() => navigate('/verify-account')}
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-blue-500/10 hover:bg-blue-500 text-blue-600 hover:text-white rounded-lg transition-all font-medium text-sm whitespace-nowrap border border-blue-500/20 shadow-sm"
+          >
+            <ShieldCheck size={16} /> ভেরিফিকেশন আবেদন
+          </button>
 
           {/* Edit Button moved outside the card */}
           {!isEditing && (

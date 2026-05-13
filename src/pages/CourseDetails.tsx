@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { ChevronLeft, PlayCircle, FileText, Lock, Eye, X, Video as VideoIcon, Users, DollarSign, BookOpen } from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import PaymentModal from '../components/ui/PaymentModal';
+import CoursePaymentModal from '../components/ui/CoursePaymentModal';
 import { supabase } from '../lib/supabase';
 import { getDirectLink } from '../lib/utils';
 
@@ -13,6 +14,7 @@ export default function CourseDetails() {
   const [course, setCourse] = useState<any>(null);
   const [contents, setContents] = useState<any[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [purchaseStatus, setPurchaseStatus] = useState<'none' | 'pending'>('none');
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentNumber, setPaymentNumber] = useState('01993879904');
@@ -92,6 +94,21 @@ export default function CourseDetails() {
         
         if (enrollmentData) {
           setIsEnrolled(true);
+        } else {
+          // Check for pending donations
+          const { data: donationData } = await supabase
+            .from('donations')
+            .select('status')
+            .eq('user_id', session.user.id)
+            .eq('course_id', id)
+            .eq('type', 'course')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (donationData && donationData.status === 'pending') {
+            setPurchaseStatus('pending');
+          }
         }
       }
     } catch (err) {
@@ -201,7 +218,7 @@ export default function CourseDetails() {
             )}
           </div>
           
-          {!isEnrolled && (
+          {!isEnrolled && purchaseStatus === 'none' && (
             <div className="flex flex-col mt-2 sm:mt-4">
               {course.affiliateLink && course.totalUsers > 0 && (
                 <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-red-500 mb-2">
@@ -220,6 +237,24 @@ export default function CourseDetails() {
             </div>
           )}
 
+          {!isEnrolled && purchaseStatus === 'pending' && (
+            <div className="flex flex-col mt-4 gap-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl w-fit">
+              <div className="flex items-center gap-2 text-orange-600 font-bold">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                </span>
+                পেন্ডিং (Pending for approval)
+              </div>
+              <button
+                onClick={() => navigate(`/messages?course=${id}`)}
+                className="w-full text-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md transition-colors text-sm"
+              >
+                দ্রুত অ্যাপ্রুভ করতে এসএমএস করুন
+              </button>
+            </div>
+          )}
+
           {course.description && (
             <div className="mt-4 border-t border-black/5 dark:border-white/5 pt-4">
               <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-normal whitespace-pre-wrap">
@@ -230,14 +265,13 @@ export default function CourseDetails() {
         </div>
       </GlassmorphicCard>
 
-      <PaymentModal 
+      <CoursePaymentModal 
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        type="course"
-        courseId={id}
+        courseId={id || ''}
         courseTitle={course.title}
         price={course.price}
-        paymentNumber={paymentNumber}
+        onSuccess={() => setPurchaseStatus('pending')}
       />
 
       <div className="flex flex-col gap-4">

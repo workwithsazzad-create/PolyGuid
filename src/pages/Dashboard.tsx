@@ -155,7 +155,7 @@ export default function Dashboard() {
             <h1 className="text-lg sm:text-3xl font-bold text-[var(--text)] leading-tight break-words">
               Welcome back{userName ? `, ${userName}` : '!'}
             </h1>
-            {(profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuid')) && (
+            {(profile?.is_verified || profile?.role === 'admin') && (
               <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={16} />
             )}
           </div>

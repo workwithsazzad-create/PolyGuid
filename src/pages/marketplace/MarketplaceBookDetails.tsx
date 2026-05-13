@@ -29,25 +29,45 @@ export default function MarketplaceBookDetails() {
 
       if (!id) return;
       try {
+        setLoading(true);
         // Fetch book details
         const { data, error } = await supabase
           .from('marketplace_books')
-          .select('*, profiles:user_id(full_name, is_verified, role)')
+          .select(`
+            *,
+            profiles (
+              id,
+              full_name,
+              avatar_url,
+              role,
+              is_verified
+            )
+          `)
           .eq('id', id)
           .maybeSingle();
 
-        if (error) throw error;
-        if (data) {
+        if (error) {
+          console.error("Error fetching book:", error);
+          // Fallback to simple select if join fails
+          const { data: simpleData, error: simpleError } = await supabase
+            .from('marketplace_books')
+            .select('*')
+            .eq('id', id)
+            .maybeSingle();
+            
+          if (simpleError) throw simpleError;
+          if (simpleData) setBook(simpleData);
+        } else if (data) {
           setBook(data);
-          
-          // Fetch seller info (optional, if you need more than what's in book)
-          // We already have book.phone, etc. 
-
           // Increment view count using SQL
-          await supabase.rpc('increment_book_views', { book_id: id });
+          try {
+            await supabase.rpc('increment_book_views', { book_id: id });
+          } catch (rpcError) {
+            console.warn("Could not increment views:", rpcError);
+          }
         }
       } catch (error) {
-        console.error("Error fetching book:", error);
+        console.error("Critical error fetching book:", error);
       } finally {
         setLoading(false);
       }

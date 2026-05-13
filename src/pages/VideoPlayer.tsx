@@ -104,13 +104,13 @@ export default function VideoPlayer() {
         .from('comments')
         .select('*')
         .eq('content_id', contentId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
       
       if (commentsData && commentsData.length > 0) {
         const userIds = [...new Set(commentsData.map(c => c.user_id))];
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, polytechnic_name, role')
+          .select('id, full_name, avatar_url, polytechnic_name, role, is_verified')
           .in('id', userIds);
           
         const profilesMap: any = {};
@@ -152,7 +152,8 @@ export default function VideoPlayer() {
         ...data[0],
         profiles: currentUserProfile
       };
-      setComments(prev => [...prev, newCommentData]);
+      // Prepend to show at top immediately
+      setComments(prev => [newCommentData, ...prev]);
       if (parentId) {
         setReplyText('');
         setReplyingTo(null);
@@ -247,12 +248,12 @@ export default function VideoPlayer() {
       </div>
 
       {/* Comments Section */}
-      <GlassmorphicCard className="p-4 sm:p-6 mt-4 flex flex-col max-h-[600px] sm:max-h-[800px]">
-        <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] mb-4 sm:mb-6 shrink-0">
+      <GlassmorphicCard className="p-4 sm:p-6 mt-4">
+        <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] mb-4 sm:mb-6">
           {comments.length} Comments
         </h2>
         
-        <form onSubmit={handleAddComment} className="flex gap-3 sm:gap-4 mb-6 sm:mb-8 shrink-0">
+        <form onSubmit={handleAddComment} className="flex gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 text-white shadow-lg">
             <User size={16} sm:size={20} />
           </div>
@@ -275,7 +276,7 @@ export default function VideoPlayer() {
           </div>
         </form>
 
-        <div className="flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="flex flex-col gap-6">
           {comments.filter(c => !c.parent_id).map((comment) => {
             const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : (comment.profiles || {});
             const displayName = comment.user_id === user?.id ? 'You' : (profile?.full_name || 'Student');
@@ -304,7 +305,7 @@ export default function VideoPlayer() {
                           >
                             {displayName}
                           </span>
-                          {profile?.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                          {(profile?.role === 'admin' || profile?.is_verified) && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
                         </div>
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                           {new Date(comment.created_at).toLocaleDateString()}
@@ -393,7 +394,7 @@ export default function VideoPlayer() {
                                <div className="flex-1">
                                  <div className="flex items-center gap-2">
                                     <span className="font-bold text-[var(--text)] text-xs">{rDisplayName}</span>
-                                    {rProfile?.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-3.5 h-3.5" size={14} />}
+                                    {(rProfile?.role === 'admin' || rProfile?.is_verified) && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-3.5 h-3.5" size={14} />}
                                     <span className="text-[10px] text-gray-400">{new Date(reply.created_at).toLocaleDateString()}</span>
                                  </div>
                                  <p className="text-[var(--text)] mt-0.5 text-xs leading-relaxed break-words">{reply.text}</p>
@@ -468,7 +469,7 @@ export default function VideoPlayer() {
               <div className="text-center">
                 <h3 className="text-xl font-bold text-[var(--text)] flex items-center justify-center gap-1">
                   {selectedProfile.full_name || 'Student'}
-                  {selectedProfile.role === 'admin' && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={18} />}
+                  {(selectedProfile.role === 'admin' || selectedProfile.is_verified) && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={18} />}
                 </h3>
                 {selectedProfile.polytechnic_name && (
                   <p className="text-sm text-gray-500 mt-1">{selectedProfile.polytechnic_name}</p>

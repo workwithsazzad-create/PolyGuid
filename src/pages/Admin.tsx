@@ -79,7 +79,9 @@ export default function Admin() {
   } | null>(null);
 
   // Transactions State
-  const [donationNumber, setDonationNumber] = useState("");
+  const [bkashNumber, setBkashNumber] = useState("");
+  const [nagadNumber, setNagadNumber] = useState("");
+  const [rocketNumber, setRocketNumber] = useState("");
   const [transactions, setTransactions] = useState<any[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
@@ -116,6 +118,9 @@ export default function Admin() {
           "stat_polytechnics",
           "home_banner",
           "donation_number",
+          "bkash_number",
+          "nagad_number",
+          "rocket_number",
         ]);
 
       if (data) {
@@ -126,7 +131,10 @@ export default function Admin() {
           if (item.key === "stat_polytechnics")
             newStats.polytechnics = item.value;
           if (item.key === "home_banner") setBannerUrl(item.value);
-          if (item.key === "donation_number") setDonationNumber(item.value);
+          if (item.key === "donation_number") setBkashNumber(item.value); // fallback
+          if (item.key === "bkash_number") setBkashNumber(item.value);
+          if (item.key === "nagad_number") setNagadNumber(item.value);
+          if (item.key === "rocket_number") setRocketNumber(item.value);
         });
         setStats(newStats);
       }
@@ -194,27 +202,27 @@ export default function Admin() {
     }
   };
 
+  const savePaymentSetting = async (key: string, value: string) => {
+      const { data: existing } = await supabase.from("site_settings").select("key").eq("key", key).maybeSingle();
+      if (existing) {
+        await supabase.from("site_settings").update({ value }).eq("key", key);
+      } else {
+        await supabase.from("site_settings").insert({ key, value });
+      }
+  };
+
   const handleSaveDonationNumber = async () => {
     setIsSavingDonationNum(true);
     try {
-      // Robust save: Check if exists, then update or insert
-      const { data: existing } = await supabase.from("site_settings").select("key").eq("key", "donation_number").maybeSingle();
-      
-      let error;
-      if (existing) {
-        const { error: updateError } = await supabase.from("site_settings").update({ value: donationNumber }).eq("key", "donation_number");
-        error = updateError;
-      } else {
-        const { error: insertError } = await supabase.from("site_settings").insert({ key: "donation_number", value: donationNumber });
-        error = insertError;
-      }
+      await savePaymentSetting("bkash_number", bkashNumber);
+      await savePaymentSetting("nagad_number", nagadNumber);
+      await savePaymentSetting("rocket_number", rocketNumber);
 
-      if (error) throw error;
-      setStatusMsg({ type: "success", text: "✅ Donation number updated!" });
+      setStatusMsg({ type: "success", text: "✅ Payment numbers updated!" });
     } catch (err) {
       setStatusMsg({
         type: "error",
-        text: "❌ Failed to save donation number.",
+        text: "❌ Failed to save payment numbers.",
       });
     } finally {
       setIsSavingDonationNum(false);
@@ -223,14 +231,23 @@ export default function Admin() {
 
   const updateTransactionStatus = async (id: string, status: string) => {
     try {
+      const tx = transactions.find(t => t.id === id);
+      
       // If approved and it's a course, auto-enroll
-      if (status === 'approved') {
-        const tx = transactions.find(t => t.id === id);
-        if (tx?.type === 'course' && tx.course_id && tx.user_id) {
+      if (status === 'approved' && tx && tx.status !== 'approved') {
+        if (tx.type === 'course' && tx.course_id && tx.user_id) {
           await supabase.from('enrollments').upsert({
             user_id: tx.user_id,
             course_id: tx.course_id
           }, { onConflict: 'user_id,course_id' });
+
+          // Send course approved notification
+          await supabase.from('notifications').insert([{
+            user_id: tx.user_id,
+            title: 'Course Approved 🎉',
+            body: 'আপনার কেনা কোর্সটি অ্যাপ্রুভ হয়েছে। এখন আপনি এর ভিডিও এবং নোট দেখতে পারবেন। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!',
+            type: 'course_approved'
+          }]);
         }
       }
 
@@ -889,23 +906,47 @@ export default function Admin() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Payment Receive Number (bKash/Nagad/Rocket)
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
+                    Payment Receive Numbers
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={donationNumber}
-                      onChange={(e) => setDonationNumber(e.target.value)}
-                      placeholder="e.g. 017XXXXXXXX"
-                      className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
-                    />
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-20 text-xs font-bold text-gray-500">bKash</span>
+                      <input
+                        type="text"
+                        value={bkashNumber}
+                        onChange={(e) => setBkashNumber(e.target.value)}
+                        placeholder="e.g. 017XXXXXXXX"
+                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-20 text-xs font-bold text-gray-500">Nagad</span>
+                      <input
+                        type="text"
+                        value={nagadNumber}
+                        onChange={(e) => setNagadNumber(e.target.value)}
+                        placeholder="e.g. 017XXXXXXXX"
+                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-20 text-xs font-bold text-gray-500">Rocket</span>
+                      <input
+                        type="text"
+                        value={rocketNumber}
+                        onChange={(e) => setRocketNumber(e.target.value)}
+                        placeholder="e.g. 017XXXXXXXX"
+                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
+                      />
+                    </div>
+
                     <button
                       onClick={handleSaveDonationNumber}
                       disabled={isSavingDonationNum}
-                      className="bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold px-4 rounded-lg transition-all text-sm disabled:opacity-50"
+                      className="bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold py-2.5 px-4 rounded-lg transition-all text-sm disabled:opacity-50 mt-2"
                     >
-                      {isSavingDonationNum ? "Saving..." : "Save"}
+                      {isSavingDonationNum ? "Saving..." : "Save Numbers"}
                     </button>
                   </div>
                   {statusMsg && activeTab === "transactions" && (
@@ -1457,6 +1498,24 @@ export default function Admin() {
                   >
                     <Bell size={18} />
                     Push to All Users
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (!confirm("Are you sure you want to delete ALL notifications for ALL users? This cannot be undone.")) return;
+                      try {
+                        // Delete all notifications
+                        const { error } = await supabase.from('notifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                        if (error) throw error;
+                        alert("All notifications have been deleted!");
+                      } catch (err: any) {
+                        alert(err.message || "Failed to delete notifications.");
+                      }
+                    }}
+                    className="w-full py-3 mt-4 bg-red-500/10 text-red-500 font-bold rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={18} />
+                    Clear All Notifications
                   </button>
                 </div>
               </GlassmorphicCard>
