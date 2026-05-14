@@ -103,7 +103,16 @@ async function startServer() {
       res.json(notices.slice(0, 30));
     } catch (error: any) {
       console.error("Notice Fetch Error:", error.message);
-      res.status(500).json({ error: "Failed to fetch notices" });
+      // Fallback notices when BTEB is down or returning 503
+      res.json([
+        {
+          id: "bteb-down-notice",
+          title: "কারিগরি শিক্ষা বোর্ডের (BTEB) সার্ভারে সমস্যার কারণে সাময়িকভাবে নোটিশ আপডেট হচ্ছে না। দয়া করে কিছুক্ষণ পর আবার চেষ্টা করুন।",
+          date: new Date().toLocaleDateString('en-GB'),
+          link: "https://bteb.gov.bd",
+          isNew: true
+        }
+      ]);
     }
   });
 
@@ -163,6 +172,48 @@ async function startServer() {
       message: "Webhook received and logged. Manual verification required." 
     });
   };
+
+  app.delete("/api/users/:id", async (req, res) => {
+    const userId = req.params.id;
+    if (!userId) {
+      return res.status(400).json({ error: "Missing user ID" });
+    }
+
+    try {
+      console.log(`Starting to delete user ${userId} and all related data...`);
+
+      // 1. Manually cascade deletes for related tables where user_id references auth.users or public.profiles
+      // Using service key bypasses RLS
+      await supabase.from('marketplace_books').delete().eq('user_id', userId);
+      await supabase.from('messages').delete().or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+      await supabase.from('donations').delete().eq('user_id', userId);
+      await supabase.from('enrollments').delete().eq('user_id', userId);
+      await supabase.from('verification_applications').delete().eq('user_id', userId);
+      await supabase.from('notifications').delete().eq('user_id', userId);
+      await supabase.from('video_comments').delete().eq('user_id', userId);
+      await supabase.from('saved_items').delete().eq('user_id', userId);
+      
+      // 2. Delete the profile
+      await supabase.from('profiles').delete().eq('id', userId);
+
+      // 3. Delete the auth user (only works if SUPABASE_SERVICE_ROLE_KEY is used)
+      // We wrap this in a try-catch to not fail the whole request if the service_role key isn't present
+      try {
+        const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+        if (authError) {
+          console.warn(`Could not delete from auth.users (requires service role):`, authError.message);
+        }
+      } catch (authErr: any) {
+        console.warn(`Could not delete from auth.users:`, authErr.message);
+      }
+
+      console.log(`User ${userId} deleted successfully.`);
+      res.json({ success: true, message: "User deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting user via API:", error);
+      res.status(500).json({ error: error.message || "Failed to delete user" });
+    }
+  });
 
   app.all("/api/payment-webhook", handleWebhook);
   app.all("/api/payment", handleWebhook);

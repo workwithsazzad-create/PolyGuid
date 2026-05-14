@@ -30,7 +30,7 @@ export default function PaymentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [msg, setMsg] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
-  const maxSteps = type === 'donation' ? 4 : 2;
+  const maxSteps = type === 'donation' ? 3 : 2;
 
   useEffect(() => {
     if (!isOpen) {
@@ -71,8 +71,8 @@ export default function PaymentModal({
 
       const { error } = await supabase.from('donations').insert([
         { 
-          student_name: form.name || 'Anonymous Giver', 
-          polytechnic_name: form.polytechnic || 'Anonymous', 
+          student_name: type === 'course' ? (form.name || 'Anonymous Giver') : 'From Profile', 
+          polytechnic_name: type === 'course' ? (form.polytechnic || 'Anonymous') : 'From Profile', 
           transaction_id: trxIdClean,
           amount: parseFloat(form.amount.toString()),
           type: type,
@@ -92,6 +92,9 @@ export default function PaymentModal({
           body: 'আপনার ডোনেশন সাবমিটের জন্য ধন্যবাদ। PolyGuid কর্তৃপক্ষ ভেরিফাই করলে আপনার নাম আমাদের ওয়েবসাইটে ফিচার করা হবে।',
           type: 'donation_submitted'
         }]);
+        setIsSubmitting(false);
+        onClose();
+        return;
       }
 
       setMsg({ 
@@ -228,55 +231,12 @@ export default function PaymentModal({
 
                     {step === 3 && (
                       <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-2 duration-300">
-                        <div className="flex flex-col gap-4">
-                          <div className="relative">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">আপনার নাম (যা ওয়েবসাইটে দেখাবে)</label>
-                            <input 
-                              type="text" 
-                              placeholder="আপনার নাম লিখুন..." 
-                              value={form.name} 
-                              onChange={e => setForm({...form, name: e.target.value})} 
-                              className="w-full bg-black/5 dark:bg-white/5 border border-transparent rounded-2xl p-4 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 transition-all" 
-                            />
-                          </div>
-                          <div className="relative">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">পলিটেকনিকের নাম</label>
-                            <input 
-                              type="text" 
-                              placeholder="পলিটেকনিকের নাম লিখুন..." 
-                              value={form.polytechnic} 
-                              onChange={e => setForm({...form, polytechnic: e.target.value})} 
-                              className="w-full bg-black/5 dark:bg-white/5 border border-transparent rounded-2xl p-4 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 transition-all" 
-                            />
-                          </div>
-                          <div className="relative">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">ডোনেশনের পরিমাণ (৳)</label>
-                            <input 
-                              type="number" 
-                              placeholder="পেমেন্ট এমাউন্ট..." 
-                              value={form.amount} 
-                              onChange={e => setForm({...form, amount: e.target.value})} 
-                              className="w-full bg-black/5 dark:bg-white/5 border border-transparent rounded-2xl p-4 text-sm font-bold text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 transition-all font-mono" 
-                            />
-                          </div>
-                        </div>
-                        <button 
-                          disabled={!form.name || !form.amount || !form.polytechnic}
-                          onClick={nextStep}
-                          className="w-full bg-[var(--primary)] hover:bg-[#28a428] text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-[var(--primary)]/20 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
-                        >
-                          পেমেন্ট করুন <ChevronRight size={18} />
-                        </button>
-                      </div>
-                    )}
-
-                    {step === 4 && (
-                      <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-2 duration-300">
                         <div className="bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-[24px] p-6 text-center">
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">নিচের নাম্বারে সেন্ড মানি করুন</p>
                           <div className="flex items-center justify-center gap-4 mb-4">
                             <span className="text-3xl font-black text-[var(--primary)] tracking-tight">{paymentNumber}</span>
                             <button 
+                              type="button"
                               onClick={handleCopy}
                               className="p-3 bg-white dark:bg-white/10 rounded-xl shadow-md border border-black/5 hover:scale-105 transition-all active:scale-90"
                             >
@@ -290,6 +250,17 @@ export default function PaymentModal({
                         </div>
 
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                          <div className="relative">
+                            <label className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider ml-1 mb-1 block">ডোনেশনের পরিমাণ (৳)*</label>
+                            <input 
+                              required
+                              type="number" 
+                              placeholder="পেমেন্ট এমাউন্ট..." 
+                              value={form.amount} 
+                              onChange={e => setForm({...form, amount: e.target.value})} 
+                              className="w-full bg-black/5 dark:bg-white/5 border border-[var(--primary)]/30 rounded-2xl p-4 text-sm font-bold text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 transition-all font-mono" 
+                            />
+                          </div>
                           <div className="relative">
                             <label className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider ml-1 mb-1 block">আপনার মোবাইল নাম্বার*</label>
                             <input 
@@ -323,11 +294,11 @@ export default function PaymentModal({
                           )}
 
                           <button 
-                            disabled={isSubmitting || !form.trxId || !form.phone} 
+                            disabled={isSubmitting || !form.trxId || !form.phone || !form.amount} 
                             type="submit" 
                             className="w-full bg-[var(--primary)] hover:bg-[#28a428] text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-[var(--primary)]/20 disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98]"
                           >
-                            {isSubmitting ? 'ভেরিফাই হচ্ছে...' : 'তথ্য জমা দিন'}
+                            {isSubmitting ? 'প্রসেসিং হচ্ছে...' : 'তথ্য জমা দিন'}
                           </button>
                         </form>
                       </div>

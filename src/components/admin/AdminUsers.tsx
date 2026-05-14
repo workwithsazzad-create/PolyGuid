@@ -25,7 +25,7 @@ interface Profile {
   phone: string;
   role: string;
   address?: string;
-  polytechnic?: string;
+  polytechnic_name?: string;
   created_at: string;
 }
 
@@ -66,20 +66,30 @@ export default function AdminUsers() {
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
 
+    setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userToDelete.id);
+      const userId = userToDelete.id;
 
-      if (error) throw error;
+      // Call our backend API to delete the user using service_role bypassing RLS
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const res = await fetch(`${baseUrl}/api/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
       
-      setUsers(users.filter(u => u.id !== userToDelete.id));
-      setMessage({ type: 'success', text: 'User profile deleted from database.' });
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete user');
+      }
+      
+      setUsers(users.filter(u => u.id !== userId));
+      setMessage({ type: 'success', text: 'User and all related data deleted from database.' });
       setUserToDelete(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting user:', err);
-      setMessage({ type: 'error', text: 'Failed to delete user.' });
+      setMessage({ type: 'error', text: err.message || 'Failed to delete user.' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -104,7 +114,7 @@ export default function AdminUsers() {
             phone: currentUser.phone,
             role: currentUser.role,
             address: currentUser.address,
-            polytechnic: currentUser.polytechnic
+            polytechnic_name: currentUser.polytechnic_name
           })
           .eq('id', currentUser.id);
 
@@ -143,7 +153,7 @@ export default function AdminUsers() {
               phone: currentUser.phone,
               role: currentUser.role || 'student',
               address: currentUser.address,
-              polytechnic: currentUser.polytechnic
+              polytechnic_name: currentUser.polytechnic_name
             });
 
           if (profileError) throw profileError;
@@ -239,7 +249,7 @@ export default function AdminUsers() {
                         </div>
                         <div>
                           <p className="font-bold text-[var(--text)] text-sm">{user.full_name || 'N/A'}</p>
-                          <p className="text-[10px] text-gray-500">{user.polytechnic || 'No Polytechnic'}</p>
+                          <p className="text-[10px] text-gray-500">{user.polytechnic_name || 'No Polytechnic'}</p>
                         </div>
                       </div>
                     </td>
@@ -316,9 +326,17 @@ export default function AdminUsers() {
                 </button>
                 <button 
                   onClick={handleDeleteUser}
-                  className="flex-1 px-6 py-3 bg-red-500 text-white rounded-xl font-semibold shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all active:scale-95"
+                  disabled={saving}
+                  className="flex-1 px-6 py-3 bg-red-500 text-white rounded-xl font-semibold shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Yes, Delete
+                  {saving ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Yes, Delete"
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -388,8 +406,8 @@ export default function AdminUsers() {
                     <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Polytechnic</label>
                     <input 
                       type="text"
-                      value={currentUser.polytechnic || ''}
-                      onChange={e => setCurrentUser({...currentUser, polytechnic: e.target.value})}
+                      value={currentUser.polytechnic_name || ''}
+                      onChange={e => setCurrentUser({...currentUser, polytechnic_name: e.target.value})}
                       placeholder="e.g. Dhaka Polytechnic"
                       className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl py-2.5 px-4 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
                     />

@@ -230,7 +230,7 @@ export default function Home() {
         try {
           donationsRes = await supabase
             .from("donations")
-            .select("*")
+            .select("*, profiles(full_name, polytechnic_name, avatar_url, is_verified)")
             .eq("status", "approved")
             .eq("type", "donation")
             .order("created_at", { ascending: false });
@@ -346,7 +346,7 @@ export default function Home() {
         const fetchDonationsData = async () => {
           const { data } = await supabase
             .from("donations")
-            .select("*")
+            .select("*, profiles(full_name, polytechnic_name, avatar_url, is_verified)")
             .eq("status", "approved")
             .eq("type", "donation")
             .order("created_at", { ascending: false });
@@ -900,19 +900,39 @@ export default function Home() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.5 }}
-                      className="absolute w-full"
+                      className="absolute w-full flex items-center gap-3 sm:gap-4"
                     >
-                      <p className="text-[10px] sm:text-sm text-[var(--text)] font-semibold leading-tight">
-                        Thank you{" "}
-                        <span className="text-[var(--primary)]">
-                          {approvedDonations[currentDonationIndex].student_name || 'Anonymous Donor'}
-                        </span>{" "}
-                        from{" "}
-                        <span className="text-gray-500 dark:text-gray-400 font-bold uppercase">
-                          {approvedDonations[currentDonationIndex].polytechnic_name || 'Polytechnic'}
-                        </span>{" "}
-                        for your support! 🎉
-                      </p>
+                      {approvedDonations[currentDonationIndex].profiles?.avatar_url ? (
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden border-2 border-[var(--primary)]/20 shrink-0 shadow-sm">
+                          <img 
+                            src={approvedDonations[currentDonationIndex].profiles.avatar_url} 
+                            alt={approvedDonations[currentDonationIndex].profiles?.full_name || 'Donor'} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[var(--primary)]/5 flex items-center justify-center border-2 border-[var(--primary)]/20 shrink-0 shadow-sm">
+                          <User size={20} className="text-[var(--primary)]" />
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-col shrink-0 pr-4 sm:pr-6 md:pr-8">
+                        <span className="text-[var(--primary)] font-bold inline-flex items-center gap-1 text-[13px] sm:text-[15px] leading-tight">
+                          {approvedDonations[currentDonationIndex].profiles?.full_name || approvedDonations[currentDonationIndex].student_name || 'Anonymous'}
+                          {approvedDonations[currentDonationIndex].profiles?.is_verified && (
+                            <BadgeCheck size={14} className="text-blue-500 fill-blue-500/20 shrink-0" />
+                          )}
+                        </span>
+                        <span className="text-gray-500 dark:text-gray-400 font-bold uppercase text-[10px] sm:text-[11px] tracking-wider mt-0.5">
+                          ({approvedDonations[currentDonationIndex].profiles?.polytechnic_name || approvedDonations[currentDonationIndex].polytechnic_name || 'RPI'})
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] sm:text-[13px] text-[var(--text)] font-semibold leading-relaxed">
+                          Thank you <span className="text-[var(--primary)] font-bold">{approvedDonations[currentDonationIndex].profiles?.full_name?.split(' ')[0] || approvedDonations[currentDonationIndex].student_name?.split(' ')[0] || 'friend'}</span> from <strong>{approvedDonations[currentDonationIndex].profiles?.polytechnic_name || approvedDonations[currentDonationIndex].polytechnic_name || 'Polytechnic'}</strong> for your support! 🎉
+                        </p>
+                      </div>
                     </motion.div>
                   ) : (
                     <motion.div className="absolute w-full">

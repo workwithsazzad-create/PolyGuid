@@ -49,6 +49,23 @@ export default function AdminCourseUsers() {
       
       setCourse(courseData);
 
+      // Auto-migrate legacy approved donations into enrollments for this course
+      const { data: legacyApproved } = await supabase
+        .from('donations')
+        .select('user_id')
+        .eq('course_id', courseId)
+        .eq('status', 'approved')
+        .not('user_id', 'is', null);
+      
+      if (legacyApproved && legacyApproved.length > 0) {
+        // Upsert silently to not affect UI if it fails
+        const enrollmentsToUpsert = legacyApproved.map((d: any) => ({
+          user_id: d.user_id,
+          course_id: courseId
+        }));
+        await supabase.from('enrollments').upsert(enrollmentsToUpsert, { onConflict: 'user_id,course_id' });
+      }
+
       // Fetch Enrolled Users
       const { data: enrollmentData, error: enrollError } = await supabase
         .from('enrollments')
@@ -259,7 +276,7 @@ export default function AdminCourseUsers() {
                     {item.profiles?.phone || 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                    {item.profiles?.polytechnic || 'N/A'}
+                    {item.profiles?.polytechnic_name || 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-500">
                     {new Date(item.created_at).toLocaleDateString('en-GB', {
@@ -340,7 +357,7 @@ export default function AdminCourseUsers() {
                         className="w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b last:border-none border-gray-100 dark:border-gray-700"
                       >
                         <div className="font-medium text-gray-900 dark:text-white">{u.full_name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{u.phone} • {u.polytechnic || 'N/A'}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{u.phone} • {u.polytechnic_name || 'N/A'}</div>
                       </button>
                     ))}
                   </div>

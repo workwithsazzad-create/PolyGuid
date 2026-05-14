@@ -67,6 +67,14 @@ export default function Messages() {
 
   const fetchConversations = async (currentUserId: string) => {
     try {
+      let supportAdminId: string | null = null;
+      if (searchParams.get('action') === 'support') {
+        const { data: adminData } = await supabase.from('profiles').select('id').eq('phone', '01993879904').limit(1).maybeSingle();
+        if (adminData) {
+          supportAdminId = adminData.id;
+        }
+      }
+
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -101,17 +109,21 @@ export default function Messages() {
       });
 
       // Include initialUserId if present
-      if (initialUserId) {
-        otherUserIds.add(initialUserId);
-        if (!uniqueUsersMap.has(initialUserId)) {
-          uniqueUsersMap.set(initialUserId, {
-            id: initialUserId,
-            lastMessage: 'Start a conversation...',
-            timestamp: new Date().toISOString(),
-            full_name: 'Student',
-            avatar_url: null,
-            unread: false
-          });
+      if (initialUserId || supportAdminId) {
+        const idToUse = supportAdminId || initialUserId;
+        if (idToUse) {
+          otherUserIds.add(idToUse);
+          if (!uniqueUsersMap.has(idToUse)) {
+            uniqueUsersMap.set(idToUse, {
+              id: idToUse,
+              lastMessage: 'Start a conversation...',
+              timestamp: new Date().toISOString(),
+              full_name: 'Support API',
+              avatar_url: null,
+              unread: false,
+              isSupport: true
+            });
+          }
         }
       }
 
@@ -143,8 +155,9 @@ export default function Messages() {
       
       // WhatsApp style: do not auto-select the first conversation. 
       // Only select if there is a specific initialUserId in the URL and we haven't selected one yet.
-      if (initialUserId && !selectedUser) {
-        const target = convList.find(c => c.id === initialUserId);
+      const selId = supportAdminId || initialUserId;
+      if (selId && !selectedUser) {
+        const target = convList.find(c => c.id === selId);
         if (target) setSelectedUser(target);
       }
       
@@ -156,15 +169,18 @@ export default function Messages() {
   };
 
   useEffect(() => {
-    if (!initialUserId) {
+    const isSupport = searchParams.get('action') === 'support';
+    if (!initialUserId && !isSupport) {
       if (selectedUser) setSelectedUser(null);
     } else {
-      if (conversations.length > 0 && (!selectedUser || selectedUser.id !== initialUserId)) {
-        const target = conversations.find(c => c.id === initialUserId);
+      const selId = initialUserId; 
+      // If it's pure support, fetchConversations will find the target and select it.
+      if (selId && conversations.length > 0 && (!selectedUser || selectedUser.id !== selId)) {
+        const target = conversations.find(c => c.id === selId);
         if (target) setSelectedUser(target);
       }
     }
-  }, [initialUserId, conversations, selectedUser]);
+  }, [initialUserId, conversations, selectedUser, searchParams]);
 
   useEffect(() => {
     let channel: any;

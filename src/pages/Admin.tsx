@@ -305,6 +305,14 @@ export default function Admin() {
             body: `আপনার কেনা ${tx.type === 'book' ? 'বই' : 'কোর্সটি'} অ্যাপ্রুভ হয়েছে। এখন আপনি এর কন্টেন্ট দেখতে পারবেন। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!`,
             type: 'course_approved'
           }]);
+        } else if (tx.type === 'donation' && tx.user_id) {
+          // Send approval notification for donation
+          await supabase.from('notifications').insert([{
+            user_id: tx.user_id,
+            title: 'Donation Approved 🎉',
+            body: 'অভিনন্দন! আপনার ডোনেশনটি অ্যাপ্রুভ হয়েছে এবং আমাদের ওয়েবসাইটে আপনার প্রোফাইলটি ফিচার করা হয়েছে। PolyGuid কে সাপোর্ট করার জন্য ধন্যবাদ!',
+            type: 'donation_approved'
+          }]);
         }
       }
 

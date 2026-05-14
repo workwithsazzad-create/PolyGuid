@@ -95,19 +95,23 @@ export default function CourseDetails() {
         if (enrollmentData) {
           setIsEnrolled(true);
         } else {
-          // Check for pending donations
+          // Check for pending or legacy approved donations
           const { data: donationData } = await supabase
             .from('donations')
             .select('status')
             .eq('user_id', session.user.id)
             .eq('course_id', id)
-            .eq('type', 'course')
+            .in('type', ['course', 'book']) // some could be books if they were in same table
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
 
-          if (donationData && donationData.status === 'pending') {
-            setPurchaseStatus('pending');
+          if (donationData) {
+            if (donationData.status === 'approved') {
+              setIsEnrolled(true);
+            } else if (donationData.status === 'pending') {
+              setPurchaseStatus('pending');
+            }
           }
         }
       }
@@ -251,7 +255,7 @@ export default function CourseDetails() {
                 পেন্ডিং (Pending for approval)
               </div>
               <button
-                onClick={() => navigate(`/messages?course=${id}`)}
+                onClick={() => navigate(`/messages?action=support&course=${id}`)}
                 className="w-full text-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md transition-colors text-sm"
               >
                 দ্রুত অ্যাপ্রুভ করতে এসএমএস করুন
