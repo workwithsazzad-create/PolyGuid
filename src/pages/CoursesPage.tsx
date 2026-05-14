@@ -26,6 +26,7 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [pendingCourseIds, setPendingCourseIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -51,6 +52,16 @@ export default function CoursesPage() {
         
         if (enrollmentsData) {
           setEnrollments(enrollmentsData);
+        }
+
+        const { data: pendingData } = await supabase
+          .from('donations')
+          .select('course_id')
+          .eq('user_id', session.user.id)
+          .eq('status', 'pending');
+        
+        if (pendingData) {
+          setPendingCourseIds(new Set(pendingData.map(d => d.course_id)));
         }
       }
 
@@ -162,6 +173,7 @@ export default function CoursesPage() {
                key={course.id}
                {...course}
                isEnrolled={enrollments.some(e => e.course_id === course.id)}
+               purchaseStatus={pendingCourseIds.has(course.id) ? 'pending' : undefined}
             />
           ))}
         </div>

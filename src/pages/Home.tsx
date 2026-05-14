@@ -95,6 +95,7 @@ export default function Home() {
   const [enrollments, setEnrollments] = useState<any[]>(
     globalHomeCache?.enrollments || [],
   );
+  const [pendingCourseIds, setPendingCourseIds] = useState<Set<string>>(new Set());
   const [realUserCount, setRealUserCount] = useState(0);
   const [profile, setProfile] = useState<any>(globalHomeCache?.profile || null);
 
@@ -298,6 +299,16 @@ export default function Home() {
           if (enrollmentsData) {
             setEnrollments(enrollmentsData);
             newCache.enrollments = enrollmentsData;
+          }
+
+          const { data: pendingData } = await supabase
+            .from("donations")
+            .select("course_id")
+            .eq("user_id", session.user.id)
+            .eq("status", "pending");
+          
+          if (pendingData) {
+            setPendingCourseIds(new Set(pendingData.map(d => d.course_id)));
           }
 
           // Fetch profile for mobile greeting
@@ -690,6 +701,7 @@ export default function Home() {
                         isEnrolled={enrollments.some(
                           (e) => e.course_id === course.id,
                         )}
+                        purchaseStatus={pendingCourseIds.has(course.id) ? 'pending' : undefined}
                       />
                     </div>
                   ))}
@@ -765,6 +777,7 @@ export default function Home() {
                         isEnrolled={enrollments.some(
                           (e) => e.course_id === course.id,
                         )}
+                        purchaseStatus={pendingCourseIds.has(course.id) ? 'pending' : undefined}
                       />
                     </div>
                   ))}

@@ -293,10 +293,19 @@ export default function Admin() {
       // If approved and it's a course or book, auto-enroll
       if (status === 'approved' && tx && tx.status !== 'approved') {
         if ((tx.type === 'course' || tx.type === 'book') && tx.course_id && tx.user_id) {
-          await supabase.from('enrollments').upsert({
-            user_id: tx.user_id,
-            course_id: tx.course_id
-          }, { onConflict: 'user_id,course_id' });
+          const { data: existingEnrollment } = await supabase
+            .from('enrollments')
+            .select('id')
+            .eq('user_id', tx.user_id)
+            .eq('course_id', tx.course_id)
+            .maybeSingle();
+
+          if (!existingEnrollment) {
+            await supabase.from('enrollments').insert({
+              user_id: tx.user_id,
+              course_id: tx.course_id
+            });
+          }
 
           // Send approval notification
           await supabase.from('notifications').insert([{

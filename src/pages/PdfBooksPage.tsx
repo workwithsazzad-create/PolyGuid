@@ -12,6 +12,7 @@ export default function PdfBooksPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [pendingCourseIds, setPendingCourseIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | 'ebook' | 'pdf' | 'hardcopy'>('all');
 
@@ -39,6 +40,16 @@ export default function PdfBooksPage() {
         
         if (enrollmentsData) {
           setEnrollments(enrollmentsData);
+        }
+
+        const { data: pendingData } = await supabase
+          .from('donations')
+          .select('course_id')
+          .eq('user_id', session.user.id)
+          .eq('status', 'pending');
+        
+        if (pendingData) {
+          setPendingCourseIds(new Set(pendingData.map(d => d.course_id)));
         }
       }
 
@@ -160,6 +171,7 @@ export default function PdfBooksPage() {
               {...course} 
               isBook={true}
               isEnrolled={enrollments.some(e => e.course_id === course.id)}
+              purchaseStatus={pendingCourseIds.has(course.id) ? 'pending' : undefined}
             />
           ))}
         </div>

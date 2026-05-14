@@ -14,13 +14,14 @@ interface CourseCardProps {
   thumbnail: string;
   classes?: number;
   isEnrolled?: boolean;
+  purchaseStatus?: 'none' | 'pending' | 'approved';
   isBook?: boolean;
   affiliateLink?: string;
 }
 
 import { Link } from 'react-router-dom';
 
-export default function CourseCard({ id, title, description, price, originalPrice, thumbnail, classes = 12, isEnrolled = false, isBook = false, affiliateLink }: CourseCardProps) {
+export default function CourseCard({ id, title, description, price, originalPrice, thumbnail, classes = 12, isEnrolled = false, isBook = false, affiliateLink, purchaseStatus = 'none' }: CourseCardProps) {
   const hasDiscount = Boolean(originalPrice && originalPrice > price);
   const discountPercent = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
   
@@ -90,12 +91,16 @@ export default function CourseCard({ id, title, description, price, originalPric
           
           <div 
             className={`w-full py-0.5 sm:py-1 rounded-md font-black text-[8.5px] sm:text-[9.5px] uppercase tracking-wider text-center transition-all shadow-none mt-1 ${
-              isEnrolled && !isEBook
+              purchaseStatus === 'pending'
+                ? 'bg-orange-500 text-white'
+                : (isEnrolled && !isEBook)
                 ? 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-black/5 dark:border-white/10' 
                 : 'bg-[var(--primary)] text-white'
             }`}
           >
-            {isEBook ? 'Read Now' : (isEnrolled ? (isBook ? 'Purchased' : 'Watch Now') : (isBook ? 'Buy Now' : 'Enroll'))}
+            {purchaseStatus === 'pending' 
+              ? 'Pending Approval'
+              : isEBook ? 'Read Now' : (isEnrolled ? (isBook ? 'Purchased' : 'Watch Now') : (isBook ? 'Buy Now' : 'Enroll'))}
           </div>
         </div>
       </GlassmorphicCard>

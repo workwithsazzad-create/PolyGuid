@@ -16,6 +16,7 @@ export default function MarketplaceHome() {
   
   const [polyguidBooks, setPolyguidBooks] = useState<any[]>([]);
   const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [pendingCourseIds, setPendingCourseIds] = useState<Set<string>>(new Set());
   const [userBooks, setUserBooks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,6 +39,16 @@ export default function MarketplaceHome() {
         .select('course_id')
         .eq('user_id', session.user.id);
       if (data) setEnrollments(data);
+      
+      const { data: pendingData } = await supabase
+        .from('donations')
+        .select('course_id')
+        .eq('user_id', session.user.id)
+        .eq('status', 'pending');
+      
+      if (pendingData) {
+        setPendingCourseIds(new Set(pendingData.map(d => d.course_id)));
+      }
     }
   };
 
@@ -289,6 +300,7 @@ export default function MarketplaceHome() {
                             {...book} 
                             isBook={true} 
                             isEnrolled={enrollments.some(e => e.course_id === book.id)} 
+                            purchaseStatus={pendingCourseIds.has(book.id) ? 'pending' : undefined}
                             affiliateLink={book.affiliateLink} 
                           />
                         ))}
