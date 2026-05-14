@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { 
   Users, 
@@ -16,6 +16,8 @@ import { cn } from '../../lib/utils';
 export default function AdminCourseUsers() {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTab = searchParams.get('tab') || 'courses';
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState<any>(null);
   const [enrolledUsers, setEnrolledUsers] = useState<any[]>([]);
@@ -187,7 +189,7 @@ export default function AdminCourseUsers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/admin?tab=${returnTab}`)}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors dark:hover:bg-gray-800"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
@@ -195,10 +197,10 @@ export default function AdminCourseUsers() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Users className="w-6 h-6 text-[var(--primary)]" />
-              Course Users
+              {returnTab === 'pdf' ? 'Book Users' : 'Student List'}
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Course: <span className="text-[var(--primary)] font-medium">{course?.title}</span>
+              {returnTab === 'pdf' ? 'Book' : 'Course'}: <span className="text-[var(--primary)] font-medium">{course?.title}</span>
             </p>
           </div>
         </div>
@@ -282,7 +284,7 @@ export default function AdminCourseUsers() {
               )) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                    No users found for this course.
+                    No users found for this {returnTab === 'pdf' ? 'book' : 'course'}.
                   </td>
                 </tr>
               )}
@@ -296,7 +298,7 @@ export default function AdminCourseUsers() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create Course User</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Enroll New User</h2>
               <button 
                 onClick={() => setShowAddModal(false)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"

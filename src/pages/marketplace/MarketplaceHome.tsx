@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/src/lib/supabase';
-import { Search, MapPin, Plus, List, Eye } from 'lucide-react';
+import { Search, MapPin, Plus, List, Eye, ArrowLeft } from 'lucide-react';
 import CourseCard from '@/src/components/ui/CourseCard';
 import MarketplaceBookCard from './MarketplaceBookCard';
 
@@ -15,6 +15,7 @@ export default function MarketplaceHome() {
   const [department, setDepartment] = useState('');
   
   const [polyguidBooks, setPolyguidBooks] = useState<any[]>([]);
+  const [enrollments, setEnrollments] = useState<any[]>([]);
   const [userBooks, setUserBooks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,27 +26,47 @@ export default function MarketplaceHome() {
   const SEMESTERS = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
   useEffect(() => {
+    fetchEnrollments();
     fetchBooks();
   }, [district, semester, department]);
+
+  const fetchEnrollments = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data } = await supabase
+        .from('enrollments')
+        .select('course_id')
+        .eq('user_id', session.user.id);
+      if (data) setEnrollments(data);
+    }
+  };
+
+  const [polyguidType, setPolyguidType] = useState<'all' | 'pdf' | 'hardcopy'>('all');
 
   const fetchBooks = async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch Polyguid books (affiliate hard copies)
+      // 1. Fetch Polyguid books (Exclude E-books as they go to Free Books)
       const { data: adminBooks } = await supabase
         .from('courses')
         .select('*')
         .contains('categories', ['বই'])
-        .like('description', '%[meta:affiliate_link:%')
+        .not('categories', 'cs', '{"ebook"}')
         .order('created_at', { ascending: false });
 
       if (adminBooks) {
         setPolyguidBooks(adminBooks.map(c => {
           const metaMatch = c.description?.match(/\[meta:fake_user_count:(\d+)\]/);
           const affiliateMatch = c.description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
+          const readNowMatch = c.description?.match(/\[meta:read_now_link:([^\]]+)\]/);
           let cleanDesc = c.description?.replace(/\[meta:fake_user_count:\d+\]/g, '') || '';
-          cleanDesc = cleanDesc.replace(/\[meta:affiliate_link:[^\]]+\]/g, '').trim();
+          cleanDesc = cleanDesc.replace(/\[meta:affiliate_link:[^\]]+\]/g, '').replace(/\[meta:read_now_link:[^\]]+\]/g, '').trim();
           
+          let bookType = 'pdf';
+          if (c.categories?.includes('affiliate') || affiliateMatch) bookType = 'hardcopy';
+          else if (c.categories?.includes('pdf')) bookType = 'pdf';
+          else if (affiliateMatch) bookType = 'hardcopy';
+
           return {
             id: c.id,
             title: c.title,
@@ -56,7 +77,8 @@ export default function MarketplaceHome() {
             classes: c.classes_count,
             categories: c.categories || [],
             affiliateLink: affiliateMatch ? affiliateMatch[1] : null,
-            totalUsers: metaMatch ? parseInt(metaMatch[1]) : 0
+            totalUsers: metaMatch ? parseInt(metaMatch[1]) : 0,
+            bookType
           };
         }));
       }
@@ -190,12 +212,18 @@ export default function MarketplaceHome() {
   return (
     <div className="flex flex-col h-full bg-[var(--background)] lg:min-h-[calc(100vh-64px)] overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#121212]/90 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 py-3 sm:py-4">
+      <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#121212]/90 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 py-2 sm:py-3">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+             <button 
+               onClick={() => navigate(-1)}
+               className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group"
+             >
+               <ArrowLeft size={20} className="text-[var(--text)] group-hover:text-[var(--primary)]" />
+             </button>
              <div>
-                <h1 className="text-lg sm:text-2xl font-black text-[var(--text)] tracking-tight">Marketplace</h1>
-                <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Buy and sell engineering books</p>
+                <h1 className="text-sm sm:text-lg font-black text-[var(--text)] tracking-tight">Marketplace</h1>
+                <p className="text-[7px] sm:text-[9px] text-gray-500 font-medium">Buy and sell books</p>
              </div>
           </div>
           <div className="flex items-center gap-2">
@@ -212,14 +240,14 @@ export default function MarketplaceHome() {
       <div className="w-full max-w-7xl mx-auto px-4 py-6">
         {/* Main Content */}
         <div className="w-full">
-          <div className="relative mb-6">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <div className="relative mb-5">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input 
               type="text"
               placeholder="বইয়ের নাম অথবা ঠিকানা দিয়ে খুঁজুন..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#32CD32] text-sm font-medium shadow-sm"
+              className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#32CD32] text-[10px] sm:text-xs font-medium shadow-sm"
             />
           </div>
 
@@ -232,15 +260,38 @@ export default function MarketplaceHome() {
               <div className="flex flex-col gap-10">
                 {/* Polyguid Books Section */}
                 <div>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
                     <h2 className="text-lg sm:text-xl font-bold text-[var(--text)]">Polyguid থেকে প্রকাশিত</h2>
-                    <span className="text-xs text-gray-500 font-bold px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-full">{filteredPolyguid.length}টি বই</span>
+                    <div className="flex gap-2">
+                       {['all', 'pdf', 'hardcopy'].map((type) => (
+                         <button
+                           key={type}
+                           onClick={() => setPolyguidType(type as any)}
+                           className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                             polyguidType === type 
+                               ? 'bg-[#32CD32] text-white shadow-lg shadow-[#32CD32]/20' 
+                               : 'bg-white dark:bg-white/5 text-gray-500 border border-black/5 dark:border-white/10'
+                           }`}
+                         >
+                           {type === 'all' ? 'সব' : type === 'pdf' ? 'PDF' : 'Hardcopy'}
+                         </button>
+                       ))}
+                    </div>
                   </div>
-                  {filteredPolyguid.length > 0 ? (
+                  
+                  {filteredPolyguid.filter(b => polyguidType === 'all' || b.bookType === polyguidType).length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
-                      {filteredPolyguid.map(book => (
-                        <CourseCard key={book.id} {...book} isBook={true} isEnrolled={false} affiliateLink={book.affiliateLink} />
-                      ))}
+                      {filteredPolyguid
+                        .filter(b => polyguidType === 'all' || b.bookType === polyguidType)
+                        .map(book => (
+                          <CourseCard 
+                            key={book.id} 
+                            {...book} 
+                            isBook={true} 
+                            isEnrolled={enrollments.some(e => e.course_id === book.id)} 
+                            affiliateLink={book.affiliateLink} 
+                          />
+                        ))}
                     </div>
                   ) : (
                     <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-black/5 dark:border-white/5 p-8 text-center text-gray-500 text-sm shadow-sm">কোনো বই পাওয়া যায়নি</div>

@@ -162,18 +162,24 @@ export default function AdminPdfs() {
     e.preventDefault();
     setLoading(true);
     
-    const cleanDesc = pdfForm.description.replace(/\[meta:fake_user_count:\d+\]/g, '').replace(/\[meta:affiliate_link:[^\]]+\]/g, '').trim();
+    const cleanDesc = pdfForm.description.replace(/\[meta:fake_user_count:\d+\]/g, '').replace(/\[meta:affiliate_link:[^\]]+\]/g, '').replace(/\[meta:read_now_link:[^\]]+\]/g, '').trim();
     const metaString = `\n\n[meta:fake_user_count:${pdfForm.fakeUserCount}]`;
     const affiliateString = pdfForm.type === 'affiliate' ? `\n[meta:affiliate_link:${pdfForm.affiliateLink}]` : '';
+    const readNowString = pdfForm.type === 'ebook' ? `\n[meta:read_now_link:${pdfForm.pdfLink}]` : '';
     
+    const categories = ['বই'];
+    if (pdfForm.type === 'ebook') categories.push('ebook');
+    else if (pdfForm.type === 'pdf') categories.push('pdf');
+    else if (pdfForm.type === 'affiliate') categories.push('affiliate');
+
     const pdfData = {
       title: pdfForm.title,
       thumbnail_url: pdfForm.thumbnail,
-      is_free: pdfForm.isFree,
-      original_price: pdfForm.originalPrice,
-      price: pdfForm.price,
-      categories: ['বই'],
-      description: cleanDesc + metaString + affiliateString
+      is_free: pdfForm.type === 'ebook' ? true : pdfForm.isFree,
+      original_price: pdfForm.type === 'ebook' ? 0 : pdfForm.originalPrice,
+      price: pdfForm.type === 'ebook' ? 0 : pdfForm.price,
+      categories: categories,
+      description: cleanDesc + metaString + affiliateString + readNowString
     };
 
     let savedCourseId = editingPdfId;
@@ -394,17 +400,22 @@ export default function AdminPdfs() {
                     >
                       <option value="pdf" className="bg-white dark:bg-[#1a1a1a]">PDF Book</option>
                       <option value="affiliate" className="bg-white dark:bg-[#1a1a1a]">Affiliate Book</option>
+                      <option value="ebook" className="bg-white dark:bg-[#1a1a1a]">E-Book</option>
                     </select>
                   </div>
 
                  <div className="relative pt-2">
-                    <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 transition-all">Book Title*</label>
+                    <div className="flex justify-between items-center absolute -top-1.5 left-3 right-3 z-10 pointer-events-none">
+                      <label className="bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase transition-all pointer-events-auto">Book Title*</label>
+                      <span className="bg-white dark:bg-[#1a1a1a] px-1 text-[10px] font-bold text-blue-500 transition-all pointer-events-auto">{pdfForm.title.length} characters</span>
+                    </div>
                     <input 
                       required
                       type="text" 
                       value={pdfForm.title}
                       onChange={(e) => setPdfForm({...pdfForm, title: e.target.value})}
                       placeholder="Book Title*"
+                      maxLength={50}
                       className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
@@ -454,22 +465,38 @@ export default function AdminPdfs() {
                   </div>
                   )}
 
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Market Strategy</label>
-                      <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${pdfForm.isFree ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-white/5 opacity-50'}`}>
-                        <input type="checkbox" className="sr-only" checked={pdfForm.isFree} onChange={(e) => setPdfForm({...pdfForm, isFree: e.target.checked})} />
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${pdfForm.isFree ? 'bg-green-600 border-green-600' : 'border-gray-400'}`}>
-                          {pdfForm.isFree && <Plus size={14} className="text-white rotate-45" />}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-tight">Mark as Free Book</span>
-                          <span className="text-[10px] text-gray-400">Checking this puts the book in the Free category</span>
-                        </div>
-                      </label>
-                    </div>
+                  {pdfForm.type === 'ebook' && (
+                  <div className="relative pt-2">
+                    <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-[var(--primary)] uppercase z-10 transition-all">Read Now Link*</label>
+                    <input 
+                      required
+                      type="url" 
+                      value={pdfForm.pdfLink}
+                      onChange={(e) => setPdfForm({...pdfForm, pdfLink: e.target.value})}
+                      placeholder="e.g. your-ebook-url.com"
+                      className="w-full bg-transparent border-2 border-[var(--primary)]/50 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:border-[var(--primary)] shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                    />
+                  </div>
+                  )}
 
-                    {!pdfForm.isFree && (
+                  <div className="flex flex-col gap-4">
+                    {pdfForm.type !== 'ebook' && (
+                      <div className="flex flex-col gap-2">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Market Strategy</label>
+                        <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${pdfForm.isFree ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-white/5 opacity-50'}`}>
+                          <input type="checkbox" className="sr-only" checked={pdfForm.isFree} onChange={(e) => setPdfForm({...pdfForm, isFree: e.target.checked})} />
+                          <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${pdfForm.isFree ? 'bg-green-600 border-green-600' : 'border-gray-400'}`}>
+                            {pdfForm.isFree && <Plus size={14} className="text-white rotate-45" />}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-tight">Mark as Free Book</span>
+                            <span className="text-[10px] text-gray-400">Checking this puts the book in the Free category</span>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+
+                    {pdfForm.type !== 'ebook' && !pdfForm.isFree && (
                       <div className="grid grid-cols-2 gap-4">
                         <div className="relative pt-2">
                           <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 tracking-widest">Market Value</label>
@@ -494,16 +521,18 @@ export default function AdminPdfs() {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-3">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Fake User Count</label>
-                    <input 
-                      type="number" 
-                      value={pdfForm.fakeUserCount} 
-                      onChange={(e) => setPdfForm({...pdfForm, fakeUserCount: parseInt(e.target.value) || 0})} 
-                      placeholder="e.g. 500"
-                      className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" 
-                    />
-                  </div>
+                  {pdfForm.type !== 'ebook' && (
+                    <div className="flex flex-col gap-3">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Fake User Count</label>
+                      <input 
+                        type="number" 
+                        value={pdfForm.fakeUserCount} 
+                        onChange={(e) => setPdfForm({...pdfForm, fakeUserCount: parseInt(e.target.value) || 0})} 
+                        placeholder="e.g. 500"
+                        className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                      />
+                    </div>
+                  )}
                   
                   <div className="flex justify-end gap-3 mt-4">
                     <button type="submit" disabled={loading} className="bg-[#32CD32] text-white font-medium py-2 px-6 rounded-md hover:bg-[#28a428] transition-colors disabled:opacity-50">
@@ -591,7 +620,7 @@ export default function AdminPdfs() {
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/admin/course/${pdf.id}/users`);
+                    navigate(`/admin/course/${pdf.id}/users?tab=pdf`);
                   }}
                   className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
                   title="Manage Users"
@@ -607,14 +636,21 @@ export default function AdminPdfs() {
                     setEditingPdfId(pdf.id);
                     const metaMatch = pdf.description?.match(/\[meta:fake_user_count:(\d+)\]/);
                     const affiliateMatch = pdf.description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
+                    const readNowMatch = pdf.description?.match(/\[meta:read_now_link:([^\]]+)\]/);
                     let cleanDesc = pdf.description?.replace(/\[meta:fake_user_count:\d+\]/g, '') || '';
-                    cleanDesc = cleanDesc.replace(/\[meta:affiliate_link:[^\]]+\]/g, '').trim();
+                    cleanDesc = cleanDesc.replace(/\[meta:affiliate_link:[^\]]+\]/g, '').replace(/\[meta:read_now_link:[^\]]+\]/g, '').trim();
+
+                    let bookType = 'pdf';
+                    if (pdf.categories?.includes('ebook')) bookType = 'ebook';
+                    else if (pdf.categories?.includes('affiliate')) bookType = 'affiliate';
+                    else if (pdf.categories?.includes('pdf')) bookType = 'pdf';
+                    else if (affiliateMatch) bookType = 'affiliate';
 
                     setPdfForm({
-                      type: affiliateMatch ? 'affiliate' : 'pdf',
+                      type: bookType,
                       title: pdf.title || '',
                       thumbnail: pdf.thumbnail_url || '',
-                      pdfLink: '', // Will fetch below
+                      pdfLink: readNowMatch ? readNowMatch[1] : '', 
                       affiliateLink: affiliateMatch ? affiliateMatch[1] : '',
                       isFree: pdf.is_free ?? true,
                       originalPrice: pdf.original_price || 0,
@@ -623,13 +659,15 @@ export default function AdminPdfs() {
                       description: cleanDesc,
                       fakeUserCount: metaMatch ? parseInt(metaMatch[1]) : 0
                     });
-  
-  // Fetch existing pdf link
-  supabase.from('course_content').select('url').eq('course_id', pdf.id).eq('type', 'pdf').maybeSingle().then(({data}) => {
-    if (data && data.url) {
-      setPdfForm(prev => ({...prev, pdfLink: data.url}));
-    }
-  });
+
+                    // Fetch existing pdf link if not already set by readNowMatch
+                    if (!readNowMatch) {
+                      supabase.from('course_content').select('url').eq('course_id', pdf.id).eq('type', 'pdf').maybeSingle().then(({data}) => {
+                        if (data && data.url) {
+                          setPdfForm(prev => ({...prev, pdfLink: data.url}));
+                        }
+                      });
+                    }
   
                     setIsAddingPdf(true);
                   }}

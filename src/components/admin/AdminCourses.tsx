@@ -65,13 +65,17 @@ const ContentModal = ({
                 </div>
 
                 <div className="relative pt-2">
-                  <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 transition-all">Title*</label>
+                  <div className="flex justify-between items-center absolute -top-1.5 left-3 right-3 z-10 pointer-events-none">
+                    <label className="bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase transition-all pointer-events-auto">Title*</label>
+                    <span className="bg-white dark:bg-[#1a1a1a] px-1 text-[10px] font-bold text-blue-500 transition-all pointer-events-auto">{contentForm.title.length} characters</span>
+                  </div>
                   <input 
                     required
                     type="text" 
                     value={contentForm.title}
                     onChange={(e) => setContentForm({...contentForm, title: e.target.value})}
                     placeholder="Title*"
+                    maxLength={50}
                     className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -163,13 +167,17 @@ const ContentModal = ({
           ) : (
             <form onSubmit={handleCreateCourse} className="flex flex-col gap-6">
                <div className="relative pt-2">
-                  <label className="absolute -top-1.5 left-3 bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase z-10 transition-all">Course Identity*</label>
+                  <div className="flex justify-between items-center absolute -top-1.5 left-3 right-3 z-10 pointer-events-none">
+                    <label className="bg-white dark:bg-[#1a1a1a] px-1 text-[11px] font-bold text-gray-400 uppercase transition-all pointer-events-auto">Course Identity*</label>
+                    <span className="bg-white dark:bg-[#1a1a1a] px-1 text-[10px] font-bold text-blue-500 transition-all pointer-events-auto">{courseForm.title.length} characters</span>
+                  </div>
                   <input 
                     required
                     type="text" 
                     value={courseForm.title}
                     onChange={(e) => setCourseForm({...courseForm, title: e.target.value})}
                     placeholder="Course Title*"
+                    maxLength={50}
                     className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -878,7 +886,7 @@ export default function AdminCourses() {
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/admin/course/${course.id}/users`);
+                    navigate(`/admin/course/${course.id}/users?tab=courses`);
                   }}
                   className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
                   title="Manage Users"

@@ -113,6 +113,35 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const preventPageScroll = (e: WheelEvent) => {
+      const container = e.currentTarget as HTMLElement;
+      if (e.deltaY !== 0) {
+        container.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    };
+
+    const courseScroll = scrollContainerRef.current;
+    const bookScroll = mobileBooksRef.current;
+
+    if (courseScroll) {
+      courseScroll.addEventListener('wheel', preventPageScroll as any, { passive: false });
+    }
+    if (bookScroll) {
+      bookScroll.addEventListener('wheel', preventPageScroll as any, { passive: false });
+    }
+
+    return () => {
+      if (courseScroll) {
+        courseScroll.removeEventListener('wheel', preventPageScroll as any);
+      }
+      if (bookScroll) {
+        bookScroll.removeEventListener('wheel', preventPageScroll as any);
+      }
+    };
+  }, [allCourses]);
+
+  useEffect(() => {
     const fetchUserCount = async () => {
       const { count } = await supabase
         .from("profiles")
@@ -203,6 +232,7 @@ export default function Home() {
             .from("donations")
             .select("*")
             .eq("status", "approved")
+            .eq("type", "donation")
             .order("created_at", { ascending: false });
         } catch (e) {
           donationsRes = { data: null, error: e };
@@ -318,6 +348,7 @@ export default function Home() {
             .from("donations")
             .select("*")
             .eq("status", "approved")
+            .eq("type", "donation")
             .order("created_at", { ascending: false });
           if (isMounted && data) setApprovedDonations(data);
         };
@@ -480,12 +511,12 @@ export default function Home() {
               route: "/results",
             },
             {
-              name: "Book PDF",
+              name: "Free Books",
               icon: FileText,
               color: "text-red-500",
               bgColor: "bg-red-50 dark:bg-red-900/20",
               shadowColor: "shadow-red-500/20",
-              route: "/books-pdf",
+              route: "/books-pdf?type=ebook",
             },
             {
               name: "Book List",
@@ -550,7 +581,7 @@ export default function Home() {
                 <stat.icon size={16} className="sm:w-6 sm:h-6" />
               </div>
               <div className="flex flex-col items-start justify-center">
-                <h3 className="text-[11px] xs:text-xs sm:text-2xl font-black text-[var(--text)] leading-none mb-0.5 sm:mb-1">
+                <h3 className="text-[10px] xs:text-xs sm:text-lg font-black text-[var(--text)] leading-none mb-0.5 sm:mb-1">
                   <AnimatedCounter
                     value={i === 1 ? stat.value + realUserCount : stat.value}
                     suffix="+"
@@ -586,11 +617,11 @@ export default function Home() {
             path: "/results",
           },
           {
-            name: "Book PDF",
+            name: "Free Books",
             icon: FileText,
             color: "text-red-500",
             bg: "bg-red-500/5",
-            path: "/books-pdf",
+            path: "/books-pdf?type=ebook",
           },
           {
             name: "Book List",
@@ -628,7 +659,7 @@ export default function Home() {
             জনপ্রিয় কোর্স সমূহ
           </h2>
           <button
-            onClick={() => navigate("/courses")}
+            onClick={() => navigate("/courses", { replace: false })}
             className="text-[9px] sm:text-[10px] font-black text-[var(--primary)] hover:underline uppercase tracking-wider"
           >
             সবগুলো দেখুন
@@ -642,11 +673,6 @@ export default function Home() {
             <>
               <div
                 ref={scrollContainerRef}
-                onWheel={(e) => {
-                  if (e.deltaY !== 0) {
-                    e.currentTarget.scrollLeft += e.deltaY;
-                  }
-                }}
                 className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar scroll-smooth"
               >
                 {allCourses
@@ -707,7 +733,7 @@ export default function Home() {
             জনপ্রিয় বই সমূহ
           </h2>
           <button
-            onClick={() => navigate("/books-pdf")}
+            onClick={() => navigate("/books-pdf?type=all", { replace: false })}
             className="text-[9px] sm:text-[10px] font-black text-[var(--primary)] hover:underline uppercase tracking-wider"
           >
             সবগুলো দেখুন
@@ -715,33 +741,17 @@ export default function Home() {
         </div>
 
         <div className="relative group">
-          {/* We will filter books from courses that have 'বই' or 'Book' category, or show placeholder */}
           {allCourses.filter(
-            (c) =>
-              c.pinned_pdf_position !== null && (
-                      c.categories?.includes("বই") ||
-                      c.categories?.includes("Book") ||
-                      c.title?.includes("বই")
-                    ),
+            (c) => c.pinned_pdf_position !== null && c.pinned_pdf_position > 0,
           ).length > 0 ? (
             <>
               <div
                 ref={mobileBooksRef}
-                onWheel={(e) => {
-                  if (e.deltaY !== 0) {
-                    e.currentTarget.scrollLeft += e.deltaY;
-                  }
-                }}
                 className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar scroll-smooth"
               >
                 {allCourses
                   .filter(
-                    (c) =>
-                      c.pinned_pdf_position !== null && (
-                      c.categories?.includes("বই") ||
-                      c.categories?.includes("Book") ||
-                      c.title?.includes("বই")
-                    ),
+                    (c) => c.pinned_pdf_position !== null && c.pinned_pdf_position > 0,
                   )
                   .sort((a, b) => (a.pinned_pdf_position || 99) - (b.pinned_pdf_position || 99))
                   .map((course, i) => (
@@ -784,7 +794,7 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center py-12 text-center space-y-3 opacity-40">
               <BookOpen size={40} className="text-gray-500" strokeWidth={1} />
               <h2 className="text-sm font-medium text-gray-400">
-                খুব শীঘ্রই বই যুক্ত করা হবে
+                এখনো কোনো জনপ্রিয় বই পিন করা হয়নি
               </h2>
             </div>
           )}
@@ -895,14 +905,11 @@ export default function Home() {
                       <p className="text-[10px] sm:text-sm text-[var(--text)] font-semibold leading-tight">
                         Thank you{" "}
                         <span className="text-[var(--primary)]">
-                          {approvedDonations[currentDonationIndex].student_name}
+                          {approvedDonations[currentDonationIndex].student_name || 'Anonymous Donor'}
                         </span>{" "}
                         from{" "}
-                        <span className="text-gray-500 dark:text-gray-400">
-                          {
-                            approvedDonations[currentDonationIndex]
-                              .polytechnic_name
-                          }
+                        <span className="text-gray-500 dark:text-gray-400 font-bold uppercase">
+                          {approvedDonations[currentDonationIndex].polytechnic_name || 'Polytechnic'}
                         </span>{" "}
                         for your support! 🎉
                       </p>

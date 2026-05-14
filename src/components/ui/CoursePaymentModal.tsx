@@ -9,6 +9,7 @@ interface CoursePaymentModalProps {
   courseId: string;
   courseTitle: string;
   price: number;
+  type: 'course' | 'book';
   onSuccess: () => void;
 }
 
@@ -18,6 +19,7 @@ export default function CoursePaymentModal({
   courseId,
   courseTitle,
   price,
+  type,
   onSuccess
 }: CoursePaymentModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
@@ -80,7 +82,7 @@ export default function CoursePaymentModal({
           polytechnic_name: method || 'manual', 
           transaction_id: form.trxId.trim(),
           amount: parseFloat(price.toString()),
-          type: 'course',
+          type: type,
           course_id: courseId,
           user_id: session?.user?.id || null,
           status: 'pending'

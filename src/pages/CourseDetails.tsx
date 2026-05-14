@@ -168,6 +168,10 @@ export default function CourseDetails() {
     }
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[70vh] animate-pulse">
@@ -187,18 +191,18 @@ export default function CourseDetails() {
       className="flex flex-col gap-6 max-w-4xl mx-auto pb-12"
     >
       <button 
-        onClick={() => navigate('/home')}
+        onClick={handleBack}
         className="flex items-center gap-2 text-gray-500 hover:text-[var(--primary)] transition-colors w-fit hidden lg:flex"
       >
-        <ChevronLeft size={20} /> Back to Home
+        <ChevronLeft size={20} /> Back
       </button>
 
       <GlassmorphicCard className="p-4 sm:p-6 md:p-8 flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-start">
-        <div className="w-full md:w-[45%] lg:w-[40%] aspect-video md:aspect-[4/3] bg-black/5 dark:bg-white/5 rounded-xl overflow-hidden flex-shrink-0 relative flex items-center justify-center">
+        <div className="w-full md:w-[45%] lg:w-[40%] bg-black/5 dark:bg-white/5 rounded-xl overflow-hidden flex-shrink-0 relative">
           <img 
             src={getDirectLink(course.thumbnail)} 
             alt={course.title}
-            className="w-full h-full object-contain"
+            className="w-full h-auto object-cover"
             referrerPolicy="no-referrer"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
@@ -228,10 +232,10 @@ export default function CourseDetails() {
               )}
               <button 
                 onClick={handleEnroll}
-                className="bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold py-1.5 px-5 sm:py-3 sm:px-8 text-xs sm:text-base rounded-xl sm:rounded-xl transition-all shadow-lg shadow-[var(--primary)]/20 w-fit"
+                className="bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold py-2.5 px-5 sm:py-3 sm:px-8 text-sm sm:text-base rounded-xl sm:rounded-xl transition-all shadow-lg shadow-[var(--primary)]/20 w-full sm:w-fit"
               >
                 {(course.categories?.includes("বই") || course.categories?.includes("Book") || course.affiliateLink) 
-                  ? (course.isFree && !course.affiliateLink ? 'Get Book for Free' : 'Buy Now') 
+                  ? 'Buy Now' 
                   : (course.isFree ? 'Enroll Now for Free' : 'Buy Now')}
               </button>
             </div>
@@ -271,6 +275,7 @@ export default function CourseDetails() {
         courseId={id || ''}
         courseTitle={course.title}
         price={course.price}
+        type={(course.categories?.includes("বই") || course.categories?.includes("Book") || course.affiliateLink) ? 'book' : 'course'}
         onSuccess={() => setPurchaseStatus('pending')}
       />
 

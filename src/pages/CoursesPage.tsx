@@ -100,7 +100,7 @@ export default function CoursesPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
         <div className="flex items-center gap-3 sm:gap-4">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/home')}
             className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group hidden lg:flex"
           >
             <ArrowLeft className="text-[var(--text)] group-hover:text-[var(--primary)]" size={24} />
@@ -135,7 +135,7 @@ export default function CoursesPage() {
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
-            onClick={() => setSearchParams({ category: cat })}
+            onClick={() => setSearchParams({ category: cat }, { replace: true })}
             className={cn(
               "px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all border",
               currentCategory === cat 

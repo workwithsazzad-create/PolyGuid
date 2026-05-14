@@ -13,6 +13,7 @@ export default function PdfBooksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'ebook' | 'pdf' | 'hardcopy'>('all');
 
   useEffect(() => {
     fetchCourses();
@@ -43,9 +44,16 @@ export default function PdfBooksPage() {
 
       if (data) {
         setCourses(
-          data
-            .filter(c => !c.description?.includes('[meta:affiliate_link:'))
-            .map(c => ({
+          data.map(c => {
+            const affiliateMatch = c.description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
+            const readNowMatch = c.description?.match(/\[meta:read_now_link:([^\]]+)\]/);
+            
+            let bookType: 'ebook' | 'pdf' | 'hardcopy' = 'pdf';
+            if (c.categories?.includes('ebook') || readNowMatch) bookType = 'ebook';
+            else if (c.categories?.includes('affiliate') || affiliateMatch) bookType = 'hardcopy';
+            else bookType = 'pdf';
+
+            return {
               id: c.id,
               title: c.title,
               description: c.description,
@@ -53,8 +61,10 @@ export default function PdfBooksPage() {
               originalPrice: c.original_price,
               thumbnail: c.thumbnail_url || "https://placehold.co/1000x1430/1a1a1a/e11d48?text=New+Book",
               classes: c.classes_count,
-              categories: c.categories || []
-            }))
+              categories: c.categories || [],
+              bookType
+            };
+          })
         );
       }
     } catch (err) {
@@ -64,25 +74,42 @@ export default function PdfBooksPage() {
     }
   };
 
-  const filteredCourses = courses.filter(c => 
-    c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const isEBookOnly = searchParams.get('type') === 'ebook';
+  const pageTitle = isEBookOnly ? 'Free Books' : 'Book Somahar';
+
+  const filteredCourses = courses.filter(c => {
+    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        c.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (isEBookOnly) {
+      return matchesSearch && c.bookType === 'ebook';
+    }
+
+    const matchesCategory = activeCategory === 'all' || c.bookType === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const categories = [
+    { id: 'all', name: 'সব' },
+    { id: 'ebook', name: 'ফ্রি বুক' },
+    { id: 'pdf', name: 'পিডিএফ বুক' },
+    { id: 'hardcopy', name: 'হার্ডকপি' }
+  ];
 
   return (
-    <div className="flex flex-col gap-8 max-w-7xl mx-auto w-full px-4 py-8">
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full px-4 py-8">
       {/* Header & Search */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
         <div className="flex items-center gap-3 sm:gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group hidden lg:flex"
+            className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group flex"
           >
-            <ArrowLeft className="text-[var(--text)] group-hover:text-red-500" size={24} />
+            <ArrowLeft className="text-[var(--text)] group-hover:text-[var(--primary)]" size={20} />
           </button>
-          <div className="pl-0 sm:pl-0 lg:pl-0">
-            <h1 className="text-xl sm:text-3xl font-black text-[var(--text)] tracking-tight">বই সমাহার</h1>
-            <p className="text-[10px] sm:text-sm text-gray-500 mt-0.5">আপনার প্রয়োজনীয় পিডিএফ বইটি খুঁজে নিন</p>
+          <div className="pl-1">
+            <h1 className="text-xl sm:text-3xl font-black text-[var(--text)] tracking-tight">{pageTitle}</h1>
+            <p className="text-[10px] sm:text-sm text-gray-500 mt-0.5">আপনার প্রয়োজনীয় বইটি খুঁজে নিন</p>
           </div>
         </div>
         
@@ -93,10 +120,30 @@ export default function PdfBooksPage() {
             placeholder="বইয়ের নাম দিয়ে খুঁজুন..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#32CD32] text-sm shadow-sm"
           />
         </div>
       </div>
+
+      {/* Categories - Only show in Book Somahar mode */}
+      {!isEBookOnly && (
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id as any)}
+              className={cn(
+                "px-6 py-2.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                activeCategory === cat.id
+                  ? "bg-[#32CD32] text-white shadow-lg shadow-[#32CD32]/20 scale-105"
+                  : "bg-white dark:bg-white/5 text-gray-500 border border-black/5 dark:border-white/10 hover:border-[#32CD32]/50"
+              )}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Course Grid */}
       {isLoading ? (

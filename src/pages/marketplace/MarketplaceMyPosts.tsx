@@ -91,8 +91,14 @@ export default function MarketplaceMyPosts() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--background)]">
-      <header className="bg-white dark:bg-[#121212] border-b border-black/5 dark:border-white/5 px-4 py-4 sticky top-0 z-30">
-        <div className="max-w-4xl mx-auto flex items-center justify-center">
+      <header className="bg-white dark:bg-[#121212] border-b border-black/5 dark:border-white/5 px-4 py-4 sticky top-0 z-30 flex items-center justify-center">
+        <button 
+          onClick={() => navigate(-1)}
+          className="absolute left-4 md:left-8 flex items-center gap-2 text-gray-500 hover:text-[var(--primary)] transition-colors z-10"
+        >
+          <ArrowLeft size={20} /> <span className="hidden sm:inline">Back</span>
+        </button>
+        <div className="max-w-4xl mx-auto flex items-center relative justify-center">
           <h1 className="text-xl font-black text-[var(--text)]">My Posts</h1>
         </div>
       </header>

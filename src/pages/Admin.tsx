@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Capacitor } from "@capacitor/core";
 import GlassmorphicCard from "@/src/components/ui/GlassmorphicCard";
 import { motion, AnimatePresence } from "motion/react";
@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/src/lib/supabase";
 import { getDirectLink } from "@/src/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import * as pdfjs from "pdfjs-dist";
 
 // Initialize PDF.js worker
@@ -57,7 +57,42 @@ import AdminVerifications from "../components/admin/AdminVerifications";
 
 export default function Admin() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<AdminTab>("courses");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<AdminTab>((searchParams.get("tab") as AdminTab) || "courses");
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const preventPageScroll = (e: WheelEvent) => {
+      const container = tabsScrollRef.current;
+      if (container && e.deltaY !== 0) {
+        container.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    };
+
+    const container = tabsScrollRef.current;
+    if (container) {
+      container.addEventListener('wheel', preventPageScroll as any, { passive: false });
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('wheel', preventPageScroll as any);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab as AdminTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: AdminTab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
   const [isPremium, setIsPremium] = useState(false);
   const [bannerUrl, setBannerUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -88,6 +123,28 @@ export default function Admin() {
   const [isSavingDonationNum, setIsSavingDonationNum] = useState(false);
   const [totalStudentsCount, setTotalStudentsCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [transactionStatusTab, setTransactionStatusTab] = useState<"pending" | "approved" | "rejected">("pending");
+  const [transactionTypeTab, setTransactionTypeTab] = useState<"all" | "course" | "book" | "donation">("all");
+
+  const filteredTransactions = transactions.filter((t) => {
+    const matchesStatus = t.status === transactionStatusTab;
+    const matchesType = transactionTypeTab === "all" || t.type === transactionTypeTab;
+    const matchesSearch = !searchQuery || 
+      t.student_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      t.transaction_id?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesType && matchesSearch;
+  });
+
+  const getStatsForStatus = (status: string) => {
+    const list = transactions.filter(t => t.status === status && (transactionTypeTab === 'all' || t.type === transactionTypeTab));
+    const count = list.length;
+    const amount = list.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    return { count, amount };
+  };
+
+  const pendingStats = getStatsForStatus("pending");
+  const approvedStats = getStatsForStatus("approved");
+  const rejectedStats = getStatsForStatus("rejected");
 
   // Fetch student count
   const fetchDBStats = async () => {
@@ -233,19 +290,19 @@ export default function Admin() {
     try {
       const tx = transactions.find(t => t.id === id);
       
-      // If approved and it's a course, auto-enroll
+      // If approved and it's a course or book, auto-enroll
       if (status === 'approved' && tx && tx.status !== 'approved') {
-        if (tx.type === 'course' && tx.course_id && tx.user_id) {
+        if ((tx.type === 'course' || tx.type === 'book') && tx.course_id && tx.user_id) {
           await supabase.from('enrollments').upsert({
             user_id: tx.user_id,
             course_id: tx.course_id
           }, { onConflict: 'user_id,course_id' });
 
-          // Send course approved notification
+          // Send approval notification
           await supabase.from('notifications').insert([{
             user_id: tx.user_id,
-            title: 'Course Approved 🎉',
-            body: 'আপনার কেনা কোর্সটি অ্যাপ্রুভ হয়েছে। এখন আপনি এর ভিডিও এবং নোট দেখতে পারবেন। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!',
+            title: `${tx.type === 'book' ? 'Book' : 'Course'} Approved 🎉`,
+            body: `আপনার কেনা ${tx.type === 'book' ? 'বই' : 'কোর্সটি'} অ্যাপ্রুভ হয়েছে। এখন আপনি এর কন্টেন্ট দেখতে পারবেন। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!`,
             type: 'course_approved'
           }]);
         }
@@ -775,18 +832,14 @@ export default function Admin() {
       {/* Tab Navigation */}
       <div className="w-full relative">
         <div 
-          onWheel={(e) => {
-            if (e.deltaY !== 0) {
-              e.currentTarget.scrollLeft += e.deltaY;
-            }
-          }}
+          ref={tabsScrollRef}
           className="flex items-center gap-2 overflow-x-auto pb-3 -mx-4 px-4 sm:-mx-0 sm:px-0 scroll-smooth touch-pan-x snap-x hide-scrollbar border-b border-black/10 dark:border-white/10"
         >
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => {
-                setActiveTab(tab.id as AdminTab);
+                handleTabChange(tab.id as AdminTab);
               }}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap snap-start shrink-0 ${
                 activeTab === tab.id
@@ -959,141 +1012,170 @@ export default function Admin() {
                 </div>
               </GlassmorphicCard>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">Pending</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-yellow-600">{pendingStats.count}</span>
+                    <span className="text-xs text-yellow-600/60 font-bold">৳{pendingStats.amount}</span>
+                  </div>
+                </div>
+                <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest">Approved</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-green-600">{approvedStats.count}</span>
+                    <span className="text-xs text-green-600/60 font-bold">৳{approvedStats.amount}</span>
+                  </div>
+                </div>
+                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">Rejected</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-red-600">{rejectedStats.count}</span>
+                    <span className="text-xs text-red-600/60 font-bold">৳{rejectedStats.amount}</span>
+                  </div>
+                </div>
+              </div>
+
               <GlassmorphicCard className="max-w-5xl p-6 sm:p-8">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                  <h2 className="text-lg font-bold text-[var(--text)]">
-                    Transaction Submissions
-                  </h2>
-                  <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                    <div className="relative w-full sm:w-64">
+                <div className="flex flex-col gap-6">
+                  {/* Transaction Tabs and Filters */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
+                      {(["pending", "approved", "rejected"] as const).map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => setTransactionStatusTab(status)}
+                          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${
+                            transactionStatusTab === status
+                              ? "bg-[var(--primary)] text-white shadow-md"
+                              : "text-gray-500 hover:text-[var(--text)]"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {(["all", "course", "book", "donation"] as const).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => setTransactionTypeTab(type)}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border uppercase tracking-widest ${
+                            transactionTypeTab === type
+                              ? "bg-[var(--text)] text-[var(--card)] border-[var(--text)]"
+                              : "border-black/10 dark:border-white/10 text-gray-500 hover:border-black/30 dark:hover:border-white/30"
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="relative w-full">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                       <input 
                         type="text" 
                         placeholder="Search number or TrxID..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                       />
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">
-                      <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                      Pending Requests
-                    </div>
                   </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-black/5 dark:bg-white/5">
-                      <tr>
-                        <th className="px-4 py-3 rounded-l-lg">User (Phone)</th>
-                        <th className="px-4 py-3">Type</th>
-                        <th className="px-4 py-3">Amount</th>
-                        <th className="px-4 py-3">Course/Purpose</th>
-                        <th className="px-4 py-3">TrxID</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3 rounded-r-lg text-right">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions
-                        .filter(t => t.status === 'pending')
-                        .filter(t => {
-                          if (!searchQuery) return true;
-                          const q = searchQuery.toLowerCase();
-                          return (
-                            t.student_name?.toLowerCase().includes(q) || 
-                            t.transaction_id?.toLowerCase().includes(q)
-                          );
-                        }).length === 0 ? (
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+                      <thead className="text-[10px] text-gray-400 uppercase tracking-widest font-black border-b border-black/5 dark:border-white/5">
                         <tr>
-                          <td colSpan={7} className="px-4 py-8 text-center">
-                            {searchQuery ? "No matching pending transactions found." : "No pending transactions found."}
-                          </td>
+                          <th className="px-4 py-4">User Details</th>
+                          <th className="px-4 py-4">Type</th>
+                          <th className="px-4 py-4">Amount</th>
+                          <th className="px-4 py-4">Purpose</th>
+                          <th className="px-4 py-4">TrxID</th>
+                          <th className="px-4 py-4 text-right">Actions</th>
                         </tr>
-                      ) : (
-                        transactions
-                          .filter(t => t.status === 'pending')
-                          .filter(t => {
-                            if (!searchQuery) return true;
-                            const q = searchQuery.toLowerCase();
-                            return (
-                              t.student_name?.toLowerCase().includes(q) || 
-                              t.transaction_id?.toLowerCase().includes(q)
-                            );
-                          })
-                          .map((d) => (
-                          <tr
-                            key={d.id}
-                            className="border-b border-black/5 dark:border-white/5 last:border-0"
-                          >
-                            <td className="px-4 py-3">
-                              <div className="font-medium text-[var(--text)]">{d.student_name}</div>
-                              <div className="text-[10px] text-gray-400">{d.polytechnic_name}</div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${d.type === 'course' ? 'bg-blue-500/10 text-blue-500' : 'bg-pink-500/10 text-pink-500'}`}>
-                                {d.type || 'donation'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-xs font-bold text-[var(--primary)]">
-                              ৳{d.amount}
-                            </td>
-                            <td className="px-4 py-3 text-xs">
-                              {d.type === 'course' ? (
-                                <span className="text-blue-500 font-semibold">{d.courses?.title || 'Unknown Course'}</span>
-                              ) : (
-                                <span className="text-gray-400">Self Donation</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 font-mono text-xs">
-                              {d.transaction_id}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                  d.status === "approved"
-                                    ? "bg-green-500/10 text-green-500"
-                                    : d.status === "rejected"
-                                      ? "bg-red-500/10 text-red-500"
-                                      : "bg-yellow-500/10 text-yellow-500"
-                                }`}
-                              >
-                                {d.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                {d.status === "pending" && (
-                                  <>
-                                    <button
-                                      onClick={() =>
-                                        updateTransactionStatus(d.id, "approved")
-                                      }
-                                      className="p-1.5 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white rounded-lg transition-all"
-                                      title="Approve"
-                                    >
-                                      <Check size={16} />
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        updateTransactionStatus(d.id, "rejected")
-                                      }
-                                      className="p-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-all"
-                                      title="Reject"
-                                    >
-                                      <X size={16} />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
+                      </thead>
+                      <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                        {filteredTransactions.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-4 py-12 text-center text-gray-400 italic">
+                              No {transactionStatusTab} transactions found.
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ) : (
+                          filteredTransactions.map((d) => (
+                            <tr key={d.id} className="group hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                              <td className="px-4 py-4">
+                                <div className="font-bold text-[var(--text)]">{d.student_name}</div>
+                                <div className="text-[10px] text-gray-400 font-medium">{d.polytechnic_name}</div>
+                                <div className="text-[9px] text-[var(--primary)]/60 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {new Date(d.created_at).toLocaleDateString()}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${
+                                  d.type === 'course' ? 'bg-blue-500/10 text-blue-500' : 
+                                  d.type === 'book' ? 'bg-orange-500/10 text-orange-500' :
+                                  'bg-pink-500/10 text-pink-500'
+                                }`}>
+                                  {d.type === 'course' ? 'Course Fee' : d.type === 'book' ? 'Book Order' : 'Donation'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="text-xs font-black text-[var(--text)]">৳{d.amount}</div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="text-[10px] font-bold text-gray-500 max-w-[150px] truncate">
+                                  {d.type === 'course' || d.type === 'book' ? (
+                                    <span className="text-blue-500">{d.courses?.title || 'Loading...'}</span>
+                                  ) : (
+                                    <span className="text-gray-400">Direct Donation</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="font-mono text-[10px] font-bold bg-black/5 dark:bg-white/10 px-2 py-1 rounded w-fit select-all">
+                                  {d.transaction_id}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  {d.status === "pending" ? (
+                                    <>
+                                      <button
+                                        onClick={() => updateTransactionStatus(d.id, "approved")}
+                                        className="p-2 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-90"
+                                        title="Approve"
+                                      >
+                                        <Check size={16} strokeWidth={3} />
+                                      </button>
+                                      <button
+                                        onClick={() => updateTransactionStatus(d.id, "rejected")}
+                                        className="p-2 bg-red-500/10 hover:bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-90"
+                                        title="Reject"
+                                      >
+                                        <X size={16} strokeWidth={3} />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button 
+                                      onClick={() => deleteTransaction(d.id)}
+                                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </GlassmorphicCard>
 
@@ -1129,29 +1211,6 @@ export default function Admin() {
                   </div>
                 </GlassmorphicCard>
               )}
-
-              {/* History Table (Optional) */}
-              <GlassmorphicCard className="max-w-5xl p-6 sm:p-8 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
-                <h3 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-widest">Transaction History</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-[11px] text-gray-500">
-                        <tbody>
-                            {transactions.filter(t => t.status !== 'pending').slice(0, 10).map(t => (
-                                <tr key={t.id} className="border-b border-black/5 dark:border-white/5">
-                                    <td className="py-2">{t.student_name}</td>
-                                    <td className="py-2 font-mono">{t.transaction_id}</td>
-                                    <td className="py-2">
-                                        <span className={`px-2 py-0.5 rounded uppercase font-bold text-[9px] ${t.status === 'approved' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>{t.status}</span>
-                                    </td>
-                                    <td className="py-2 text-right">
-                                        <button onClick={() => deleteTransaction(t.id)} className="text-red-500 hover:scale-110 transition-transform"><Trash2 size={12}/></button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-              </GlassmorphicCard>
             </div>
           )}
 

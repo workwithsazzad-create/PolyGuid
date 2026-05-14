@@ -25,9 +25,17 @@ export default function CourseCard({ id, title, description, price, originalPric
   const discountPercent = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
   
   const affiliateMatch = description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
+  const readNowMatch = description?.match(/\[meta:read_now_link:([^\]]+)\]/);
   const actualAffiliateLink = affiliateLink || (affiliateMatch ? affiliateMatch[1] : null);
+  const readNowLink = readNowMatch ? readNowMatch[1] : null;
+  const isEBook = Boolean(readNowLink);
 
-  const CardWrapper = ({ children, className }: any) => <Link to={`/course/${id}`} className={className}>{children}</Link>;
+  const CardWrapper = ({ children, className }: any) => {
+    if (isEBook && readNowLink) {
+      return <a href={readNowLink} target="_blank" rel="noopener noreferrer" className={className} onClick={(e) => e.stopPropagation()}>{children}</a>;
+    }
+    return <Link to={`/course/${id}`} className={className}>{children}</Link>;
+  };
 
   return (
     <CardWrapper className="block h-full no-underline">
@@ -42,15 +50,15 @@ export default function CourseCard({ id, title, description, price, originalPric
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
-          {hasDiscount && (
+          {hasDiscount && !isEBook && (
             <CourseBadge>
               {discountPercent}% OFF
             </CourseBadge>
           )}
           {isBook && (
             <div className="absolute top-1.5 right-1.5 bg-white/95 dark:bg-black/80 backdrop-blur text-[var(--primary)] text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 border border-white/20 dark:border-white/10 z-10 uppercase tracking-wider">
-              {actualAffiliateLink ? <BookOpen size={10} /> : <FileText size={10} />}
-              {actualAffiliateLink ? 'Hard Copy' : 'PDF Book'}
+              {isEBook ? <BookOpen size={10} /> : (actualAffiliateLink ? <BookOpen size={10} /> : <FileText size={10} />)}
+              {isEBook ? 'E-Book' : (actualAffiliateLink ? 'Hard Copy' : 'PDF Book')}
             </div>
           )}
           {!isBook && (
@@ -63,29 +71,31 @@ export default function CourseCard({ id, title, description, price, originalPric
         </div>
         
         <div className="flex flex-col gap-0.5 p-0.5">
-          <h3 className="text-[9px] sm:text-[11px] font-bold text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight h-[2.1em] overflow-hidden">
+          <h3 className="text-[9px] sm:text-[11px] font-bold text-gray-800 dark:text-gray-200 line-clamp-3 leading-tight h-[3.2em] overflow-hidden">
             {title}
           </h3>
           
-          <div className="flex items-center gap-1 mt-auto">
-            <span className="text-[10px] sm:text-[11px] font-black text-[var(--primary)]">
-              ৳{price}
-            </span>
-            {hasDiscount && (
-              <span className="text-[7.5px] sm:text-[8px] text-gray-400 line-through">
-                ৳{originalPrice}
+          {!isEBook && (
+            <div className="flex items-center gap-1 mt-auto">
+              <span className="text-[10px] sm:text-[11px] font-black text-[var(--primary)]">
+                ৳{price}
               </span>
-            )}
-          </div>
+              {hasDiscount && (
+                <span className="text-[7.5px] sm:text-[8px] text-gray-400 line-through">
+                  ৳{originalPrice}
+                </span>
+              )}
+            </div>
+          )}
           
           <div 
-            className={`w-full py-0.5 sm:py-1 rounded-md font-black text-[8.5px] sm:text-[9.5px] uppercase tracking-wider text-center transition-all shadow-none ${
-              isEnrolled 
-                ? 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-gray-200 dark:border-white/10' 
+            className={`w-full py-0.5 sm:py-1 rounded-md font-black text-[8.5px] sm:text-[9.5px] uppercase tracking-wider text-center transition-all shadow-none mt-1 ${
+              isEnrolled && !isEBook
+                ? 'bg-gray-100 dark:bg-white/5 text-gray-400 border border-black/5 dark:border-white/10' 
                 : 'bg-[var(--primary)] text-white'
             }`}
           >
-            {isEnrolled ? (isBook ? 'Purchased' : 'Enrolled') : (isBook ? 'Buy Now' : 'Enroll')}
+            {isEBook ? 'Read Now' : (isEnrolled ? (isBook ? 'Purchased' : 'Watch Now') : (isBook ? 'Buy Now' : 'Enroll'))}
           </div>
         </div>
       </GlassmorphicCard>

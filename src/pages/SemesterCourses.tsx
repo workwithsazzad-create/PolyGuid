@@ -81,7 +81,7 @@ export default function SemesterCourses() {
     <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-8 animate-fade-in focus-within:outline-none">
       <div className="flex items-center gap-3 sm:gap-4 border-b border-black/5 dark:border-white/10 pb-4 sm:pb-6">
         <button 
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/home')}
           className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors hidden lg:flex"
         >
           <ArrowLeft size={24} className="text-[var(--text)]" />
