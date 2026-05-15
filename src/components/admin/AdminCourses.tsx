@@ -883,17 +883,19 @@ export default function AdminCourses() {
                   <span className="sm:hidden">Link</span>
                 </button>
 
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/admin/course/${course.id}/users?tab=courses`);
-                  }}
-                  className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
-                  title="Manage Users"
-                >
-                  <Users size={18} className="hidden sm:block" />
-                  <span className="sm:hidden">Users</span>
-                </button>
+                {(!course.categories?.includes('affiliate') && !course.categories?.includes('ebook') && !course.description?.includes('[meta:affiliate_link:') && !course.description?.includes('[meta:read_now_link:')) && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/admin/course/${course.id}/users?tab=courses`);
+                    }}
+                    className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
+                    title="Manage Users"
+                  >
+                    <Users size={18} className="hidden sm:block" />
+                    <span className="sm:hidden">Users</span>
+                  </button>
+                )}
 
                 <button 
                   onClick={(e) => {

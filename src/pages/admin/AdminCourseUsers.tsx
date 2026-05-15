@@ -58,12 +58,21 @@ export default function AdminCourseUsers() {
         .not('user_id', 'is', null);
       
       if (legacyApproved && legacyApproved.length > 0) {
-        // Upsert silently to not affect UI if it fails
-        const enrollmentsToUpsert = legacyApproved.map((d: any) => ({
-          user_id: d.user_id,
-          course_id: courseId
-        }));
-        await supabase.from('enrollments').upsert(enrollmentsToUpsert, { onConflict: 'user_id,course_id' });
+        // Find existing to avoid bulk upsert failure if no unique conflict index exists
+        const { data: existingE } = await supabase.from('enrollments').select('user_id').eq('course_id', courseId);
+        const existingIds = new Set(existingE?.map(e => e.user_id) || []);
+        
+        const enrollmentsToInsert = legacyApproved
+          .filter((d: any) => !existingIds.has(d.user_id))
+          .map((d: any) => ({
+            user_id: d.user_id,
+            course_id: courseId
+          }));
+        if (enrollmentsToInsert.length > 0) {
+          try {
+            await supabase.from('enrollments').insert(enrollmentsToInsert);
+          } catch(e) {}
+        }
       }
 
       // Fetch Enrolled Users
@@ -78,7 +87,7 @@ export default function AdminCourseUsers() {
         const userIds = enrollmentData.map(e => e.user_id);
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('id, full_name, phone, polytechnic')
+          .select('id, full_name, phone, polytechnic_name')
           .in('id', userIds);
 
         const combined = enrollmentData.map(e => ({
@@ -107,7 +116,7 @@ export default function AdminCourseUsers() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, phone, polytechnic')
+        .select('id, full_name, phone, polytechnic_name')
         .or(`phone.ilike.%${val}%,full_name.ilike.%${val}%`)
         .limit(5);
 

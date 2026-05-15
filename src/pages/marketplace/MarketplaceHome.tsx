@@ -34,21 +34,28 @@ export default function MarketplaceHome() {
   const fetchEnrollments = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-      const { data } = await supabase
+      const { data: enrollmentData } = await supabase
         .from('enrollments')
         .select('course_id')
         .eq('user_id', session.user.id);
-      if (data) setEnrollments(data);
       
-      const { data: pendingData } = await supabase
+      const { data: donationData } = await supabase
         .from('donations')
-        .select('course_id')
+        .select('course_id, status')
         .eq('user_id', session.user.id)
-        .eq('status', 'pending');
+        .in('status', ['approved', 'pending']);
       
-      if (pendingData) {
-        setPendingCourseIds(new Set(pendingData.map(d => d.course_id)));
-      }
+      const enrolled = new Set<string>();
+      const pending = new Set<string>();
+      
+      enrollmentData?.forEach(e => enrolled.add(e.course_id));
+      donationData?.forEach(d => {
+        if (d.status === 'approved') enrolled.add(d.course_id);
+        else if (d.status === 'pending') pending.add(d.course_id);
+      });
+
+      setEnrollments(Array.from(enrolled).map(id => ({ course_id: id })));
+      setPendingCourseIds(pending);
     }
   };
 

@@ -292,26 +292,23 @@ export default function Admin() {
       
       // If approved and it's a course or book, auto-enroll
       if (status === 'approved' && tx && tx.status !== 'approved') {
-        if ((tx.type === 'course' || tx.type === 'book') && tx.course_id && tx.user_id) {
-          const { data: existingEnrollment } = await supabase
-            .from('enrollments')
-            .select('id')
-            .eq('user_id', tx.user_id)
-            .eq('course_id', tx.course_id)
-            .maybeSingle();
-
-          if (!existingEnrollment) {
+        const isEnrollable = tx.type === 'course' || tx.type === 'book' || tx.type === 'pdf';
+        
+        if (isEnrollable && tx.course_id && tx.user_id) {
+          try {
             await supabase.from('enrollments').insert({
               user_id: tx.user_id,
               course_id: tx.course_id
             });
+          } catch (e) {
+            // Probably already enrolled, ignore conflict
           }
 
           // Send approval notification
           await supabase.from('notifications').insert([{
             user_id: tx.user_id,
-            title: `${tx.type === 'book' ? 'Book' : 'Course'} Approved 🎉`,
-            body: `আপনার কেনা ${tx.type === 'book' ? 'বই' : 'কোর্সটি'} অ্যাপ্রুভ হয়েছে। এখন আপনি এর কন্টেন্ট দেখতে পারবেন। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!`,
+            title: `${tx.type === 'donation' ? 'Donation' : (tx.type === 'book' || tx.type === 'pdf' ? 'Book' : 'Course')} Approved 🎉`,
+            body: `আপনার কেনা ${tx.type === 'book' || tx.type === 'pdf' ? 'বই' : (tx.type === 'course' ? 'কোর্সটি' : 'ডোনেশন')} অ্যাপ্রুভ হয়েছে। এখন আপনি এর কন্টেন্ট দেখতে পারবেন। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!`,
             type: 'course_approved'
           }]);
         } else if (tx.type === 'donation' && tx.user_id) {
