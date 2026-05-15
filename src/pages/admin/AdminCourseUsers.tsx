@@ -75,24 +75,44 @@ export default function AdminCourseUsers() {
         }
       }
 
-      // Fetch Enrolled Users
-      const { data: enrollmentData, error: enrollError } = await supabase
+      // Fetch Enrolled Users from enrollments table
+      const { data: enrollmentData } = await supabase
         .from('enrollments')
         .select('user_id, created_at')
         .eq('course_id', courseId);
 
-      if (enrollError) throw enrollError;
+      // Fetch users who have approved donations for this course
+      const { data: approvedDonations } = await supabase
+        .from('donations')
+        .select('user_id, created_at')
+        .eq('course_id', courseId)
+        .eq('status', 'approved');
 
-      if (enrollmentData && enrollmentData.length > 0) {
-        const userIds = enrollmentData.map(e => e.user_id);
+      // Combine user IDs and unique them
+      const userMap = new Map<string, string>(); // user_id -> created_at
+      
+      enrollmentData?.forEach(e => {
+        userMap.set(e.user_id, e.created_at);
+      });
+      
+      approvedDonations?.forEach(d => {
+        if (d.user_id && !userMap.has(d.user_id)) {
+          userMap.set(d.user_id, d.created_at);
+        }
+      });
+
+      const userIds = Array.from(userMap.keys());
+
+      if (userIds.length > 0) {
         const { data: profileData } = await supabase
           .from('profiles')
           .select('id, full_name, phone, polytechnic_name')
           .in('id', userIds);
 
-        const combined = enrollmentData.map(e => ({
-          ...e,
-          profiles: profileData?.find(p => p.id === e.user_id) || null
+        const combined = userIds.map(uid => ({
+          user_id: uid,
+          created_at: userMap.get(uid),
+          profiles: profileData?.find(p => p.id === uid) || null
         }));
         setEnrolledUsers(combined);
       } else {
@@ -173,6 +193,8 @@ export default function AdminCourseUsers() {
     if (!userToDelete || !courseId) return;
 
     try {
+      // We ONLY delete from enrollments table to "un-enroll" them. 
+      // We DO NOT delete the donation record to keep transaction history as requested.
       const { error } = await supabase
         .from('enrollments')
         .delete()

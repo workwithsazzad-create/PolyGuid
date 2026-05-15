@@ -29,6 +29,9 @@ export default function AdminPdfs() {
     fakeUserCount: 0
   });
 
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [contentDeleteConfirmId, setContentDeleteConfirmId] = useState<string | null>(null);
+
   const SEMESTERS = [
     "১ম সেমিস্টার", "২য় সেমিস্টার", "৩য় সেমিস্টার", "৪র্থ সেমিস্টার",
     "৫ম সেমিস্টার", "৬ষ্ঠ সেমিস্টার", "৭ম সেমিস্টার"
@@ -111,8 +114,13 @@ export default function AdminPdfs() {
     e.preventDefault();
     if (!pdfToPin) return;
 
-    // Build new map
-    const newMap = { ...pinnedPdfsMap };
+    // Build new map and clean up deleted books
+    const newMap: Record<string, number> = {};
+    for (const [id, position] of Object.entries(pinnedPdfsMap)) {
+      if (pdfs.some(c => c.id === id) || id === pdfToPin.id) {
+        newMap[id] = position as number;
+      }
+    }
     
     // Check if position physically taken
     for (const id in newMap) {
@@ -243,18 +251,25 @@ export default function AdminPdfs() {
   };
 
   const handleDeletePdf = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this book? Everything inside it will also be deleted.')) return;
-    
-    const { error } = await supabase
-      .from('courses')
-      .delete()
-      .eq('id', id);
+    setLoading(true);
+    try {
+      const baseUrl = window.location.origin;
+      const res = await fetch(`${baseUrl}/api/courses/${id}`, {
+        method: "DELETE",
+      });
 
-    if (error) {
-      console.error('Error deleting pdf:', error);
-    } else {
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete book");
+      }
+      
       setPdfs(prev => prev.filter(c => c.id !== id));
       if (selectedPdf?.id === id) setSelectedPdf(null);
+    } catch (error) {
+      console.error('Error deleting pdf:', error);
+      alert('বইটি ডিলিট করা যাচ্ছে না। সম্ভবত ডাটাবেস এর কোনো সীমাবদ্ধতা আছে।');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -329,8 +344,6 @@ export default function AdminPdfs() {
   };
 
   const handleDeleteContent = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this content?')) return;
-    
     const contentToDelete = pdfContents.find(c => c.id === id);
     const { error } = await supabase
       .from('course_content')
@@ -679,14 +692,33 @@ export default function AdminPdfs() {
                   <Edit2 size={18} className="hidden sm:block" />
                   <span className="sm:hidden">Edit</span>
                 </button>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleDeletePdf(pdf.id); }}
-                  className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
-                  title="Delete"
-                >
-                  <Trash2 size={18} className="hidden sm:block" />
-                  <span className="sm:hidden">Del</span>
-                </button>
+                {deleteConfirmId === pdf.id ? (
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDeletePdf(pdf.id); setDeleteConfirmId(null); }}
+                      className="px-2 py-1.5 sm:p-2.5 text-white bg-red-500 hover:bg-red-600 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase"
+                      title="Yes, delete"
+                    >
+                      Confirm
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
+                      className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-gray-700 bg-gray-100 dark:bg-gray-800 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase"
+                      title="Cancel"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(pdf.id); }}
+                    className="px-2 py-1.5 sm:p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg sm:rounded-xl transition-all text-[10px] sm:text-xs font-bold uppercase underline sm:no-underline"
+                    title="Delete"
+                  >
+                    <Trash2 size={18} className="hidden sm:block" />
+                    <span className="sm:hidden">Del</span>
+                  </button>
+                )}
               </div>
             </div>
           </GlassmorphicCard>

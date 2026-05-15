@@ -85,34 +85,31 @@ export default function CourseDetails() {
       // Enrollment
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data: enrollmentData } = await supabase
+        // Enrolled check
+        const { data: enrollment } = await supabase
           .from('enrollments')
           .select('id')
           .eq('user_id', session.user.id)
           .eq('course_id', id)
           .maybeSingle();
         
-        if (enrollmentData) {
-          setIsEnrolled(true);
-        } else {
-          // Check for pending or legacy approved donations
-          const { data: donationData } = await supabase
-            .from('donations')
-            .select('status')
-            .eq('user_id', session.user.id)
-            .eq('course_id', id)
-            .in('type', ['course', 'book']) // some could be books if they were in same table
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        // Donation check
+        const { data: donation } = await supabase
+          .from('donations')
+          .select('status')
+          .eq('user_id', session.user.id)
+          .eq('course_id', id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-          if (donationData) {
-            if (donationData.status === 'approved') {
-              setIsEnrolled(true);
-            } else if (donationData.status === 'pending') {
-              setPurchaseStatus('pending');
-            }
-          }
+        if (enrollment || (donation && donation.status === 'approved')) {
+          setIsEnrolled(true);
+          setPurchaseStatus('approved');
+        } else if (donation && donation.status === 'pending') {
+          setPurchaseStatus('pending');
+        } else {
+          setPurchaseStatus('none');
         }
       }
     } catch (err) {

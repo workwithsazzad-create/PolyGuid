@@ -186,7 +186,10 @@ async function startServer() {
       // Using service key bypasses RLS
       await supabase.from('marketplace_books').delete().eq('user_id', userId);
       await supabase.from('messages').delete().or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
-      await supabase.from('donations').delete().eq('user_id', userId);
+      
+      // We DO NOT delete donations. We keep them for transaction history, but unlink the user
+      await supabase.from('donations').update({ user_id: null }).eq('user_id', userId);
+      
       await supabase.from('enrollments').delete().eq('user_id', userId);
       await supabase.from('verification_applications').delete().eq('user_id', userId);
       await supabase.from('notifications').delete().eq('user_id', userId);
@@ -212,6 +215,39 @@ async function startServer() {
     } catch (error: any) {
       console.error("Error deleting user via API:", error);
       res.status(500).json({ error: error.message || "Failed to delete user" });
+    }
+  });
+
+  app.delete("/api/courses/:id", async (req, res) => {
+    const courseId = req.params.id;
+    if (!courseId) {
+      return res.status(400).json({ error: "Missing course ID" });
+    }
+
+    try {
+      console.log(`Starting to delete course ${courseId} and all related data...`);
+
+      // Using service key bypasses RLS
+      // 1. Delete contents
+      await supabase.from('course_content').delete().eq('course_id', courseId);
+      
+      // 2. Delete enrollments
+      await supabase.from('enrollments').delete().eq('course_id', courseId);
+      
+      // 3. Unlink donations (to keep transaction history but avoid foreign key constraint)
+      await supabase.from('donations').update({ course_id: null }).eq('course_id', courseId);
+      
+      // 4. Finally delete the course
+      const { error } = await supabase.from('courses').delete().eq('id', courseId);
+
+      if (error) {
+        throw error;
+      }
+
+      res.status(200).json({ success: true, message: "Course deleted successfully" });
+    } catch (err: any) {
+      console.error("Error deleting course:", err);
+      res.status(500).json({ error: err.message || "Failed to delete course" });
     }
   });
 

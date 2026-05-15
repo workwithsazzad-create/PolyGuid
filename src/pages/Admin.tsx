@@ -1143,8 +1143,8 @@ export default function Admin() {
                               </td>
                               <td className="px-4 py-4">
                                 <div className="text-[10px] font-bold text-gray-500 max-w-[150px] truncate">
-                                  {d.type === 'course' || d.type === 'book' ? (
-                                    <span className="text-blue-500">{d.courses?.title || 'Loading...'}</span>
+                                  {d.type === 'course' || d.type === 'book' || d.type === 'pdf' ? (
+                                    <span className="text-blue-500">{d.courses?.title || (d.course_id ? 'Loading...' : 'Deleted Database Item')}</span>
                                   ) : (
                                     <span className="text-gray-400">Direct Donation</span>
                                   )}
