@@ -95,7 +95,7 @@ export default function CourseDetails() {
         
         // Donation check
         const { data: donation } = await supabase
-          .from('donations')
+          .from('payments')
           .select('status')
           .eq('user_id', session.user.id)
           .eq('course_id', id)

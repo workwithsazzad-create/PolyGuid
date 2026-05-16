@@ -41,7 +41,7 @@ export default function SemesterCourses() {
         }
 
         const { data: donationData } = await supabase
-          .from('donations')
+          .from('payments')
           .select('course_id, status')
           .eq('user_id', session.user.id);
         

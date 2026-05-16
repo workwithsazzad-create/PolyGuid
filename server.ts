@@ -190,6 +190,9 @@ async function startServer() {
       // We DO NOT delete donations. We keep them for transaction history, but unlink the user
       await supabase.from('donations').update({ user_id: null }).eq('user_id', userId);
       
+      // We also unlink payments
+      await supabase.from('payments').update({ user_id: null }).eq('user_id', userId);
+      
       await supabase.from('enrollments').delete().eq('user_id', userId);
       await supabase.from('verification_applications').delete().eq('user_id', userId);
       await supabase.from('notifications').delete().eq('user_id', userId);
@@ -236,6 +239,9 @@ async function startServer() {
       
       // 3. Unlink donations (to keep transaction history but avoid foreign key constraint)
       await supabase.from('donations').update({ course_id: null }).eq('course_id', courseId);
+      
+      // Unlink payments too
+      await supabase.from('payments').update({ course_id: null }).eq('course_id', courseId);
       
       // 4. Finally delete the course
       const { error } = await supabase.from('courses').delete().eq('id', courseId);

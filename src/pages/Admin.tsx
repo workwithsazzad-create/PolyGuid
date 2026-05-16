@@ -208,14 +208,33 @@ export default function Admin() {
   }, [activeTab]);
 
   const fetchTransactions = async () => {
-    const { data } = await supabase
+    // Fetch normal donations
+    const { data: dData } = await supabase
       .from("donations")
       .select("*, courses(title)")
       .order("created_at", { ascending: false });
+    
+    // Fetch course payments from the new table
+    const { data: pData } = await supabase
+      .from("payments")
+      .select("*, courses(title)")
+      .order("created_at", { ascending: false });
+      
+    const donationsList = (dData || []).map(d => ({ ...d, _table: 'donations' }));
+    const paymentsList = (pData || []).map(p => ({ 
+      ...p, 
+      _table: 'payments',
+      polytechnic_name: p.method, // Map columns for UI consistency 
+      student_name: p.phone
+    }));
+    
+    const combined = [...donationsList, ...paymentsList].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 
-    if (data) {
+    if (combined.length > 0) {
       // Filter out duplicate TrxIDs in the UI
-      const uniqueDocs = data.filter((v, i, a) => 
+      const uniqueDocs = combined.filter((v, i, a) => 
         a.findIndex(t => t.transaction_id === v.transaction_id) === i
       );
       setTransactions(uniqueDocs);
@@ -322,10 +341,20 @@ export default function Admin() {
             type: 'donation_approved'
           }]);
         }
+      } else if (status === 'rejected' && tx && tx.status !== 'rejected') {
+        if (tx.user_id) {
+          await supabase.from('notifications').insert([{
+            user_id: tx.user_id,
+            title: `${tx.type === 'donation' ? 'Donation' : (tx.type === 'book' || tx.type === 'pdf' ? 'Book Order' : 'Course Payment')} Rejected ❌`,
+            body: `দুঃখিত, আপনার প্রদানকৃত ট্রানজেকশনটি বাতিল করা হয়েছে। যদি কোন ভুল থাকে, দয়া করে আমাদের হেল্পলাইন নাম্বারে যোগাযোগ করুন।`,
+            type: 'payment_rejected'
+          }]);
+        }
       }
 
+      const updateTable = tx?._table || "donations";
       const { error } = await supabase
-        .from("donations")
+        .from(updateTable)
         .update({ status })
         .eq("id", id);
       if (error) throw error;
@@ -335,9 +364,10 @@ export default function Admin() {
     }
   };
 
-  const deleteTransaction = async (id: string) => {
+  const deleteTransaction = async (id: string, table?: string) => {
     try {
-      const { error } = await supabase.from("donations").delete().eq("id", id);
+      const targetTable = table || "donations";
+      const { error } = await supabase.from(targetTable).delete().eq("id", id);
       if (error) throw error;
       setTransactions(transactions.filter((d) => d.id !== id));
     } catch (err: any) {
@@ -1178,7 +1208,7 @@ export default function Admin() {
                                     </>
                                   ) : (
                                     <button 
-                                      onClick={() => deleteTransaction(d.id)}
+                                      onClick={() => deleteTransaction(d.id, d._table)}
                                       className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
                                     >
                                       <Trash2 size={16} />

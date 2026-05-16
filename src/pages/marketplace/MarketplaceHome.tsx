@@ -40,7 +40,7 @@ export default function MarketplaceHome() {
         .eq('user_id', session.user.id);
       
       const { data: donationData } = await supabase
-        .from('donations')
+        .from('payments')
         .select('course_id, status')
         .eq('user_id', session.user.id)
         .in('status', ['approved', 'pending']);

@@ -55,7 +55,7 @@ export default function CoursesPage() {
         }
 
         const { data: pendingData } = await supabase
-          .from('donations')
+          .from('payments')
           .select('course_id')
           .eq('user_id', session.user.id)
           .eq('status', 'pending');

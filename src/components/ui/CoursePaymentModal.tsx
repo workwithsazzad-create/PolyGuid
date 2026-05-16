@@ -65,7 +65,7 @@ export default function CoursePaymentModal({
       const { data: { session } } = await supabase.auth.getSession();
       
       const { data: existing } = await supabase
-        .from('donations')
+        .from('payments')
         .select('id')
         .eq('transaction_id', form.trxId.trim())
         .maybeSingle();
@@ -76,7 +76,7 @@ export default function CoursePaymentModal({
         return;
       }
 
-      const { error } = await supabase.from('donations').insert([
+      const { error } = await supabase.from('payments').insert([
         { 
           phone: form.phone, 
           method: method || 'manual', 
