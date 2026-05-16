@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 export default function Messages() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialUserId = searchParams.get('userId');
+  const initialCommunityId = searchParams.get('communityId');
   
   const [user, setUser] = useState<any>(null);
   const [conversations, setConversations] = useState<any[]>([]);
@@ -87,8 +88,68 @@ export default function Messages() {
         return;
       }
 
+      // Fetch communities the user has joined
+      const { data: communityData, error: commError } = await supabase
+        .from('course_communities')
+        .select(`
+          course_id, 
+          joined_at,
+          courses (
+            id,
+            title,
+            thumbnail_url
+          )
+        `)
+        .eq('user_id', currentUserId);
+
       const uniqueUsersMap = new Map();
       const otherUserIds = new Set<string>();
+      
+      // Community processing
+      const communityCourseIds = new Set<string>();
+      try {
+        if (!commError && communityData) {
+          communityData.forEach((comm: any) => {
+             const c = Array.isArray(comm.courses) ? comm.courses[0] : comm.courses;
+             if (c) {
+               communityCourseIds.add(c.id);
+               uniqueUsersMap.set(c.id, {
+                 id: c.id,
+                 isCommunity: true,
+                 lastMessage: 'Tap to view community messages',
+                 timestamp: comm.joined_at || new Date().toISOString(),
+                 full_name: `${c.title} Community`,
+                 avatar_url: c.thumbnail_url,
+                 unread: false
+               });
+             }
+          });
+          
+          // Fetch latest community messages for timestamps
+          if (communityCourseIds.size > 0) {
+            const { data: latestCommMsgs } = await supabase
+              .from('community_messages')
+              .select('course_id, text, created_at')
+              .in('course_id', Array.from(communityCourseIds))
+              .order('created_at', { ascending: false })
+              .limit(50);
+              
+            if (latestCommMsgs) {
+              const seenCourses = new Set();
+              latestCommMsgs.forEach(msg => {
+                if (!seenCourses.has(msg.course_id)) {
+                  seenCourses.add(msg.course_id);
+                  const u = uniqueUsersMap.get(msg.course_id);
+                  if (u) {
+                    u.lastMessage = msg.text;
+                    u.timestamp = msg.created_at;
+                  }
+                }
+              });
+            }
+          }
+        }
+      } catch(e) {}
       
       // First pass: identify the other users
       data?.forEach((msg: any) => {
@@ -154,8 +215,8 @@ export default function Messages() {
       setConversations(convList);
       
       // WhatsApp style: do not auto-select the first conversation. 
-      // Only select if there is a specific initialUserId in the URL and we haven't selected one yet.
-      const selId = supportAdminId || initialUserId;
+      // Only select if there is a specific initialUserId or initialCommunityId in the URL and we haven't selected one yet.
+      const selId = supportAdminId || initialUserId || initialCommunityId;
       if (selId && !selectedUser) {
         const target = convList.find(c => c.id === selId);
         if (target) setSelectedUser(target);
@@ -170,70 +231,99 @@ export default function Messages() {
 
   useEffect(() => {
     const isSupport = searchParams.get('action') === 'support';
-    if (!initialUserId && !isSupport) {
+    if (!initialUserId && !initialCommunityId && !isSupport) {
       if (selectedUser) setSelectedUser(null);
     } else {
-      const selId = initialUserId; 
+      const selId = initialUserId || initialCommunityId; 
       // If it's pure support, fetchConversations will find the target and select it.
       if (selId && conversations.length > 0 && (!selectedUser || selectedUser.id !== selId)) {
         const target = conversations.find(c => c.id === selId);
         if (target) setSelectedUser(target);
       }
     }
-  }, [initialUserId, conversations, selectedUser, searchParams]);
+  }, [initialUserId, initialCommunityId, conversations, selectedUser, searchParams]);
 
   useEffect(() => {
     let channel: any;
     if (selectedUser && user) {
-      fetchMessages(selectedUser.id);
-      markAsRead(selectedUser.id);
-      
-      channel = supabase
-        .channel(`messages_${user.id}_${selectedUser.id}_${Math.random().toString(36).substring(7)}`)
-        .on('postgres_changes', { 
-            event: 'DELETE', 
-            schema: 'public', 
-            table: 'messages'
-        }, payload => {
-            setMessages(prev => prev.filter(m => m.id !== payload.old.id));
-        })
-        .on('postgres_changes', { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'messages',
-            filter: `receiver_id=eq.${user.id}` 
-        }, payload => {
-            if (payload.new.sender_id === selectedUser.id) {
-                setMessages(prev => {
-                   if (prev.some(m => m.id === payload.new.id)) return prev;
-                   return [...prev, payload.new];
-                });
-                scrollToBottom('smooth');
-                markAsRead(selectedUser.id);
-            }
-        })
-        .on('postgres_changes', { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'messages',
-            filter: `sender_id=eq.${user.id}` 
-        }, payload => {
-            if (payload.new.receiver_id === selectedUser.id) {
-                setMessages(prev => {
-                   // Safely replace the temporary message that matches this content
-                   const tempIndex = prev.findIndex(m => m.id.toString().includes('-temp-') && m.content === payload.new.content);
-                   if (tempIndex !== -1) {
-                     const next = [...prev];
-                     next[tempIndex] = payload.new;
-                     return next;
-                   }
-                   if (prev.some(m => m.id === payload.new.id)) return prev;
-                   return [...prev, payload.new];
-                });
-                scrollToBottom('smooth');
-            }
-        })
-        .subscribe();
+      if (selectedUser.isCommunity) {
+        setBlockedByMe(false);
+        setBlockedByOther(false);
+        fetchMessages(selectedUser.id, true);
+        markAsRead(selectedUser.id);
+        
+        channel = supabase
+          .channel(`community_messages_${selectedUser.id}_${Math.random().toString(36).substring(7)}`)
+          .on('postgres_changes', { 
+              event: 'INSERT', 
+              schema: 'public', 
+              table: 'community_messages',
+              filter: `course_id=eq.${selectedUser.id}` 
+          }, async payload => {
+              const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', payload.new.sender_id).maybeSingle();
+              const newMsg = {
+                  ...payload.new,
+                  content: payload.new.text,
+                  sender_name: profile?.full_name || 'Member'
+              };
+              setMessages(prev => {
+                 if (prev.some(m => m.id === newMsg.id)) return prev;
+                 return [...prev, newMsg];
+              });
+              scrollToBottom('smooth');
+          })
+          .subscribe();
+      } else {
+        fetchMessages(selectedUser.id, false);
+        markAsRead(selectedUser.id);
+        
+        channel = supabase
+          .channel(`messages_${user.id}_${selectedUser.id}_${Math.random().toString(36).substring(7)}`)
+          .on('postgres_changes', { 
+              event: 'DELETE', 
+              schema: 'public', 
+              table: 'messages'
+          }, payload => {
+              setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+          })
+          .on('postgres_changes', { 
+              event: 'INSERT', 
+              schema: 'public', 
+              table: 'messages',
+              filter: `receiver_id=eq.${user.id}` 
+          }, payload => {
+              if (payload.new.sender_id === selectedUser.id) {
+                  setMessages(prev => {
+                     if (prev.some(m => m.id === payload.new.id)) return prev;
+                     return [...prev, payload.new];
+                  });
+                  scrollToBottom('smooth');
+                  markAsRead(selectedUser.id);
+              }
+          })
+          .on('postgres_changes', { 
+              event: 'INSERT', 
+              schema: 'public', 
+              table: 'messages',
+              filter: `sender_id=eq.${user.id}` 
+          }, payload => {
+              if (payload.new.receiver_id === selectedUser.id) {
+                  setMessages(prev => {
+                     // Safely replace the temporary message that matches this content
+                     const tempIndex = prev.findIndex(m => m.id.toString().includes('-temp-') && m.content === payload.new.content);
+                     if (tempIndex !== -1) {
+                       const next = [...prev];
+                       next[tempIndex] = payload.new;
+                       return next;
+                     }
+                     if (prev.some(m => m.id === payload.new.id)) return prev;
+                     return [...prev, payload.new];
+                  });
+                  scrollToBottom('smooth');
+              }
+          })
+          .subscribe();
+      }
     }
     return () => {
       if (channel) supabase.removeChannel(channel);
@@ -241,7 +331,7 @@ export default function Messages() {
   }, [selectedUser, user]);
 
   const markAsRead = async (senderId: string) => {
-    if (!user) return;
+    if (!user || (selectedUser && selectedUser.isCommunity)) return;
     
     // Optimistically update the UI to remove the unread indicator instantly
     setConversations(prev => prev.map(conv => 
@@ -268,26 +358,63 @@ export default function Messages() {
     }
   };
 
-  const fetchMessages = async (otherUserId: string) => {
+  const fetchMessages = async (otherUserId: string, isCommunity: boolean = false) => {
     if (!user) return;
     
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
-      .order('created_at', { ascending: true });
+    if (isCommunity) {
+      const { data, error } = await supabase
+        .from('community_messages')
+        .select(`
+          id,
+          course_id,
+          sender_id,
+          text as content,
+          created_at
+        `)
+        .eq('course_id', otherUserId)
+        .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching messages:', error);
+      if (error) {
+        console.error('Error fetching community messages:', error);
+      } else {
+        // Fetch profiles
+        let mappedData = data || [];
+        if (mappedData.length > 0) {
+          const senderIds = Array.from(new Set(mappedData.map(d => d.sender_id)));
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', senderIds);
+            
+          if (profiles) {
+            const profileMap = new Map(profiles.map(p => [p.id, p.full_name]));
+            mappedData = mappedData.map(d => ({
+              ...d,
+              sender_name: profileMap.get(d.sender_id) || 'Member'
+            }));
+          }
+        }
+        setMessages(mappedData);
+        scrollToBottom('auto');
+      }
     } else {
-      setMessages(data || []);
-      // Land at the bottom instantly on load
-      scrollToBottom('auto');
-      
-      // Cleanup notifications whenever we enter a chat
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-         await supabase.from('notifications').delete().eq('user_id', session.user.id).eq('type', 'message');
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+      } else {
+        setMessages(data || []);
+        scrollToBottom('auto');
+        
+        // Cleanup notifications whenever we enter a chat
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+           await supabase.from('notifications').delete().eq('user_id', session.user.id).eq('type', 'message');
+        }
       }
     }
   };
@@ -461,6 +588,7 @@ export default function Messages() {
         id: tempId,
         sender_id: user.id,
         receiver_id: selectedUser.id,
+        course_id: selectedUser.isCommunity ? selectedUser.id : undefined,
         content: msgContent,
         created_at: new Date().toISOString(),
         read: false
@@ -474,21 +602,36 @@ export default function Messages() {
     });
     scrollToBottom('smooth');
 
-    // Remove any notification code here to strictly follow "notification off"
-    const { error } = await supabase
-      .from('messages')
-      .insert([{
-        sender_id: user.id,
-        receiver_id: selectedUser.id,
-        content: msgContent
-      }]);
+    if (selectedUser.isCommunity) {
+      const { error } = await supabase
+        .from('community_messages')
+        .insert([{
+          sender_id: user.id,
+          course_id: selectedUser.id,
+          text: msgContent
+        }]);
 
-    if (error) {
-      console.error('Error sending message:', error);
-      setMessages(prev => prev.filter(m => m.id !== tempId));
-      alert("Failed to send message: " + error.message);
+      if (error) {
+        console.error('Error sending community message:', error);
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        alert("Failed to send message: " + error.message);
+      }
     } else {
-      fetchConversations(user.id);
+      const { error } = await supabase
+        .from('messages')
+        .insert([{
+          sender_id: user.id,
+          receiver_id: selectedUser.id,
+          content: msgContent
+        }]);
+
+      if (error) {
+        console.error('Error sending message:', error);
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        alert("Failed to send message: " + error.message);
+      } else {
+        fetchConversations(user.id);
+      }
     }
   };
 
@@ -604,15 +747,18 @@ export default function Messages() {
                         <div 
                           onClick={() => {
                             if (isMe && !isTemp && window.confirm('Delete this message for everyone?')) {
-                              deleteMessage(msg.id);
+                              if (!selectedUser.isCommunity) deleteMessage(msg.id);
                             }
                           }}
-                          className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl cursor-pointer select-none transition-all active:scale-[0.98] ${
+                          className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl cursor-pointer select-none transition-all active:scale-[0.98] flex flex-col ${
                             isMe 
                               ? 'bg-[var(--primary)] text-white rounded-tr-sm' 
                               : 'bg-white dark:bg-[#2a2a2a] text-[var(--text)] rounded-tl-sm border border-black/5 dark:border-white/5 shadow-sm'
                           }`}
                         >
+                          {!isMe && selectedUser.isCommunity && (
+                            <span className="text-[10px] font-bold text-[var(--primary)] mb-0.5">{msg.sender_name || 'Member'}</span>
+                          )}
                           <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                           <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

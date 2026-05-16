@@ -113,34 +113,7 @@ export default function Home() {
     return "Welcome";
   };
 
-  useEffect(() => {
-    const preventPageScroll = (e: WheelEvent) => {
-      const container = e.currentTarget as HTMLElement;
-      if (e.deltaY !== 0) {
-        container.scrollLeft += e.deltaY;
-        e.preventDefault();
-      }
-    };
-
-    const courseScroll = scrollContainerRef.current;
-    const bookScroll = mobileBooksRef.current;
-
-    if (courseScroll) {
-      courseScroll.addEventListener('wheel', preventPageScroll as any, { passive: false });
-    }
-    if (bookScroll) {
-      bookScroll.addEventListener('wheel', preventPageScroll as any, { passive: false });
-    }
-
-    return () => {
-      if (courseScroll) {
-        courseScroll.removeEventListener('wheel', preventPageScroll as any);
-      }
-      if (bookScroll) {
-        bookScroll.removeEventListener('wheel', preventPageScroll as any);
-      }
-    };
-  }, [allCourses]);
+  // Removed wheel event listener as requested by user
 
   useEffect(() => {
     const fetchUserCount = async () => {
@@ -422,11 +395,10 @@ export default function Home() {
   }, [approvedDonations.length]);
 
   useEffect(() => {
-    // Auto slide books and courses slider for mobile view
-    if (window.innerWidth >= 1024) return; // Only on mobile
+    // Auto slide books and courses slider for both mobile and PC view
     const interval = setInterval(() => {
       [mobileBooksRef, scrollContainerRef].forEach(ref => {
-        if (ref.current) {
+        if (ref.current && !ref.current.matches(':hover')) {
           const { scrollLeft, scrollWidth, clientWidth } = ref.current;
           let itemWidth = window.innerWidth < 640 ? 150 : 220;
           if (scrollLeft + clientWidth >= scrollWidth - 20) {
@@ -436,7 +408,7 @@ export default function Home() {
           }
         }
       });
-    }, 1000); // Fast enough, though 0.5s clashes with smooth scrolling CSS duration
+    }, 3000); // 3 seconds interval
     return () => clearInterval(interval);
   }, []);
 
@@ -699,7 +671,7 @@ export default function Home() {
             <>
               <div
                 ref={scrollContainerRef}
-                className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar scroll-smooth"
+                className="flex gap-2 sm:gap-4 overflow-x-auto lg:overflow-x-hidden pb-4 snap-x hide-scrollbar scroll-smooth"
               >
                 {allCourses
                   .filter(
@@ -774,7 +746,7 @@ export default function Home() {
             <>
               <div
                 ref={mobileBooksRef}
-                className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar scroll-smooth"
+                className="flex gap-2 sm:gap-4 overflow-x-auto lg:overflow-x-hidden pb-4 snap-x hide-scrollbar scroll-smooth"
               >
                 {allCourses
                   .filter(

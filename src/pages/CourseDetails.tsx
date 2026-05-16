@@ -14,6 +14,7 @@ export default function CourseDetails() {
   const [course, setCourse] = useState<any>(null);
   const [contents, setContents] = useState<any[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [hasJoinedCommunity, setHasJoinedCommunity] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState<'none' | 'pending'>('none');
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -106,6 +107,20 @@ export default function CourseDetails() {
         if (enrollment || (donation && donation.status === 'approved')) {
           setIsEnrolled(true);
           setPurchaseStatus('approved');
+          
+          // Check community
+          try {
+            const { data: communityData } = await supabase
+              .from('course_communities')
+              .select('joined_at')
+              .eq('user_id', session.user.id)
+              .eq('course_id', id)
+              .maybeSingle();
+            
+            if (communityData) {
+              setHasJoinedCommunity(true);
+            }
+          } catch(e) { /* ignore relation error until table created */ }
         } else if (donation && donation.status === 'pending') {
           setPurchaseStatus('pending');
         } else {
@@ -117,6 +132,28 @@ export default function CourseDetails() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleJoinCommunity = async () => {
+    if (hasJoinedCommunity) {
+      navigate(`/messages?communityId=${id}`);
+      return;
+    }
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    try {
+      const { error } = await supabase.from('course_communities').insert({
+        course_id: id,
+        user_id: session.user.id
+      });
+      if (!error) {
+        setHasJoinedCommunity(true);
+      } else {
+        console.error("Error joining community:", error);
+      }
+    } catch(e) { console.error(e); }
   };
 
   const handleEnroll = async () => {
@@ -256,6 +293,24 @@ export default function CourseDetails() {
                 className="w-full text-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md transition-colors text-sm"
               >
                 দ্রুত অ্যাপ্রুভ করতে এসএমএস করুন
+              </button>
+            </div>
+          )}
+
+          {isEnrolled && !(course.categories?.includes("বই") || course.categories?.includes("Book") || course.affiliateLink) && (
+            <div className="flex flex-col mt-4 gap-4 p-4 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-2xl w-fit">
+              <div className="flex items-center gap-2 text-[var(--primary)] font-bold">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--primary)] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--primary)]"></span>
+                </span>
+                {hasJoinedCommunity ? 'কমিউনিটি গ্রুপে যুক্ত আছেন' : 'কমিউনিটি গ্রুপে যুক্ত হোন'}
+              </div>
+              <button
+                onClick={handleJoinCommunity}
+                className="w-full text-center px-4 py-2 bg-[var(--primary)] hover:opacity-90 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] text-sm"
+              >
+                {hasJoinedCommunity ? 'এসএমএস করুন' : 'কমিউনিটিতে যুক্ত হোন'}
               </button>
             </div>
           )}
