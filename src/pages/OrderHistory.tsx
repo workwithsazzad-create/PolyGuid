@@ -164,7 +164,7 @@ export default function OrderHistory() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-12 px-4 sm:px-0">
+    <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-0">
       {/* Header */}
       <div className="flex flex-col gap-6 mb-8 mt-4 sm:mt-0">
         <div className="flex items-center gap-4">

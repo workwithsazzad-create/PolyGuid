@@ -455,7 +455,7 @@ export default function Home() {
       className="flex flex-col gap-10 sm:gap-20 pb-0"
     >
       {/* 1. Hero Banner (Desktop Only) */}
-      <div className="max-w-7xl mx-auto w-full px-4 hidden lg:block">
+      <div className="max-w-[1600px] mx-auto w-full px-4 hidden lg:block">
         <div className="relative w-full rounded-2xl sm:rounded-[32px] overflow-hidden group bg-[#1a1a1a] shadow-2xl">
           <motion.div
             key={bannerUrl}
@@ -572,7 +572,7 @@ export default function Home() {
       </div>
 
       {/* 2. Analytics Section - Significant pull up */}
-      <div className="max-w-7xl mx-auto w-full px-4 -mt-10 lg:-mt-10 relative z-20">
+      <div className="max-w-[1600px] mx-auto w-full px-4 -mt-10 lg:-mt-10 relative z-20">
         <GlassmorphicCard className="flex justify-between items-center bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-xl p-4 sm:p-5 sm:rounded-[32px] border border-black/5 dark:border-white/10 shadow-lg sm:px-16 w-full">
           {[
             {
@@ -626,7 +626,7 @@ export default function Home() {
       </div>
 
       {/* 3. Quick Access Buttons - Balanced Design (Desktop Only) */}
-      <div className="hidden lg:grid grid-cols-4 gap-2 sm:gap-6 max-w-7xl mx-auto w-full px-4">
+      <div className="hidden lg:grid grid-cols-4 gap-2 sm:gap-6 max-w-[1600px] mx-auto w-full px-4">
         {[
           {
             name: "Book Buy/Sell",
@@ -678,7 +678,7 @@ export default function Home() {
       {/* 5. Popular Courses Section - Responsive Layout */}
       <section
         ref={coursesRef}
-        className="flex flex-col gap-3 sm:gap-5 px-4 max-w-7xl mx-auto w-full"
+        className="flex flex-col gap-3 sm:gap-5 px-4 max-w-[1600px] mx-auto w-full"
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-2xl font-bold text-[var(--text)] tracking-tight">
@@ -754,7 +754,7 @@ export default function Home() {
       </section>
 
       {/* 5.5 Popular Books Section */}
-      <section className="flex flex-col gap-3 sm:gap-5 px-4 max-w-7xl mx-auto w-full">
+      <section className="flex flex-col gap-3 sm:gap-5 px-4 max-w-[1600px] mx-auto w-full">
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-2xl font-bold text-[var(--text)] tracking-tight">
             জনপ্রিয় বই সমূহ
@@ -837,7 +837,7 @@ export default function Home() {
           </h2>
           <div className="w-10 sm:w-16 h-1 bg-[var(--primary)] rounded-full opacity-20" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 max-w-7xl mx-auto w-full">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 max-w-[1600px] mx-auto w-full">
           {SEMESTERS.map((semester, i) => (
             <GlassmorphicCard
               key={i}
@@ -857,7 +857,7 @@ export default function Home() {
 
 
       {/* 6. Words for Students (Description) - Full Width Compact (Desktop Only) */}
-      <section className="px-4 max-w-7xl mx-auto w-full hidden lg:block">
+      <section className="px-4 max-w-[1600px] mx-auto w-full hidden lg:block">
         <div className="bg-black/5 dark:bg-white/10 rounded-[32px] p-10">
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-3">
@@ -912,7 +912,7 @@ export default function Home() {
       </section>
 
       {/* 7. Donation Section - Compact */}
-      <section className="flex flex-col gap-6 px-4 max-w-7xl mx-auto w-full">
+      <section className="flex flex-col gap-6 px-4 max-w-[1600px] mx-auto w-full">
         <div className="flex flex-col sm:flex-row gap-3 items-stretch">
           <div className="flex-1 p-3 sm:p-4 flex items-center justify-between overflow-hidden bg-white/40 dark:bg-black/20 rounded-[16px] sm:rounded-[24px] shadow-sm min-h-[70px] border border-black/5 dark:border-white/5">
             <div className="flex items-center gap-4 z-10 w-full">

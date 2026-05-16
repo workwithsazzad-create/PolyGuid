@@ -231,7 +231,7 @@ export default function MarketplaceHome() {
     <div className="flex flex-col h-full bg-[var(--background)] lg:min-h-[calc(100vh-64px)] overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#121212]/90 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 py-2 sm:py-3">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+        <div className="flex items-center justify-between max-w-[1600px] mx-auto">
           <div className="flex items-center gap-2">
              <button 
                onClick={() => navigate(-1)}
@@ -255,7 +255,7 @@ export default function MarketplaceHome() {
         </div>
       </header>
 
-      <div className="w-full max-w-7xl mx-auto px-4 py-6">
+      <div className="w-full max-w-[1600px] mx-auto px-4 py-6">
         {/* Main Content */}
         <div className="w-full">
           <div className="relative mb-5">

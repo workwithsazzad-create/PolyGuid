@@ -97,7 +97,7 @@ export default function Notifications() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 p-4 sm:p-6 lg:p-8">
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500 p-4 sm:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-3xl font-black text-[var(--text)] flex items-center gap-2 sm:gap-3">

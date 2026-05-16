@@ -137,7 +137,7 @@ const BookList: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-20 px-4 sm:px-0">
+    <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-0">
       <header className="flex items-center gap-3 py-4">
         {selectedDept && (
           <button 

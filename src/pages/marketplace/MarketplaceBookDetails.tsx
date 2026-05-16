@@ -156,7 +156,7 @@ export default function MarketplaceBookDetails() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] pb-10">
-      <div className="max-w-5xl mx-auto border-x border-black/5 dark:border-white/5 bg-white dark:bg-[#0a0a0a] min-h-screen shadow-2xl relative">
+      <div className="max-w-7xl mx-auto border-x border-black/5 dark:border-white/5 bg-white dark:bg-[#0a0a0a] min-h-screen shadow-2xl relative">
         {/* Header */}
         <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-md p-4 hidden md:flex items-center justify-between border-b border-black/5 dark:border-white/5">
           <button 

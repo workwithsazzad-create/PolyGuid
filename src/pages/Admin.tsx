@@ -917,7 +917,7 @@ export default function Admin() {
           {activeTab === "verifications" && <AdminVerifications />}
 
           {activeTab === "analytics" && (
-            <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
+            <GlassmorphicCard className="max-w-7xl p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
                   <FileText className="text-purple-500" size={18} />
@@ -994,7 +994,7 @@ export default function Admin() {
 
           {activeTab === "transactions" && (
             <div className="flex flex-col gap-6">
-              <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
+              <GlassmorphicCard className="max-w-7xl p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
                     <DollarSign className="text-red-500" size={18} />
@@ -1082,7 +1082,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <GlassmorphicCard className="max-w-5xl p-6 sm:p-8">
+              <GlassmorphicCard className="max-w-7xl p-6 sm:p-8">
                 <div className="flex flex-col gap-6">
                   {/* Transaction Tabs and Filters */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1227,7 +1227,7 @@ export default function Admin() {
 
               {/* Gmail SMS Sync Logs (HIDDEN as per user request to remove auto code) */}
               {webhookLogs.length > 0 && (
-                <GlassmorphicCard className="max-w-5xl p-6 sm:p-8 border-dashed border-2 border-primary/10 opacity-50">
+                <GlassmorphicCard className="max-w-7xl p-6 sm:p-8 border-dashed border-2 border-primary/10 opacity-50">
                   <div className="flex flex-col gap-4 mb-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1263,7 +1263,7 @@ export default function Admin() {
           {activeTab === "pdf" && <AdminPdfs />}
 
           {activeTab === "youtube" && (
-            <GlassmorphicCard className="max-w-2xl p-6 sm:p-8">
+            <GlassmorphicCard className="max-w-7xl p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
                   <Youtube className="text-blue-500" size={18} />

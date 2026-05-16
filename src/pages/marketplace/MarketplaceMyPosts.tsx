@@ -98,12 +98,12 @@ export default function MarketplaceMyPosts() {
         >
           <ArrowLeft size={20} /> <span className="hidden sm:inline">Back</span>
         </button>
-        <div className="max-w-4xl mx-auto flex items-center relative justify-center">
+        <div className="max-w-7xl mx-auto flex items-center relative justify-center">
           <h1 className="text-xl font-black text-[var(--text)]">My Posts</h1>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto w-full p-4 py-8">
+      <div className="max-w-7xl mx-auto w-full p-4 py-8">
         {isLoading ? (
            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {[...Array(4)].map((_, i) => <div key={i} className="aspect-[3/4] bg-gray-100 dark:bg-white/5 rounded-2xl animate-pulse" />)}

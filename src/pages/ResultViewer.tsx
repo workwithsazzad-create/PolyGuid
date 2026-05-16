@@ -178,7 +178,7 @@ export default function ResultViewer() {
   const totalReferred = allReferredSubjects.length;
 
   return (
-    <div className="max-w-4xl mx-auto pb-12 print:p-0 print:m-0">
+    <div className="max-w-7xl mx-auto pb-12 print:p-0 print:m-0">
       <div className="flex items-center gap-4 mb-4 sm:mb-8 print:hidden">
         <button 
           onClick={() => navigate('/home')}

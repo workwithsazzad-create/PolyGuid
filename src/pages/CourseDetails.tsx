@@ -189,7 +189,7 @@ export default function CourseDetails() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-6 max-w-4xl mx-auto pb-12"
+      className="flex flex-col gap-6 max-w-7xl mx-auto pb-12"
     >
       <button 
         onClick={handleBack}

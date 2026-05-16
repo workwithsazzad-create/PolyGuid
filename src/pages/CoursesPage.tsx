@@ -117,7 +117,7 @@ export default function CoursesPage() {
   );
 
   return (
-    <div className="flex flex-col gap-8 max-w-7xl mx-auto w-full px-4 py-8">
+    <div className="flex flex-col gap-8 max-w-[1600px] mx-auto w-full px-4 py-8">
       {/* Header & Search */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
         <div className="flex items-center gap-3 sm:gap-4">

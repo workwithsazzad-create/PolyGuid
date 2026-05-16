@@ -102,7 +102,7 @@ export default function SemesterCourses() {
   };
 
   return (
-    <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-8 animate-fade-in focus-within:outline-none">
+    <div className="p-4 lg:p-8 max-w-[1600px] mx-auto space-y-4 sm:space-y-8 animate-fade-in focus-within:outline-none">
       <div className="flex items-center gap-3 sm:gap-4 border-b border-black/5 dark:border-white/10 pb-4 sm:pb-6">
         <button 
           onClick={() => navigate('/home')}
