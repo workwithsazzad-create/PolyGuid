@@ -212,13 +212,15 @@ export default function Admin() {
       .from("donations")
       .select("*, courses(title)")
       .order("created_at", { ascending: false });
-    
+
     if (data) {
       // Filter out duplicate TrxIDs in the UI
       const uniqueDocs = data.filter((v, i, a) => 
         a.findIndex(t => t.transaction_id === v.transaction_id) === i
       );
       setTransactions(uniqueDocs);
+    } else {
+      setTransactions([]);
     }
   };
 

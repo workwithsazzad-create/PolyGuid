@@ -41,7 +41,7 @@ export default function OrderHistory() {
         return;
       }
 
-      // Fetch from donations (Paid)
+      // Fetch from payments (Paid)
       const { data: donationsData, error: donationsError } = await supabase
         .from('donations')
         .select(`

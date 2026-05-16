@@ -78,8 +78,8 @@ export default function CoursePaymentModal({
 
       const { error } = await supabase.from('donations').insert([
         { 
-          student_name: form.phone, 
-          polytechnic_name: method || 'manual', 
+          phone: form.phone, 
+          method: method || 'manual', 
           transaction_id: form.trxId.trim(),
           amount: parseFloat(price.toString()),
           type: type,
