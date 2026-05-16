@@ -49,20 +49,31 @@ export default function CoursesPage() {
           .from('enrollments')
           .select('course_id')
           .eq('user_id', session.user.id);
-        
-        if (enrollmentsData) {
-          setEnrollments(enrollmentsData);
-        }
 
-        const { data: pendingData } = await supabase
+        const { data: paymentData } = await supabase
           .from('payments')
-          .select('course_id')
-          .eq('user_id', session.user.id)
-          .eq('status', 'pending');
+          .select('course_id, status')
+          .eq('user_id', session.user.id);
         
-        if (pendingData) {
-          setPendingCourseIds(new Set(pendingData.map(d => d.course_id)));
+        const pending = new Set<string>();
+        const approved = new Set<string>();
+        
+        if (paymentData) {
+          paymentData.forEach(d => {
+            if (d.status === 'pending') pending.add(d.course_id);
+            if (d.status === 'approved') approved.add(d.course_id);
+          });
         }
+        
+        setPendingCourseIds(pending);
+        
+        const combinedEnrollments = [...(enrollmentsData || [])];
+        approved.forEach(id => {
+          if (!combinedEnrollments.some(e => e.course_id === id)) {
+            combinedEnrollments.push({ course_id: id });
+          }
+        });
+        setEnrollments(combinedEnrollments);
       }
 
       if (data) {

@@ -302,7 +302,7 @@ export default function Home() {
           }
 
           const { data: donationData } = await supabase
-            .from("donations")
+            .from("payments")
             .select("course_id, status")
             .eq("user_id", session.user.id);
           
