@@ -158,20 +158,23 @@ export default function Messages() {
              const c = Array.isArray(comm.courses) ? comm.courses[0] : comm.courses;
              if (c) {
                communityCourseIds.add(c.id);
-               // Use a unique prefix to prevent collide with user IDs if they overlap 
-               uniqueUsersMap.set(`comm_${c.id}`, {
+               // Track unread for groups using last viewed timestamp from localStorage
+               const lastViewed = localStorage.getItem(`last_viewed_group_${c.id}`);
+               const mapKey = `comm_${c.id}`;
+               uniqueUsersMap.set(mapKey, {
                  id: c.id,
                  isCommunity: true,
                  lastMessage: 'Welcome to the community',
                  timestamp: comm.joined_at || new Date().toISOString(),
                  full_name: `${c.title} Community`,
                  avatar_url: c.thumbnail_url ? getDirectLink(c.thumbnail_url) : null,
-                 unread: false
+                 unread: false,
+                 lastViewedAt: lastViewed ? new Date(lastViewed).getTime() : 0
                });
              }
           });
           
-          // Fetch latest community messages for timestamps
+          // Fetch latest community messages for timestamps and unread logic
           if (communityCourseIds.size > 0) {
             const { data: latestCommMsgs } = await supabase
               .from('community_messages')
@@ -188,6 +191,10 @@ export default function Messages() {
                   if (u) {
                     u.lastMessage = msg.text;
                     u.timestamp = msg.created_at;
+                    // Mark as unread if the latest message is newer than last viewed
+                    if (new Date(msg.created_at).getTime() > u.lastViewedAt) {
+                      u.unread = true;
+                    }
                   }
                 }
               });
@@ -335,19 +342,18 @@ export default function Messages() {
           }, async payload => {
               if (selectedUserRef.current?.id !== payload.new.course_id) return;
               
-              const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url, role, is_verified, phone, polytechnic_name').eq('id', payload.new.sender_id).maybeSingle();
+              const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url, role, is_verified').eq('id', payload.new.sender_id).maybeSingle();
               const newMsg: any = {
                   ...payload.new,
                   content: payload.new.text,
                   sender_name: profile?.full_name || 'Member',
                   sender_avatar: profile?.avatar_url ? getDirectLink(profile.avatar_url) : null,
                   sender_role: profile?.role,
-                  sender_verified: profile?.is_verified || profile?.role === 'admin',
-                  sender_phone: profile?.phone,
-                  sender_polytechnic: profile?.polytechnic_name
+                  sender_verified: profile?.is_verified || profile?.role === 'admin'
               };
               setMessages(prev => {
                  if (prev.some((m: any) => m.id === newMsg.id)) return prev;
+                 if (currentChatRef.current !== payload.new.course_id) return prev;
                  return [...prev, newMsg];
               });
               scrollToBottom('smooth');
@@ -411,8 +417,12 @@ export default function Messages() {
   }, [selectedUser, user]);
 
   const markAsRead = async (senderId: string) => {
-    if (!user || (selectedUser && selectedUser.isCommunity)) return;
+    if (!user) return;
     
+    if (selectedUser?.isCommunity) {
+      localStorage.setItem(`last_viewed_group_${senderId}`, new Date().toISOString());
+    }
+
     // Optimistically update the UI to remove the unread indicator instantly
     setConversations(prev => prev.map(conv => 
       conv.id === senderId ? { ...conv, unread: false } : conv
@@ -420,6 +430,8 @@ export default function Messages() {
     
     // Notify navigation components to refresh badges
     window.dispatchEvent(new CustomEvent('unread-count-changed'));
+
+    if (selectedUser?.isCommunity) return;
 
     try {
       const { error } = await supabase
@@ -794,7 +806,7 @@ export default function Messages() {
                               <span className="truncate">{conv.full_name}</span>
                               {(conv.is_verified || conv.role === 'admin') && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
                           </h4>
-                          {conv.isCommunity && <span className="bg-[var(--primary)] text-white text-[8px] font-bold px-1 py-0.5 rounded uppercase shrink-0">Group</span>}
+                          {conv.isCommunity && <span className={`text-white text-[8px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 ${conv.unread ? 'bg-[var(--primary)] animate-pulse' : 'bg-gray-400'}`}>Group</span>}
                         </div>
                         {conv.unread && <div className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full shrink-0"></div>}
                       </div>
@@ -897,7 +909,10 @@ export default function Messages() {
               </div>
 
               {/* Message List */}
-              <div className="flex-1 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3 bg-gray-50 dark:bg-[#141414] min-h-0">
+              <div 
+                key={`msg-list-${selectedUser.id}-${selectedUser.isCommunity}`}
+                className="flex-1 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3 bg-gray-50 dark:bg-[#141414] min-h-0"
+              >
                 {loadingChat ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
                     <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
@@ -952,7 +967,7 @@ export default function Messages() {
                         >
                           {!isMe && selectedUser.isCommunity && (
                             <span 
-                              className="text-xs font-bold text-[#1c1e21] cursor-pointer hover:underline mb-1 inline-flex items-center gap-1"
+                              className="text-xs font-bold text-gray-800 dark:text-white cursor-pointer hover:underline mb-1 inline-flex items-center gap-1"
                               onClick={() => {
                                 setSelectedProfileInfo({
                                   id: msg.sender_id,
@@ -967,7 +982,7 @@ export default function Messages() {
                               }}
                             >
                               {msg.sender_name || 'Member'}
-                              {msg.sender_verified && <BadgeCheck className="text-blue-500 fill-blue-500 text-white w-3.5 h-3.5" />}
+                              {msg.sender_verified && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-3.5 h-3.5" size={14} />}
                             </span>
                           )}
                           <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
