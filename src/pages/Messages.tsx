@@ -1,11 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { Send, User, ChevronLeft, BadgeCheck, MoreVertical } from 'lucide-react';
+import { 
+  Send, 
+  User, 
+  ChevronLeft, 
+  BadgeCheck, 
+  MoreVertical, 
+  Search, 
+  Image as ImageIcon, 
+  ArrowLeft,
+  Check,
+  CheckCheck,
+  BellOff,
+  Trash2,
+  Ban,
+  MessageCircle,
+  MessageSquare,
+  X
+} from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
-import { useSearchParams } from 'react-router-dom';
+import { getEmbedUrl, getDirectLink } from '../lib/utils';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function Messages() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialUserId = searchParams.get('userId');
   const initialCommunityId = searchParams.get('communityId');
@@ -119,7 +138,7 @@ export default function Messages() {
                  lastMessage: 'Tap to view community messages',
                  timestamp: comm.joined_at || new Date().toISOString(),
                  full_name: `${c.title} Community`,
-                 avatar_url: c.thumbnail_url,
+                 avatar_url: c.thumbnail_url ? getDirectLink(c.thumbnail_url) : null,
                  unread: false
                });
              }
@@ -200,7 +219,7 @@ export default function Messages() {
             if (uniqueUsersMap.has(p.id)) {
               const u = uniqueUsersMap.get(p.id);
               u.full_name = p.full_name || 'Student';
-              u.avatar_url = p.avatar_url;
+              u.avatar_url = p.avatar_url ? getDirectLink(p.avatar_url) : null;
               u.is_verified = p.is_verified || p.role === 'admin';
             }
           });
@@ -260,14 +279,19 @@ export default function Messages() {
               table: 'community_messages',
               filter: `course_id=eq.${selectedUser.id}` 
           }, async payload => {
-              const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', payload.new.sender_id).maybeSingle();
-              const newMsg = {
+              const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url, role, is_verified, phone, polytechnic_name').eq('id', payload.new.sender_id).maybeSingle();
+              const newMsg: any = {
                   ...payload.new,
                   content: payload.new.text,
-                  sender_name: profile?.full_name || 'Member'
+                  sender_name: profile?.full_name || 'Member',
+                  sender_avatar: profile?.avatar_url ? getDirectLink(profile.avatar_url) : null,
+                  sender_role: profile?.role,
+                  sender_verified: profile?.is_verified || profile?.role === 'admin',
+                  sender_phone: profile?.phone,
+                  sender_polytechnic: profile?.polytechnic_name
               };
               setMessages(prev => {
-                 if (prev.some(m => m.id === newMsg.id)) return prev;
+                 if (prev.some((m: any) => m.id === newMsg.id)) return prev;
                  return [...prev, newMsg];
               });
               scrollToBottom('smooth');
@@ -358,6 +382,9 @@ export default function Messages() {
     }
   };
 
+  const [selectedProfileInfo, setSelectedProfileInfo] = useState<any>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
   const fetchMessages = async (otherUserId: string, isCommunity: boolean = false) => {
     if (!user) return;
     
@@ -368,7 +395,7 @@ export default function Messages() {
           id,
           course_id,
           sender_id,
-          text as content,
+          content:text,
           created_at
         `)
         .eq('course_id', otherUserId)
@@ -378,20 +405,28 @@ export default function Messages() {
         console.error('Error fetching community messages:', error);
       } else {
         // Fetch profiles
-        let mappedData = data || [];
+        let mappedData = (data as any[]) || [];
         if (mappedData.length > 0) {
           const senderIds = Array.from(new Set(mappedData.map(d => d.sender_id)));
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, full_name')
+            .select('id, full_name, avatar_url, role, is_verified, phone, polytechnic_name')
             .in('id', senderIds);
             
           if (profiles) {
-            const profileMap = new Map(profiles.map(p => [p.id, p.full_name]));
-            mappedData = mappedData.map(d => ({
-              ...d,
-              sender_name: profileMap.get(d.sender_id) || 'Member'
-            }));
+            const profileMap = new Map(profiles.map(p => [p.id, p]));
+            mappedData = mappedData.map(d => {
+              const p = profileMap.get(d.sender_id);
+              return {
+                ...d,
+                sender_name: p?.full_name || 'Member',
+                sender_avatar: p?.avatar_url ? getDirectLink(p.avatar_url) : null,
+                sender_role: p?.role,
+                sender_verified: p?.is_verified || p?.role === 'admin',
+                sender_phone: p?.phone,
+                sender_polytechnic: p?.polytechnic_name
+              };
+            });
           }
         }
         setMessages(mappedData);
@@ -674,7 +709,7 @@ export default function Messages() {
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <div className="flex justify-between items-center gap-1">
-                        <h4 className={`text-sm truncate flex items-center gap-1 ${conv.unread ? 'font-black text-[var(--text)]' : 'font-semibold text-gray-600 dark:text-gray-300'}`}>
+                        <h4 className={`text-sm truncate flex items-center gap-1 ${conv.unread ? 'font-bold text-[var(--text)]' : 'font-semibold text-gray-600 dark:text-gray-300'}`}>
                             <span className="truncate">{conv.full_name}</span>
                             {(conv.is_verified || conv.role === 'admin') && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
                         </h4>
@@ -696,38 +731,81 @@ export default function Messages() {
               {/* Chat Header */}
               <div className="p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center justify-between gap-3 shadow-sm shrink-0 z-10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0 border border-black/5 dark:border-white/5">
                     {selectedUser.avatar_url ? (
-                      <img src={selectedUser.avatar_url} alt={selectedUser.full_name} className="w-full h-full object-cover" />
+                      <img src={getDirectLink(selectedUser.avatar_url)} alt={selectedUser.full_name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={20} /></div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 truncate">
-                    <h3 className="font-bold text-[var(--text)] truncate">{selectedUser.full_name}</h3>
-                    {(selectedUser.is_verified || selectedUser.role === 'admin') && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                  <div className="flex flex-col truncate">
+                    <div className="flex items-center gap-1 truncate">
+                      <h3 className="font-bold text-[var(--text)] truncate">{selectedUser.full_name}</h3>
+                      {(selectedUser.is_verified || selectedUser.role === 'admin') && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                      {selectedUser.isCommunity && <span className="bg-[var(--primary)]/10 text-[var(--primary)] text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ml-1">Community</span>}
+                    </div>
+                    {selectedUser.isCommunity && (
+                       <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-widest">Group Conversation</span>
+                    )}
                   </div>
                 </div>
                 <div className="relative" ref={dropdownRef}>
-                  <button onClick={() => setShowDropdown(!showDropdown)} className="p-2 text-gray-500 hover:text-black dark:hover:text-white transition-colors">
-                      <MoreVertical size={20} />
+                  <button 
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-gray-500"
+                  >
+                    <MoreVertical size={20} />
                   </button>
                   {showDropdown && (
-                      <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-[#2a2a2a] shadow-xl rounded-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden">
-                          <button onClick={() => {
-                            deleteConversation(selectedUser.id);
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl border border-black/5 dark:border-white/10 overflow-hidden z-[60]"
+                    >
+                      {selectedUser.isCommunity ? (
+                        <button 
+                          onClick={async () => {
+                            if (window.confirm('Are you sure you want to exit this group?')) {
+                              const { error } = await supabase.from('course_communities').delete().eq('course_id', selectedUser.id).eq('user_id', user.id);
+                              if (!error) {
+                                setSelectedUser(null);
+                                setSearchParams({});
+                                fetchConversations(user.id);
+                              }
+                            }
                             setShowDropdown(false);
-                          }} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors">
-                              Delete Chat
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                        >
+                          <X size={16} /> Exit Group
+                        </button>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to ${blockedByMe ? 'unblock' : 'block'} this user?`)) {
+                                toggleBlock(selectedUser.id);
+                                setShowDropdown(false);
+                              }
+                            }}
+                            className="w-full px-4 py-3 text-left text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                          >
+                            <Ban size={16} /> {blockedByMe ? 'Unblock User' : 'Block User'}
                           </button>
-                          <div className="h-[1px] w-full bg-black/5 dark:bg-white/5" />
-                          <button onClick={() => {
-                            toggleBlock(selectedUser.id);
-                            setShowDropdown(false);
-                          }} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors">
-                              {blockedByMe ? 'Unblock user' : 'Block user'}
+                          <button 
+                            onClick={async () => {
+                              if (window.confirm('Are you sure you want to delete this conversation? This will delete messages for both sides.')) {
+                                deleteConversation(selectedUser.id);
+                              }
+                              setShowDropdown(false);
+                            }}
+                            className="w-full px-4 py-3 text-left text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border-t border-black/5 dark:border-white/5 flex items-center gap-2"
+                          >
+                            <Trash2 size={16} /> Delete Chat
                           </button>
-                      </div>
+                        </>
+                      )}
+                    </motion.div>
                   )}
                 </div>
               </div>
@@ -743,21 +821,63 @@ export default function Messages() {
                     const isMe = msg.sender_id === user?.id;
                     const isTemp = msg.id.toString().includes('-temp-');
                     return (
-                      <div key={msg.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isTemp ? 'opacity-70 focus-within:opacity-100' : ''}`}>
+                      <div key={msg.id || i} className={`flex items-end gap-2 mb-1 ${isMe ? 'flex-row-reverse' : 'flex-row'} ${isTemp ? 'opacity-70 focus-within:opacity-100' : ''}`}>
+                        {/* Profile Pic */}
+                        {!isMe && selectedUser.isCommunity && (
+                          <div 
+                            onClick={() => {
+                              setSelectedProfileInfo({
+                                id: msg.sender_id,
+                                full_name: msg.sender_name,
+                                avatar_url: msg.sender_avatar,
+                                role: msg.sender_role,
+                                is_verified: msg.sender_verified,
+                                phone: msg.sender_phone,
+                                polytechnic: msg.sender_polytechnic
+                              });
+                              setShowProfileModal(true);
+                            }}
+                            className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 shrink-0 cursor-pointer shadow-sm active:scale-95 transition-transform"
+                          >
+                            {msg.sender_avatar ? (
+                              <img src={getDirectLink(msg.sender_avatar)} alt={msg.sender_name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={14} /></div>
+                            )}
+                          </div>
+                        )}
+                        
                         <div 
                           onClick={() => {
                             if (isMe && !isTemp && window.confirm('Delete this message for everyone?')) {
                               if (!selectedUser.isCommunity) deleteMessage(msg.id);
                             }
                           }}
-                          className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl cursor-pointer select-none transition-all active:scale-[0.98] flex flex-col ${
+                          className={`max-w-[75%] md:max-w-[70%] px-4 py-2 rounded-2xl cursor-pointer select-none transition-all active:scale-[0.98] flex flex-col ${
                             isMe 
-                              ? 'bg-[var(--primary)] text-white rounded-tr-sm' 
+                              ? 'bg-[var(--primary)] text-white rounded-tr-sm shadow-md' 
                               : 'bg-white dark:bg-[#2a2a2a] text-[var(--text)] rounded-tl-sm border border-black/5 dark:border-white/5 shadow-sm'
                           }`}
                         >
                           {!isMe && selectedUser.isCommunity && (
-                            <span className="text-[10px] font-bold text-[var(--primary)] mb-0.5">{msg.sender_name || 'Member'}</span>
+                            <span 
+                              className="text-xs font-bold text-[#1c1e21] cursor-pointer hover:underline mb-1 inline-flex items-center gap-1"
+                              onClick={() => {
+                                setSelectedProfileInfo({
+                                  id: msg.sender_id,
+                                  full_name: msg.sender_name,
+                                  avatar_url: msg.sender_avatar,
+                                  is_verified: msg.sender_verified,
+                                  role: msg.sender_role,
+                                  phone: msg.sender_phone,
+                                  polytechnic: msg.sender_polytechnic
+                                });
+                                setShowProfileModal(true);
+                              }}
+                            >
+                              {msg.sender_name || 'Member'}
+                              {msg.sender_verified && <BadgeCheck className="text-blue-500 fill-blue-500 text-white w-3.5 h-3.5" />}
+                            </span>
                           )}
                           <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                           <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
@@ -807,6 +927,79 @@ export default function Messages() {
           )}
         </div>
       </div>
+      
+      {/* Profile Modal */}
+      {showProfileModal && selectedProfileInfo && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+             <motion.div 
+               initial={{ scale: 0.9, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               className="bg-white rounded-[24px] w-full max-w-[340px] overflow-hidden shadow-2xl relative p-8 flex flex-col items-center"
+             >
+                {/* Close Button */}
+                <button 
+                  onClick={() => setShowProfileModal(false)}
+                  className="absolute top-4 right-4 p-2 bg-[#f2f3f5] hover:bg-[#e4e6eb] text-[#65676b] rounded-full transition-colors active:scale-95"
+                >
+                  <X size={20} strokeWidth={2.5} />
+                </button>
+
+                {/* Avatar with Green Border */}
+                <div className="w-28 h-28 rounded-full p-[3px] bg-[#31bb4b] mb-6 flex items-center justify-center">
+                   <div className="w-full h-full rounded-full border-[4px] border-white overflow-hidden bg-gray-100">
+                      {selectedProfileInfo.avatar_url ? (
+                        <img src={getDirectLink(selectedProfileInfo.avatar_url)} alt={selectedProfileInfo.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50"><User size={40} /></div>
+                      )}
+                   </div>
+                </div>
+
+                {/* Name and Verified Badge */}
+                <div className="flex items-center justify-center gap-1.5 mb-1 px-4">
+                   <h3 className="text-xl font-bold text-[#1c1e21] tracking-tight text-center">{selectedProfileInfo.full_name}</h3>
+                   {selectedProfileInfo.is_verified && <BadgeCheck className="text-[#0866ff] fill-[#0866ff] text-white w-[18px] h-[18px] shrink-0" />}
+                </div>
+
+                {/* Institution Name */}
+                <p className="font-semibold text-[#8d949e] text-sm tracking-tight mb-8 text-center">
+                  {selectedProfileInfo.polytechnic || 'Engineering Student'}
+                </p>
+
+                {/* Message Button */}
+                <button 
+                  onClick={() => {
+                    const findInHistory = conversations.find(c => c.id === selectedProfileInfo.id && !c.isCommunity);
+                    if (findInHistory) {
+                      setSelectedUser(findInHistory);
+                      setSearchParams({ userId: selectedProfileInfo.id });
+                    } else {
+                      const newTempUser = {
+                        id: selectedProfileInfo.id,
+                        full_name: selectedProfileInfo.full_name,
+                        avatar_url: selectedProfileInfo.avatar_url,
+                        is_verified: selectedProfileInfo.is_verified,
+                        role: selectedProfileInfo.role || 'student',
+                        lastMessage: 'Start a conversation...',
+                        timestamp: new Date().toISOString()
+                      };
+                      setSelectedUser(newTempUser);
+                      setConversations(prev => {
+                        if (prev.some(c => c.id === newTempUser.id)) return prev;
+                        return [newTempUser, ...prev];
+                      });
+                      setSearchParams({ userId: selectedProfileInfo.id });
+                    }
+                    setShowProfileModal(false);
+                  }}
+                  className="w-full bg-[#31bb4b] hover:bg-[#28a428] text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-base"
+                >
+                  <MessageSquare size={18} className="fill-white" />
+                  Message
+                </button>
+             </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
