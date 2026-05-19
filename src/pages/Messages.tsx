@@ -35,8 +35,15 @@ export default function Messages() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingChat, setLoadingChat] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const currentChatRef = useRef<string | null>(null);
+  const selectedUserRef = useRef<any>(null);
+
+  useEffect(() => {
+    selectedUserRef.current = selectedUser;
+  }, [selectedUser]);
 
   useEffect(() => {
     let globalChannel: any;
@@ -108,18 +115,37 @@ export default function Messages() {
       }
 
       // Fetch communities the user has joined
-      const { data: communityData, error: commError } = await supabase
+      let communityData: any[] = [];
+      // Fetch from BOTH enrollments AND course_communities to be safe
+      const { data: enrolled } = await supabase
+        .from('enrollments')
+        .select(`
+          course_id, 
+          courses (id, title, thumbnail_url)
+        `)
+        .eq('user_id', currentUserId);
+      
+      const { data: joined } = await supabase
         .from('course_communities')
         .select(`
           course_id, 
           joined_at,
-          courses (
-            id,
-            title,
-            thumbnail_url
-          )
+          courses (id, title, thumbnail_url)
         `)
         .eq('user_id', currentUserId);
+
+      const combined = new Map();
+      enrolled?.forEach((e: any) => {
+        if (e.courses) {
+          combined.set(e.course_id, { course_id: e.course_id, courses: e.courses, joined_at: new Date().toISOString() });
+        }
+      });
+      joined?.forEach((j: any) => {
+        if (j.courses) {
+          combined.set(j.course_id, { course_id: j.course_id, courses: j.courses, joined_at: j.joined_at });
+        }
+      });
+      communityData = Array.from(combined.values());
 
       const uniqueUsersMap = new Map();
       const otherUserIds = new Set<string>();
@@ -127,15 +153,16 @@ export default function Messages() {
       // Community processing
       const communityCourseIds = new Set<string>();
       try {
-        if (!commError && communityData) {
+        if (communityData && communityData.length > 0) {
           communityData.forEach((comm: any) => {
              const c = Array.isArray(comm.courses) ? comm.courses[0] : comm.courses;
              if (c) {
                communityCourseIds.add(c.id);
-               uniqueUsersMap.set(c.id, {
+               // Use a unique prefix to prevent collide with user IDs if they overlap 
+               uniqueUsersMap.set(`comm_${c.id}`, {
                  id: c.id,
                  isCommunity: true,
-                 lastMessage: 'Tap to view community messages',
+                 lastMessage: 'Welcome to the community',
                  timestamp: comm.joined_at || new Date().toISOString(),
                  full_name: `${c.title} Community`,
                  avatar_url: c.thumbnail_url ? getDirectLink(c.thumbnail_url) : null,
@@ -150,15 +177,14 @@ export default function Messages() {
               .from('community_messages')
               .select('course_id, text, created_at')
               .in('course_id', Array.from(communityCourseIds))
-              .order('created_at', { ascending: false })
-              .limit(50);
+              .order('created_at', { ascending: false });
               
             if (latestCommMsgs) {
               const seenCourses = new Set();
               latestCommMsgs.forEach(msg => {
                 if (!seenCourses.has(msg.course_id)) {
                   seenCourses.add(msg.course_id);
-                  const u = uniqueUsersMap.get(msg.course_id);
+                  const u = uniqueUsersMap.get(`comm_${msg.course_id}`);
                   if (u) {
                     u.lastMessage = msg.text;
                     u.timestamp = msg.created_at;
@@ -175,13 +201,14 @@ export default function Messages() {
         const otherUserId = msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
         otherUserIds.add(otherUserId);
         
-        // Keep only the latest message for the unique map
-        if (!uniqueUsersMap.has(otherUserId)) {
-          uniqueUsersMap.set(otherUserId, {
+        const mapKey = `user_${otherUserId}`;
+        if (!uniqueUsersMap.has(mapKey)) {
+          uniqueUsersMap.set(mapKey, {
             id: otherUserId,
+            isCommunity: false,
             lastMessage: msg.content,
             timestamp: msg.created_at,
-            full_name: 'Student', // Default placeholder
+            full_name: 'Student', 
             avatar_url: null,
             unread: msg.receiver_id === currentUserId && !msg.read
           });
@@ -193,9 +220,11 @@ export default function Messages() {
         const idToUse = supportAdminId || initialUserId;
         if (idToUse) {
           otherUserIds.add(idToUse);
-          if (!uniqueUsersMap.has(idToUse)) {
-            uniqueUsersMap.set(idToUse, {
+          const mapKey = `user_${idToUse}`;
+          if (!uniqueUsersMap.has(mapKey)) {
+            uniqueUsersMap.set(mapKey, {
               id: idToUse,
+              isCommunity: false,
               lastMessage: 'Start a conversation...',
               timestamp: new Date().toISOString(),
               full_name: 'Support API',
@@ -216,8 +245,9 @@ export default function Messages() {
           
         if (!profilesError && profilesData) {
           profilesData.forEach(p => {
-            if (uniqueUsersMap.has(p.id)) {
-              const u = uniqueUsersMap.get(p.id);
+            const mapKey = `user_${p.id}`;
+            if (uniqueUsersMap.has(mapKey)) {
+              const u = uniqueUsersMap.get(mapKey);
               u.full_name = p.full_name || 'Student';
               u.avatar_url = p.avatar_url ? getDirectLink(p.avatar_url) : null;
               u.is_verified = p.is_verified || p.role === 'admin';
@@ -227,7 +257,10 @@ export default function Messages() {
       }
 
       // Convert map to array and sort by timestamp
-      const convList = Array.from(uniqueUsersMap.values()).sort((a, b) => 
+      const convList = Array.from(uniqueUsersMap.entries()).map(([key, value]) => ({
+        ...(value as any),
+        mapKey: key
+      })).sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
 
@@ -235,10 +268,15 @@ export default function Messages() {
       
       // WhatsApp style: do not auto-select the first conversation. 
       // Only select if there is a specific initialUserId or initialCommunityId in the URL and we haven't selected one yet.
-      const selId = supportAdminId || initialUserId || initialCommunityId;
-      if (selId && !selectedUser) {
-        const target = convList.find(c => c.id === selId);
-        if (target) setSelectedUser(target);
+      if (!selectedUser) {
+        if (initialCommunityId) {
+          const target = convList.find(c => c.id === initialCommunityId && c.isCommunity);
+          if (target) setSelectedUser(target);
+        } else if (initialUserId || supportAdminId) {
+          const selId = supportAdminId || initialUserId;
+          const target = convList.find(c => c.id === selId && !c.isCommunity);
+          if (target) setSelectedUser(target);
+        }
       }
       
       setLoading(false);
@@ -253,11 +291,22 @@ export default function Messages() {
     if (!initialUserId && !initialCommunityId && !isSupport) {
       if (selectedUser) setSelectedUser(null);
     } else {
-      const selId = initialUserId || initialCommunityId; 
-      // If it's pure support, fetchConversations will find the target and select it.
-      if (selId && conversations.length > 0 && (!selectedUser || selectedUser.id !== selId)) {
-        const target = conversations.find(c => c.id === selId);
-        if (target) setSelectedUser(target);
+      if (conversations.length > 0) {
+        if (initialCommunityId) {
+          const target = conversations.find(c => c.id === initialCommunityId && c.isCommunity);
+          if (target && (!selectedUser || selectedUser.id !== target.id || !selectedUser.isCommunity)) {
+            setSelectedUser(target);
+          }
+        } else if (initialUserId || isSupport) {
+          // Action=support doesn't have initialUserId initially, but fetchConversations finds the admin ID
+          const selId = initialUserId || conversations.find(c => c.isSupport)?.id;
+          if (selId) {
+            const target = conversations.find(c => c.id === selId && !c.isCommunity);
+            if (target && (!selectedUser || selectedUser.id !== target.id || selectedUser.isCommunity)) {
+              setSelectedUser(target);
+            }
+          }
+        }
       }
     }
   }, [initialUserId, initialCommunityId, conversations, selectedUser, searchParams]);
@@ -265,6 +314,11 @@ export default function Messages() {
   useEffect(() => {
     let channel: any;
     if (selectedUser && user) {
+      setLoadingChat(true);
+      // Clear messages immediately when switching to avoid seeing previous conversation's messages
+      setMessages([]);
+      currentChatRef.current = selectedUser.id;
+      
       if (selectedUser.isCommunity) {
         setBlockedByMe(false);
         setBlockedByOther(false);
@@ -279,6 +333,8 @@ export default function Messages() {
               table: 'community_messages',
               filter: `course_id=eq.${selectedUser.id}` 
           }, async payload => {
+              if (selectedUserRef.current?.id !== payload.new.course_id) return;
+              
               const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url, role, is_verified, phone, polytechnic_name').eq('id', payload.new.sender_id).maybeSingle();
               const newMsg: any = {
                   ...payload.new,
@@ -316,7 +372,7 @@ export default function Messages() {
               table: 'messages',
               filter: `receiver_id=eq.${user.id}` 
           }, payload => {
-              if (payload.new.sender_id === selectedUser.id) {
+              if (payload.new.sender_id === selectedUserRef.current?.id) {
                   setMessages(prev => {
                      if (prev.some(m => m.id === payload.new.id)) return prev;
                      return [...prev, payload.new];
@@ -331,7 +387,7 @@ export default function Messages() {
               table: 'messages',
               filter: `sender_id=eq.${user.id}` 
           }, payload => {
-              if (payload.new.receiver_id === selectedUser.id) {
+              if (payload.new.receiver_id === selectedUserRef.current?.id) {
                   setMessages(prev => {
                      // Safely replace the temporary message that matches this content
                      const tempIndex = prev.findIndex(m => m.id.toString().includes('-temp-') && m.content === payload.new.content);
@@ -388,6 +444,8 @@ export default function Messages() {
   const fetchMessages = async (otherUserId: string, isCommunity: boolean = false) => {
     if (!user) return;
     
+    setLoadingChat(true);
+
     if (isCommunity) {
       const { data, error } = await supabase
         .from('community_messages')
@@ -429,21 +487,25 @@ export default function Messages() {
             });
           }
         }
-        setMessages(mappedData);
-        scrollToBottom('auto');
+        if (currentChatRef.current === otherUserId) {
+          setMessages(mappedData);
+          scrollToBottom('auto');
+        }
       }
     } else {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`);
 
       if (error) {
         console.error('Error fetching messages:', error);
       } else {
-        setMessages(data || []);
-        scrollToBottom('auto');
+        if (currentChatRef.current === otherUserId) {
+          setMessages(data || []);
+          scrollToBottom('auto');
+        }
         
         // Cleanup notifications whenever we enter a chat
         const { data: { session } } = await supabase.auth.getSession();
@@ -452,6 +514,7 @@ export default function Messages() {
         }
       }
     }
+    setLoadingChat(false);
   };
 
   useEffect(() => {
@@ -579,9 +642,15 @@ export default function Messages() {
   };
 
   const selectUser = (conv: any) => {
+    setMessages([]);
+    setLoadingChat(true);
     setSelectedUser(conv);
     if (conv) {
-      setSearchParams({ userId: conv.id });
+      if (conv.isCommunity) {
+        setSearchParams({ communityId: conv.id });
+      } else {
+        setSearchParams({ userId: conv.id });
+      }
     } else {
       setSearchParams({});
     }
@@ -650,6 +719,14 @@ export default function Messages() {
         console.error('Error sending community message:', error);
         setMessages(prev => prev.filter(m => m.id !== tempId));
         alert("Failed to send message: " + error.message);
+      } else {
+        // Community messages don't affect direct message sidebar order immediately via fetchConversations
+        // but we might want to refresh timestamps
+        setConversations(prev => prev.map(c => 
+          c.id === selectedUser.id 
+            ? { ...c, lastMessage: msgContent, timestamp: new Date().toISOString() } 
+            : c
+        ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
       }
     } else {
       const { error } = await supabase
@@ -670,6 +747,9 @@ export default function Messages() {
     }
   };
 
+  const personalConversations = conversations.filter(c => !c.isCommunity);
+  const groupConversations = conversations.filter(c => c.isCommunity);
+
   if (loading) {
     return <div className="p-8 text-center text-[var(--primary)] animate-pulse font-bold">Loading Messages...</div>;
   }
@@ -684,7 +764,7 @@ export default function Messages() {
         
         {/* Sidebar Contacts List */}
         <div className={`w-full md:w-80 border-r border-black/10 dark:border-white/10 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-4 border-b border-black/10 dark:border-white/10 bg-gray-50 dark:bg-black/20 flex justify-between items-center shrink-0">
+          <div className="p-4 border-b border-black/10 dark:border-white/10 bg-gray-50 dark:bg-black/20 shrink-0">
             <h2 className="text-xl font-bold text-[var(--text)]">Messages</h2>
           </div>
           <div className="flex-1 overflow-y-auto overscroll-contain">
@@ -693,8 +773,8 @@ export default function Messages() {
             ) : (
               conversations.map(conv => (
                 <div 
-                  key={conv.id}
-                  className={`flex flex-col border-b border-black/5 dark:border-white/5 ${selectedUser?.id === conv.id ? 'bg-[var(--primary)]/10 border-l-4 border-l-[var(--primary)]' : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-4 border-l-transparent'}`}
+                  key={conv.mapKey}
+                  className={`flex flex-col border-b border-black/5 dark:border-white/5 ${selectedUser?.id === conv.id && selectedUser.isCommunity === conv.isCommunity ? 'bg-[var(--primary)]/10 border-l-4 border-l-[var(--primary)]' : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-4 border-l-transparent'}`}
                 >
                   <div 
                     onClick={() => selectUser(conv)}
@@ -709,10 +789,13 @@ export default function Messages() {
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <div className="flex justify-between items-center gap-1">
-                        <h4 className={`text-sm truncate flex items-center gap-1 ${conv.unread ? 'font-bold text-[var(--text)]' : 'font-semibold text-gray-600 dark:text-gray-300'}`}>
-                            <span className="truncate">{conv.full_name}</span>
-                            {(conv.is_verified || conv.role === 'admin') && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
-                        </h4>
+                        <div className="flex items-center gap-1 truncate">
+                          <h4 className={`text-sm truncate flex items-center gap-1 ${conv.unread ? 'font-bold text-[var(--text)]' : 'font-semibold text-gray-600 dark:text-gray-300'}`}>
+                              <span className="truncate">{conv.full_name}</span>
+                              {(conv.is_verified || conv.role === 'admin') && <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-4 h-4 shrink-0" size={16} />}
+                          </h4>
+                          {conv.isCommunity && <span className="bg-[var(--primary)] text-white text-[8px] font-bold px-1 py-0.5 rounded uppercase shrink-0">Group</span>}
+                        </div>
                         {conv.unread && <div className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full shrink-0"></div>}
                       </div>
                       <p className={`text-xs truncate ${conv.unread ? 'font-bold text-[var(--primary)]' : 'text-gray-500'}`}>{conv.lastMessage}</p>
@@ -727,7 +810,10 @@ export default function Messages() {
         {/* Chat Area */}
         <div className={`flex-1 flex flex-col bg-gray-50 dark:bg-[#141414] ${!selectedUser ? 'hidden md:flex' : 'flex'} relative h-full overflow-hidden`}>
           {selectedUser ? (
-            <div className="flex flex-col h-full overflow-hidden relative">
+            <div 
+              key={`${selectedUser.id}-${selectedUser.isCommunity}`}
+              className="flex flex-col h-full overflow-hidden relative"
+            >
               {/* Chat Header */}
               <div className="p-4 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] flex items-center justify-between gap-3 shadow-sm shrink-0 z-10">
                 <div className="flex items-center gap-3">
@@ -811,8 +897,13 @@ export default function Messages() {
               </div>
 
               {/* Message List */}
-              <div className="flex-1 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3 bg-gray-50 dark:bg-[#141414]">
-                {messages.length === 0 ? (
+              <div className="flex-1 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3 bg-gray-50 dark:bg-[#141414] min-h-0">
+                {loadingChat ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
+                    <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest animate-pulse">Loading messages...</span>
+                  </div>
+                ) : messages.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-500 text-sm">
                     Send a message to start the conversation
                   </div>
@@ -930,23 +1021,23 @@ export default function Messages() {
       
       {/* Profile Modal */}
       {showProfileModal && selectedProfileInfo && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
              <motion.div 
-               initial={{ scale: 0.9, opacity: 0 }}
+               initial={{ scale: 0.95, opacity: 0 }}
                animate={{ scale: 1, opacity: 1 }}
-               className="bg-white rounded-[24px] w-full max-w-[340px] overflow-hidden shadow-2xl relative p-8 flex flex-col items-center"
+               className="bg-white rounded-[32px] w-full max-w-[340px] overflow-hidden shadow-2xl relative p-8 flex flex-col items-center"
              >
                 {/* Close Button */}
                 <button 
                   onClick={() => setShowProfileModal(false)}
-                  className="absolute top-4 right-4 p-2 bg-[#f2f3f5] hover:bg-[#e4e6eb] text-[#65676b] rounded-full transition-colors active:scale-95"
+                  className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-full transition-all active:scale-90"
                 >
-                  <X size={20} strokeWidth={2.5} />
+                  <X size={20} />
                 </button>
-
-                {/* Avatar with Green Border */}
-                <div className="w-28 h-28 rounded-full p-[3px] bg-[#31bb4b] mb-6 flex items-center justify-center">
-                   <div className="w-full h-full rounded-full border-[4px] border-white overflow-hidden bg-gray-100">
+ 
+                {/* Avatar with Solid Green Ring */}
+                <div className="w-28 h-28 rounded-full border-[3px] border-[#31bb4b] p-1.5 mb-6">
+                   <div className="w-full h-full rounded-full overflow-hidden bg-gray-100 shadow-sm">
                       {selectedProfileInfo.avatar_url ? (
                         <img src={getDirectLink(selectedProfileInfo.avatar_url)} alt={selectedProfileInfo.full_name} className="w-full h-full object-cover" />
                       ) : (
@@ -957,42 +1048,47 @@ export default function Messages() {
 
                 {/* Name and Verified Badge */}
                 <div className="flex items-center justify-center gap-1.5 mb-1 px-4">
-                   <h3 className="text-xl font-bold text-[#1c1e21] tracking-tight text-center">{selectedProfileInfo.full_name}</h3>
-                   {selectedProfileInfo.is_verified && <BadgeCheck className="text-[#0866ff] fill-[#0866ff] text-white w-[18px] h-[18px] shrink-0" />}
+                   <h3 className="text-2xl font-bold text-[#1c1e21] tracking-tight text-center">{selectedProfileInfo.full_name}</h3>
+                   {selectedProfileInfo.is_verified && <BadgeCheck className="text-[#0866ff] fill-[#0866ff] text-white w-5 h-5 shrink-0" />}
                 </div>
 
                 {/* Institution Name */}
-                <p className="font-semibold text-[#8d949e] text-sm tracking-tight mb-8 text-center">
+                <p className="font-semibold text-[#8d949e] text-sm tracking-tight mb-10 text-center uppercase">
                   {selectedProfileInfo.polytechnic || 'Engineering Student'}
                 </p>
 
                 {/* Message Button */}
                 <button 
-                  onClick={() => {
-                    const findInHistory = conversations.find(c => c.id === selectedProfileInfo.id && !c.isCommunity);
+                  onClick={async () => {
+                    const profileId = selectedProfileInfo.id;
+                    const findInHistory = conversations.find(c => c.id === profileId && !c.isCommunity);
+                    
                     if (findInHistory) {
                       setSelectedUser(findInHistory);
-                      setSearchParams({ userId: selectedProfileInfo.id });
+                      setSearchParams({ userId: profileId });
                     } else {
+                      // Fetch full profile info to be sure
+                      const { data: fullP } = await supabase.from('profiles').select('*').eq('id', profileId).maybeSingle();
+                      
                       const newTempUser = {
-                        id: selectedProfileInfo.id,
-                        full_name: selectedProfileInfo.full_name,
-                        avatar_url: selectedProfileInfo.avatar_url,
-                        is_verified: selectedProfileInfo.is_verified,
-                        role: selectedProfileInfo.role || 'student',
+                        id: profileId,
+                        full_name: fullP?.full_name || selectedProfileInfo.full_name,
+                        avatar_url: fullP?.avatar_url || selectedProfileInfo.avatar_url,
+                        is_verified: fullP?.is_verified || fullP?.role === 'admin' || selectedProfileInfo.is_verified,
+                        role: fullP?.role || selectedProfileInfo.role || 'student',
                         lastMessage: 'Start a conversation...',
                         timestamp: new Date().toISOString()
                       };
                       setSelectedUser(newTempUser);
                       setConversations(prev => {
-                        if (prev.some(c => c.id === newTempUser.id)) return prev;
+                        if (prev.some(c => c.id === newTempUser.id && !c.isCommunity)) return prev;
                         return [newTempUser, ...prev];
                       });
-                      setSearchParams({ userId: selectedProfileInfo.id });
+                      setSearchParams({ userId: profileId });
                     }
                     setShowProfileModal(false);
                   }}
-                  className="w-full bg-[#31bb4b] hover:bg-[#28a428] text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-base"
+                  className="w-full bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-3.5 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-base"
                 >
                   <MessageSquare size={18} className="fill-white" />
                   Message
