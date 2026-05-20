@@ -41,7 +41,27 @@ export default function OrderHistory() {
         return;
       }
 
-      // Fetch from payments (Paid)
+      // Fetch from payments (Paid normal courses & pdf books)
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payments')
+        .select(`
+          id,
+          transaction_id,
+          amount,
+          status,
+          created_at,
+          courses (
+            title,
+            thumbnail_url,
+            categories,
+            description
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (paymentsError) throw paymentsError;
+
+      // Fetch from donations (Legacy support & specific items)
       const { data: donationsData, error: donationsError } = await supabase
         .from('donations')
         .select(`
@@ -53,7 +73,9 @@ export default function OrderHistory() {
           type,
           courses (
             title,
-            thumbnail_url
+            thumbnail_url,
+            categories,
+            description
           )
         `)
         .eq('user_id', user.id);
@@ -69,16 +91,57 @@ export default function OrderHistory() {
           courses (
             title,
             thumbnail_url,
-            price
+            price,
+            categories,
+            description
           )
         `)
         .eq('user_id', user.id);
 
       if (enrollError) throw enrollError;
 
+      // Helper function to check if a course is affiliate or ebook
+      const isAffiliateOrEbook = (course: any) => {
+        if (!course) return false;
+        
+        const affiliateMatch = course.description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
+        const readNowMatch = course.description?.match(/\[meta:read_now_link:([^\]]+)\]/);
+        
+        if (course.categories?.includes('ebook') || readNowMatch) return true;
+        if (course.categories?.includes('affiliate') || affiliateMatch) return true;
+        
+        return false;
+      };
+
       // Merge and format
+      const paymentOrders = (paymentsData || []).map(p => {
+        const course = Array.isArray(p.courses) ? p.courses[0] : p.courses;
+        if (isAffiliateOrEbook(course)) return null;
+        
+        return {
+          id: p.id,
+          transaction_id: p.transaction_id || 'DIRECT',
+          amount: p.amount,
+          status: p.status || 'approved',
+          created_at: p.created_at,
+          type: 'course',
+          courses: course ? { 
+            title: (course as any).title, 
+            thumbnail_url: (course as any).thumbnail_url 
+          } : null
+        };
+      }).filter((e): e is any => e !== null);
+
       const donationOrders = (donationsData || []).map(d => {
         const course = Array.isArray(d.courses) ? d.courses[0] : d.courses;
+        if (isAffiliateOrEbook(course)) return null;
+        
+        // Skip if already in payments
+        if (paymentsData?.some(p => {
+          const pCourse = Array.isArray(p.courses) ? p.courses[0] : p.courses;
+          return (pCourse as any)?.title === (course as any).title;
+        })) return null;
+
         return {
           id: d.id,
           transaction_id: d.transaction_id || 'DIRECT',
@@ -91,17 +154,22 @@ export default function OrderHistory() {
             thumbnail_url: (course as any).thumbnail_url 
           } : null
         };
-      });
+      }).filter((e): e is any => e !== null);
 
       const enrollmentOrders = (enrollData || [])
         .map(e => {
           const course = Array.isArray(e.courses) ? e.courses[0] : e.courses;
-          if (!course) return null;
+          if (!course || isAffiliateOrEbook(course)) return null;
           
-          // Skip if already in donations to avoid duplicates
+          // Skip if already in donations or payments to avoid duplicates
           if (donationsData?.some(d => {
             const dCourse = Array.isArray(d.courses) ? d.courses[0] : d.courses;
             return (dCourse as any)?.title === (course as any).title;
+          })) return null;
+          
+          if (paymentsData?.some(p => {
+            const pCourse = Array.isArray(p.courses) ? p.courses[0] : p.courses;
+            return (pCourse as any)?.title === (course as any).title;
           })) return null;
 
           return {
@@ -119,7 +187,7 @@ export default function OrderHistory() {
         })
         .filter((e): e is any => e !== null);
 
-      const combined = [...donationOrders, ...enrollmentOrders].sort((a, b) => 
+      const combined = [...paymentOrders, ...donationOrders, ...enrollmentOrders].sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
