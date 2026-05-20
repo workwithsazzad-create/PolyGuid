@@ -73,6 +73,14 @@ export default function Messages() {
           }, () => {
              fetchConversations(session.user.id);
           })
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'community_messages'
+          }, () => {
+             fetchConversations(session.user.id);
+             window.dispatchEvent(new CustomEvent('unread-count-changed'));
+          })
           .subscribe();
       }
     };
@@ -116,6 +124,20 @@ export default function Messages() {
 
       // Fetch communities the user has joined
       let communityData: any[] = [];
+      let communityReadsMap = new Map<string, number>();
+
+      try {
+        // Fetch real read receipts from db if present
+        const { data: readsData } = await supabase
+          .from('community_reads')
+          .select('course_id, last_read_at')
+          .eq('user_id', currentUserId);
+        
+        readsData?.forEach(r => {
+           communityReadsMap.set(r.course_id, new Date(r.last_read_at).getTime());
+        });
+      } catch(e) {}
+
       // Fetch from BOTH enrollments AND course_communities to be safe
       const { data: enrolled } = await supabase
         .from('enrollments')
@@ -158,8 +180,12 @@ export default function Messages() {
              const c = Array.isArray(comm.courses) ? comm.courses[0] : comm.courses;
              if (c) {
                communityCourseIds.add(c.id);
-               // Track unread for groups using last viewed timestamp from localStorage
-               const lastViewed = localStorage.getItem(`last_viewed_group_${c.id}`);
+               // Track unread for groups using last viewed timestamp from DB or localStorage
+               let lastViewedTimestamp = communityReadsMap.get(c.id);
+               if (!lastViewedTimestamp) {
+                 const localViewed = localStorage.getItem(`last_viewed_group_${c.id}`);
+                 if (localViewed) lastViewedTimestamp = new Date(localViewed).getTime();
+               }
                const mapKey = `comm_${c.id}`;
                uniqueUsersMap.set(mapKey, {
                  id: c.id,
@@ -169,7 +195,7 @@ export default function Messages() {
                  full_name: `${c.title} Community`,
                  avatar_url: c.thumbnail_url ? getDirectLink(c.thumbnail_url) : null,
                  unread: false,
-                 lastViewedAt: lastViewed ? new Date(lastViewed).getTime() : 0
+                 lastViewedAt: lastViewedTimestamp || 0
                });
              }
           });
@@ -352,6 +378,13 @@ export default function Messages() {
                   sender_verified: profile?.is_verified || profile?.role === 'admin'
               };
               setMessages(prev => {
+                 // Safely replace the temporary message that matches this content
+                 const tempIndex = prev.findIndex(m => m.id.toString().includes('-temp-') && m.content === newMsg.content);
+                 if (tempIndex !== -1) {
+                   const next = [...prev];
+                   next[tempIndex] = newMsg;
+                   return next;
+                 }
                  if (prev.some((m: any) => m.id === newMsg.id)) return prev;
                  if (currentChatRef.current !== payload.new.course_id) return prev;
                  return [...prev, newMsg];
@@ -421,6 +454,13 @@ export default function Messages() {
     
     if (selectedUser?.isCommunity) {
       localStorage.setItem(`last_viewed_group_${senderId}`, new Date().toISOString());
+      try {
+        await supabase
+          .from('community_reads')
+          .upsert({ user_id: user.id, course_id: senderId, last_read_at: new Date().toISOString() }, { onConflict: 'user_id,course_id' });
+      } catch (e) {
+        console.error('Save to community_reads failed:', e);
+      }
     }
 
     // Optimistically update the UI to remove the unread indicator instantly
