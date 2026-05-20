@@ -204,7 +204,7 @@ export default function Messages() {
           if (communityCourseIds.size > 0) {
             const { data: latestCommMsgs } = await supabase
               .from('community_messages')
-              .select('course_id, text, created_at')
+              .select('course_id, text, created_at, sender_id')
               .in('course_id', Array.from(communityCourseIds))
               .order('created_at', { ascending: false });
               
@@ -218,7 +218,7 @@ export default function Messages() {
                     u.lastMessage = msg.text;
                     u.timestamp = msg.created_at;
                     // Mark as unread if the latest message is newer than last viewed
-                    if (new Date(msg.created_at).getTime() > u.lastViewedAt) {
+                    if (new Date(msg.created_at).getTime() > u.lastViewedAt && msg.sender_id !== currentUserId) {
                       u.unread = true;
                     }
                   }

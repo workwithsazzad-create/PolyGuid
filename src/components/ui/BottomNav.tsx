@@ -43,20 +43,25 @@ export default function BottomNav() {
           if (enrolled && enrolled.length > 0) {
             const courseIds = enrolled.map(e => e.course_id);
             
-            const { data: readsData } = await supabase
-              .from('community_reads')
-              .select('course_id, last_read_at')
-              .eq('user_id', userId);
-              
-            const readsMap = new Map();
-            readsData?.forEach(r => {
-               readsMap.set(r.course_id, new Date(r.last_read_at).getTime());
-            });
+            let readsMap = new Map();
+            try {
+              const { data: readsData } = await supabase
+                .from('community_reads')
+                .select('course_id, last_read_at')
+                .eq('user_id', userId);
+                
+              readsData?.forEach(r => {
+                 readsMap.set(r.course_id, new Date(r.last_read_at).getTime());
+              });
+            } catch (readsErr) {
+              // Table might not exist, fallback to localStorage only
+            }
 
             const { data: commMsgs } = await supabase
               .from('community_messages')
-              .select('course_id, created_at')
-              .in('course_id', courseIds);
+              .select('course_id, created_at, sender_id')
+              .in('course_id', courseIds)
+              .neq('sender_id', userId);
 
             commMsgs?.forEach(msg => {
               const msgTime = new Date(msg.created_at).getTime();
