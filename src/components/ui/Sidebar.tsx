@@ -95,6 +95,9 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
     const fetchCount = async (userId: string) => {
       if (!isMounted) return;
       try {
+        let totalUnread = 0;
+
+        // 1. Personal messages
         const { count, error } = await supabase
           .from('messages')
           .select('*', { count: 'exact', head: true })
@@ -102,7 +105,50 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
           .eq('read', false);
           
         if (error) throw error;
-        if (isMounted) setUnreadCount(count || 0);
+        totalUnread += (count || 0);
+
+        // 2. Group messages
+        try {
+          const { data: enrolled } = await supabase
+            .from('enrollments')
+            .select('course_id')
+            .eq('user_id', userId);
+            
+          if (enrolled && enrolled.length > 0) {
+            const courseIds = enrolled.map(e => e.course_id);
+            
+            const { data: readsData } = await supabase
+              .from('community_reads')
+              .select('course_id, last_read_at')
+              .eq('user_id', userId);
+              
+            const readsMap = new Map();
+            readsData?.forEach(r => {
+               readsMap.set(r.course_id, new Date(r.last_read_at).getTime());
+            });
+
+            const { data: commMsgs } = await supabase
+              .from('community_messages')
+              .select('course_id, created_at')
+              .in('course_id', courseIds);
+
+            commMsgs?.forEach(msg => {
+              const msgTime = new Date(msg.created_at).getTime();
+              let lastRead = readsMap.get(msg.course_id);
+              if (!lastRead) {
+                const localViewed = localStorage.getItem(`last_viewed_group_${msg.course_id}`);
+                lastRead = localViewed ? new Date(localViewed).getTime() : 0;
+              }
+              if (msgTime > lastRead) {
+                totalUnread++;
+              }
+            });
+          }
+        } catch (groupErr) {
+          console.error("Error calculating group unread:", groupErr);
+        }
+
+        if (isMounted) setUnreadCount(totalUnread);
       } catch (e) {
         console.error("Error fetching message count:", e);
       }
