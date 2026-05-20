@@ -136,6 +136,13 @@ export default function BottomNav() {
             fetchMessageCount(userId);
         })
         .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'community_messages'
+        }, () => {
+            fetchMessageCount(userId);
+        })
+        .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
             table: 'notifications',

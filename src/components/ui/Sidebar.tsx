@@ -225,6 +225,13 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
             fetchCount(userId);
         })
         .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'community_messages'
+        }, () => {
+            fetchCount(userId);
+        })
+        .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
             table: 'notifications',
