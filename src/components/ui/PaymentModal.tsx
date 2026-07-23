@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Heart, DollarSign, X, Copy, Check, ChevronRight, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
+import { runSupabaseAutoVerification } from '@/src/lib/autoVerification';
 import { cn } from '@/src/lib/utils';
 
 interface PaymentModalProps {
@@ -83,6 +84,9 @@ export default function PaymentModal({
       ]);
       
       if (error) throw error;
+      
+      // Trigger Supabase auto-verification
+      await runSupabaseAutoVerification().catch(err => console.error('Auto verification error:', err));
       
       // Send notification for donation
       if (type === 'donation' && session?.user?.id) {

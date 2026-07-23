@@ -30,6 +30,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/src/lib/supabase";
+import { runSupabaseAutoVerification } from "@/src/lib/autoVerification";
 import { getDirectLink } from "@/src/lib/utils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import * as pdfjs from "pdfjs-dist";
@@ -42,6 +43,7 @@ type AdminTab =
   | "pages"
   | "analytics"
   | "transactions"
+  | "logs"
   | "pdf"
   | "youtube"
   | "users"
@@ -120,6 +122,10 @@ export default function Admin() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [showSmsConfig, setShowSmsConfig] = useState(false);
+  const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isSavingDonationNum, setIsSavingDonationNum] = useState(false);
   const [totalStudentsCount, setTotalStudentsCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -199,13 +205,37 @@ export default function Admin() {
     fetchSettings();
   }, []);
 
-  // Fetch Transactions and Logs
+  // Fetch Transactions and Logs automatically + Periodic background Refresh
   React.useEffect(() => {
-    if (activeTab === "transactions") {
+    if (activeTab === "transactions" || activeTab === "logs") {
       fetchTransactions();
       fetchWebhookLogs();
+      handleAutoVerify();
+
+      // Auto-refresh logs and auto-verify every 10 seconds
+      const interval = setInterval(() => {
+        handleAutoVerify();
+        fetchWebhookLogs();
+      }, 10000);
+
+      return () => clearInterval(interval);
     }
   }, [activeTab]);
+
+  const handleAutoVerify = async () => {
+    setIsVerifying(true);
+    try {
+      const res = await runSupabaseAutoVerification();
+      if (res.newlyVerifiedCount > 0) {
+        setVerifyMessage(`🎉 ${res.newlyVerifiedCount} টি ট্রানজেকশন অটো-ভেরিফাই ও অ্যাপ্রুভ হয়েছে!`);
+        await fetchTransactions();
+      }
+    } catch (e: any) {
+      console.error("Auto verify error:", e);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const fetchTransactions = async () => {
     // Fetch normal donations
@@ -456,6 +486,7 @@ export default function Admin() {
     { id: "pages", label: "Manage Pages", icon: Layout },
     { id: "analytics", label: "Analytics", icon: FileText },
     { id: "transactions", label: "Transactions", icon: DollarSign },
+    { id: "logs", label: "SMS Logs & Config", icon: Database },
     { id: "verifications", label: "Verifications", icon: ShieldCheck },
     { id: "youtube", label: "YouTube", icon: Youtube },
     { id: "users", label: "Manage Users", icon: Users },
@@ -994,70 +1025,6 @@ export default function Admin() {
 
           {activeTab === "transactions" && (
             <div className="flex flex-col gap-6">
-              <GlassmorphicCard className="max-w-7xl p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
-                    <DollarSign className="text-red-500" size={18} />
-                  </div>
-                  <h2 className="text-lg font-bold text-[var(--text)]">
-                    Payment Settings
-                  </h2>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
-                    Payment Receive Numbers
-                  </label>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-20 text-xs font-bold text-gray-500">bKash</span>
-                      <input
-                        type="text"
-                        value={bkashNumber}
-                        onChange={(e) => setBkashNumber(e.target.value)}
-                        placeholder="e.g. 017XXXXXXXX"
-                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-20 text-xs font-bold text-gray-500">Nagad</span>
-                      <input
-                        type="text"
-                        value={nagadNumber}
-                        onChange={(e) => setNagadNumber(e.target.value)}
-                        placeholder="e.g. 017XXXXXXXX"
-                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-20 text-xs font-bold text-gray-500">Rocket</span>
-                      <input
-                        type="text"
-                        value={rocketNumber}
-                        onChange={(e) => setRocketNumber(e.target.value)}
-                        placeholder="e.g. 017XXXXXXXX"
-                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleSaveDonationNumber}
-                      disabled={isSavingDonationNum}
-                      className="bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold py-2.5 px-4 rounded-lg transition-all text-sm disabled:opacity-50 mt-2"
-                    >
-                      {isSavingDonationNum ? "Saving..." : "Save Numbers"}
-                    </button>
-                  </div>
-                  {statusMsg && activeTab === "transactions" && (
-                    <p
-                      className={`text-xs mt-1 ${statusMsg.type === "success" ? "text-green-500" : "text-red-500"}`}
-                    >
-                      {statusMsg.text}
-                    </p>
-                  )}
-                </div>
-              </GlassmorphicCard>
-
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 flex flex-col gap-1">
                   <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">Pending</span>
@@ -1224,39 +1191,259 @@ export default function Admin() {
                   </div>
                 </div>
               </GlassmorphicCard>
+            </div>
+          )}
 
-              {/* Gmail SMS Sync Logs (HIDDEN as per user request to remove auto code) */}
-              {webhookLogs.length > 0 && (
-                <GlassmorphicCard className="max-w-7xl p-6 sm:p-8 border-dashed border-2 border-primary/10 opacity-50">
-                  <div className="flex flex-col gap-4 mb-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                          <div className="w-3 h-3 rounded-full bg-primary" />
-                        </div>
-                        <h2 className="text-lg font-bold text-[var(--text)]">Incoming SMS History (Read-Only)</h2>
-                      </div>
-                      <button 
-                        onClick={fetchWebhookLogs} 
-                        className="text-xs font-bold bg-black/5 dark:bg-white/5 px-4 py-2 rounded-xl"
+          {activeTab === "logs" && (
+            <div className="flex flex-col gap-6">
+              {/* Payment Settings: bKash, Nagad, Rocket Receive Numbers */}
+              <GlassmorphicCard className="max-w-7xl p-6 sm:p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
+                      <DollarSign className="text-red-500" size={18} />
+                    </div>
+                    <h2 className="text-lg font-bold text-[var(--text)]">
+                      Payment Receive Numbers (bKash / Nagad / Rocket)
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
+                    Payment Receive Numbers
+                  </label>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-20 text-xs font-bold text-gray-500">bKash</span>
+                      <input
+                        type="text"
+                        value={bkashNumber}
+                        onChange={(e) => setBkashNumber(e.target.value)}
+                        placeholder="e.g. 017XXXXXXXX"
+                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-20 text-xs font-bold text-gray-500">Nagad</span>
+                      <input
+                        type="text"
+                        value={nagadNumber}
+                        onChange={(e) => setNagadNumber(e.target.value)}
+                        placeholder="e.g. 017XXXXXXXX"
+                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-20 text-xs font-bold text-gray-500">Rocket</span>
+                      <input
+                        type="text"
+                        value={rocketNumber}
+                        onChange={(e) => setRocketNumber(e.target.value)}
+                        placeholder="e.g. 017XXXXXXXX"
+                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[#32CD32]"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSaveDonationNumber}
+                      disabled={isSavingDonationNum}
+                      className="bg-[var(--primary)] hover:bg-[#28a428] text-white font-bold py-2.5 px-4 rounded-lg transition-all text-sm disabled:opacity-50 mt-2"
+                    >
+                      {isSavingDonationNum ? "Saving..." : "Save Numbers"}
+                    </button>
+                  </div>
+                  {statusMsg && (
+                    <p className={`text-xs mt-1 ${statusMsg.type === "success" ? "text-green-500" : "text-red-500"}`}>
+                      {statusMsg.text}
+                    </p>
+                  )}
+                </div>
+              </GlassmorphicCard>
+
+              {/* Transaction Forwarder App Setup Parameters */}
+              <GlassmorphicCard className="max-w-7xl p-6 sm:p-8">
+                <div className="flex items-center justify-between pb-4 border-b border-black/10 dark:border-white/10 mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                      📱
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-[var(--text)]">Transaction App Config Parameters</h3>
+                      <p className="text-xs text-gray-500">
+                        SMS Forwarder অ্যাপসে বসাতে এই প্যারামিটারগুলো কপি করে ব্যবহার করুন (Anon Key সহ)।
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold bg-green-500/10 text-green-600 px-3 py-1 rounded-full border border-green-500/20">
+                    Active
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-5 text-xs">
+                  {/* Box 1: Webhook URL */}
+                  <div className="flex flex-col gap-1.5 p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                    <label className="font-bold text-gray-700 dark:text-gray-300">
+                      1. Webhook URL (POST Target URL)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`${import.meta.env.VITE_SUPABASE_URL || 'https://ycflp7quzujcyjbcxjg2ft.supabase.co'}/rest/v1/webhook_logs`}
+                        className="flex-1 bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl p-2.5 text-xs font-mono text-[var(--text)] selection:bg-primary/30"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL || 'https://ycflp7quzujcyjbcxjg2ft.supabase.co'}/rest/v1/webhook_logs`);
+                          setCopiedField('url');
+                          setTimeout(() => setCopiedField(null), 2000);
+                        }}
+                        className="bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2.5 rounded-xl transition-all shrink-0 shadow-sm"
                       >
-                        {isRefreshingLogs ? "Scanning..." : "Sync Logs"}
+                        {copiedField === 'url' ? 'Copied!' : 'Copy URL'}
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    {webhookLogs.slice(0, 5).map((log, idx) => {
-                       const payloadText = typeof log.body === 'string' ? log.body : JSON.stringify(log.body);
+                  {/* Box 2: Headers JSON (Contains full Anon key) */}
+                  <div className="flex flex-col gap-2 p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-gray-700 dark:text-gray-300">
+                        2. Headers JSON (Paste in SMS App Headers Field)
+                      </label>
+                      <button
+                        onClick={() => {
+                          const headersJson = JSON.stringify({
+                            "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+                            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`,
+                            "Content-Type": "application/json",
+                            "Prefer": "return=minimal"
+                          }, null, 2);
+                          navigator.clipboard.writeText(headersJson);
+                          setCopiedField('headers');
+                          setTimeout(() => setCopiedField(null), 2000);
+                        }}
+                        className="bg-primary hover:bg-primary/90 text-white font-bold px-4 py-1.5 rounded-xl transition-all text-xs shrink-0 shadow-sm"
+                      >
+                        {copiedField === 'headers' ? 'Copied Full Headers!' : 'Copy Headers JSON'}
+                      </button>
+                    </div>
+
+                    <pre className="p-3 bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl text-[11px] font-mono text-primary whitespace-pre-wrap overflow-x-auto select-all leading-relaxed">
+                      {JSON.stringify({
+                        "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+                        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                      }, null, 2)}
+                    </pre>
+                  </div>
+
+                  {/* Box 3: Body Payload */}
+                  <div className="flex flex-col gap-1.5 p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                    <label className="font-bold text-gray-700 dark:text-gray-300">
+                      3. JSON Payload Body (Paste in SMS App Body Field)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`{"payload": "%from%: %text%", "method": "SMS_FORWARDER"}`}
+                        className="flex-1 bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl p-2.5 text-xs font-mono text-[var(--text)]"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`{"payload": "%from%: %text%", "method": "SMS_FORWARDER"}`);
+                          setCopiedField('body');
+                          setTimeout(() => setCopiedField(null), 2000);
+                        }}
+                        className="bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2.5 rounded-xl transition-all shrink-0 shadow-sm"
+                      >
+                        {copiedField === 'body' ? 'Copied!' : 'Copy Body'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Box 4: Security Explanation against fake student SMS */}
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold">
+                      <ShieldCheck size={18} />
+                      <span>🛡️ ভুয়া মেসেজ (Fake SMS) প্রতিরোধ নিরাপত্তা:</span>
+                    </div>
+                    <ul className="list-disc list-inside text-[11px] text-gray-600 dark:text-gray-300 space-y-1 pl-1">
+                      <li>
+                        <strong>অফিশিয়াল কিওয়ার্ড ভ্যালিডেশন:</strong> ওয়েবসাইট শুধু সেইসব এসএমএসই গ্রান্ট করবে যেগুলোতে bKash, NAGAD, Rocket, 16216, TrxID, Balance, Ref ইত্যাদি আসল আর্থিক কিওয়ার্ড পাওয়া যাবে।
+                      </li>
+                      <li>
+                        <strong>অ্যাপসে সেন্ডার ফিল্টারিং (Sender Filter):</strong> অ্যাপসের <em>Sender (number or text)</em> ঘরে <code>*</code> এর পরিবর্তে <code>bKash,NAGAD,16216,Rocket</code> বসিয়ে রাখলে কোন সাধারণ স্টুডেন্টের মোবাইল নম্বর থেকে পাঠানো মেসেজ অ্যাপস ফরোয়ার্ডই করবে না।
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </GlassmorphicCard>
+
+              {/* Live SMS Received in Supabase Card */}
+              <GlassmorphicCard className="max-w-7xl p-6 sm:p-8">
+                <div className="flex flex-col gap-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+                      </div>
+                      <h2 className="text-lg font-bold text-[var(--text)]">Supabase Live SMS Logs ({webhookLogs.length})</h2>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        fetchWebhookLogs();
+                        handleAutoVerify();
+                      }} 
+                      className="text-xs font-bold bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-xl transition-all flex items-center gap-2"
+                    >
+                      {isRefreshingLogs ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Refreshing...</span>
+                        </>
+                      ) : (
+                        <span>Refresh SMS Logs</span>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    যখনই আপনার ফোন থেকে SMS Forwarder অ্যাপের মাধ্যমে SMS পাঠানো হবে, তা নিচে রিয়েল-টাইমে অটোমেটিক জমা হবে এবং ব্যাকগ্রাউন্ডে ভেরিফাই হতে থাকবে।
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {webhookLogs.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 text-sm">
+                      Supabase-এ এখনো কোন SMS লগ জমা হয়নি। ফোন থেকে Test SMS ফরওয়ার্ড করে Refresh চাপুন।
+                    </div>
+                  ) : (
+                    webhookLogs.slice(0, 30).map((log, idx) => {
+                       let payloadText = '';
+                       try {
+                         payloadText = typeof log.body === 'string' ? JSON.stringify(JSON.parse(log.body), null, 2) : JSON.stringify(log.body, null, 2);
+                       } catch(e) {
+                         payloadText = typeof log.body === 'string' ? log.body : JSON.stringify(log.body);
+                       }
+                       
                        return (
-                         <div key={idx} className="text-[10px] p-2 bg-black/5 dark:bg-white/5 rounded border border-black/5">
-                           {payloadText.substring(0, 150)}...
+                         <div key={idx} className="p-3 bg-white dark:bg-[#1a1b1e] rounded-xl border border-black/10 dark:border-white/10 flex flex-col gap-2">
+                           <div className="flex items-center justify-between">
+                             <span className="text-[10px] font-bold text-gray-500 uppercase">{new Date(log.timestamp).toLocaleString()}</span>
+                             <span className="text-[10px] font-bold bg-green-500/10 text-green-600 px-2 py-0.5 rounded uppercase">{log.method || 'POST'}</span>
+                           </div>
+                           <pre className="text-[11px] bg-black/5 dark:bg-white/5 p-2 rounded-lg overflow-x-auto text-[var(--text)] whitespace-pre-wrap font-mono">
+                             {payloadText}
+                           </pre>
                          </div>
                        );
-                    })}
-                  </div>
-                </GlassmorphicCard>
-              )}
+                    })
+                  )}
+                </div>
+              </GlassmorphicCard>
             </div>
           )}
 

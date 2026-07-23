@@ -332,7 +332,15 @@ export default function CourseDetails() {
         courseTitle={course.title}
         price={course.price}
         type={(course.categories?.includes("বই") || course.categories?.includes("Book") || course.affiliateLink) ? 'book' : 'course'}
-        onSuccess={() => setPurchaseStatus('pending')}
+        onSuccess={(status) => {
+          fetchCourseDetails();
+          if (status === 'approved') {
+            setIsEnrolled(true);
+            setPurchaseStatus('approved');
+          } else {
+            setPurchaseStatus('pending');
+          }
+        }}
       />
 
       <div className="flex flex-col gap-4">
