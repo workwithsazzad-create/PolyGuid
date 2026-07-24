@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Copy, Check, ChevronRight, HelpCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 import { runSupabaseAutoVerification } from '@/src/lib/autoVerification';
+import { triggerPurchaseCelebration } from '@/src/lib/celebration';
 
 interface CoursePaymentModalProps {
   isOpen: boolean;
@@ -122,18 +123,38 @@ export default function CoursePaymentModal({
         }
       }
 
+      // Send notification for user
+      if (session?.user?.id) {
+        try {
+          if (isApproved) {
+            await supabase.from('notifications').insert([{
+              user_id: session.user.id,
+              title: 'Course Approved 🎉',
+              body: `আপনার প্রদানকৃত ট্রানজেকশন অটো-ভেরিফাই হয়েছে! "${courseTitle}" কোর্সটি আনলক করা হয়েছে।`,
+              type: 'course_approved'
+            }]);
+          } else {
+            await supabase.from('notifications').insert([{
+              user_id: session.user.id,
+              title: 'Payment Request Submitted ⏳',
+              body: `"${courseTitle}" কোর্সের জন্য আপনার পেমেন্ট রিকোয়েস্ট জমা হয়েছে। ম্যানুয়াল ভেরিফিকেশনের পর কোর্সটি আনলক হবে।`,
+              type: 'payment_pending'
+            }]);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Close popup immediately upon valid submission!
+      onSuccess(isApproved ? 'approved' : 'pending');
+      onClose();
+
+      // Trigger celebration overlay only when instantly approved (no home redirect)
       if (isApproved) {
-        setMsg({ type: 'success', text: '🎉 পেমেন্ট সাথে সাথে ভেরিফাই ও অ্যাপ্রুভ হয়েছে! কোর্সটি আনলক করা হয়েছে।' });
-        setTimeout(() => {
-          onSuccess('approved');
-          onClose();
-        }, 1000);
-      } else {
-        setMsg({ type: 'success', text: 'পেমেন্ট রিকোয়েস্ট জমা হয়েছে! ম্যানুয়াল ভেরিফিকেশনের পর কোর্সটি আনলক হবে।' });
-        setTimeout(() => {
-          onSuccess('pending');
-          onClose();
-        }, 1200);
+        triggerPurchaseCelebration({
+          title: 'Congratulations!'
+        });
       }
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message || 'সাবমিট করতে সমস্যা হয়েছে।' });

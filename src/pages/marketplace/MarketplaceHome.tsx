@@ -77,8 +77,7 @@ export default function MarketplaceHome() {
           const metaMatch = c.description?.match(/\[meta:fake_user_count:(\d+)\]/);
           const affiliateMatch = c.description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
           const readNowMatch = c.description?.match(/\[meta:read_now_link:([^\]]+)\]/);
-          let cleanDesc = c.description?.replace(/\[meta:fake_user_count:\d+\]/g, '') || '';
-          cleanDesc = cleanDesc.replace(/\[meta:affiliate_link:[^\]]+\]/g, '').replace(/\[meta:read_now_link:[^\]]+\]/g, '').trim();
+          let cleanDesc = c.description ? c.description.replace(/\[meta:[^\]]+\]/g, '').trim() : '';
           
           let bookType = 'pdf';
           if (c.categories?.includes('affiliate') || affiliateMatch) bookType = 'hardcopy';

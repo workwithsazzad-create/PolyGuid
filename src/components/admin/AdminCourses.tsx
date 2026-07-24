@@ -445,8 +445,12 @@ export default function AdminCourses() {
     e.preventDefault();
     setLoading(true);
     
-    const cleanDesc = courseForm.description.replace(/\[meta:fake_user_count:\d+\]/, '').trim();
-    const metaString = `\n\n[meta:fake_user_count:${courseForm.fakeUserCount}]`;
+    const cleanDesc = courseForm.description ? courseForm.description.replace(/\[meta:[^\]]+\]/g, '').trim() : '';
+    let metaString = '';
+    const fakeNum = parseInt(String(courseForm.fakeUserCount || '0'));
+    if (!isNaN(fakeNum) && fakeNum > 0) {
+      metaString = `\n\n[meta:fake_user_count:${fakeNum}]`;
+    }
     
     const courseData = {
       title: courseForm.title,
@@ -945,7 +949,7 @@ export default function AdminCourses() {
                     e.stopPropagation(); 
                     setEditingCourseId(course.id);
                     const metaMatch = course.description?.match(/\[meta:fake_user_count:(\d+)\]/);
-                    const cleanDesc = course.description?.replace(/\[meta:fake_user_count:\d+\]/, '').trim();
+                    const cleanDesc = course.description ? course.description.replace(/\[meta:[^\]]+\]/g, '').trim() : '';
 
                     setCourseForm({
                       title: course.title,

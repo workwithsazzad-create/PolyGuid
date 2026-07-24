@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Heart, DollarSign, X, Copy, Check, ChevronRight, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 import { runSupabaseAutoVerification } from '@/src/lib/autoVerification';
+import { triggerPurchaseCelebration } from '@/src/lib/celebration';
 import { cn } from '@/src/lib/utils';
 
 interface PaymentModalProps {
@@ -96,19 +97,12 @@ export default function PaymentModal({
           body: 'আপনার ডোনেশন সাবমিটের জন্য ধন্যবাদ। PolyGuid কর্তৃপক্ষ ভেরিফাই করলে আপনার নাম আমাদের ওয়েবসাইটে ফিচার করা হবে।',
           type: 'donation_submitted'
         }]);
-        setIsSubmitting(false);
-        onClose();
-        return;
       }
 
-      setMsg({ 
-        type: 'success', 
-        text: type === 'course' 
-          ? 'পেমেন্ট রিকোয়েস্ট জমা হয়েছে! ভেরিফিকেশনের পর কোর্সটি আনলক হবে।' 
-          : 'আপনার ডোনেশন সাবমিটের জন্য ধন্যবাদ। PolyGuid কর্তৃপক্ষ ভেরিফাই করলে আপনার নাম আমাদের ওয়েবসাইটে ফিচার করা হবে।' 
+      onClose();
+      triggerPurchaseCelebration({
+        title: 'Congratulations!'
       });
-      
-      setTimeout(() => onClose(), 4000);
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message || 'Failed to submit.' });
     } finally {

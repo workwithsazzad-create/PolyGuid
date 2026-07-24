@@ -5,6 +5,7 @@ import { ChevronLeft, PlayCircle, FileText, Lock, Eye, X, Video as VideoIcon, Us
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import PaymentModal from '../components/ui/PaymentModal';
 import CoursePaymentModal from '../components/ui/CoursePaymentModal';
+import { triggerPurchaseCelebration } from '../lib/celebration';
 import { supabase } from '../lib/supabase';
 import { getDirectLink } from '../lib/utils';
 
@@ -68,8 +69,7 @@ export default function CourseDetails() {
         const metaMatch = courseData.description?.match(/\[meta:fake_user_count:(\d+)\]/);
         const affiliateMatch = courseData.description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
         const fakeCount = metaMatch ? parseInt(metaMatch[1]) : 0;
-        let cleanDesc = courseData.description?.replace(/\[meta:fake_user_count:\d+\]/g, '') || '';
-        cleanDesc = cleanDesc.replace(/\[meta:affiliate_link:[^\]]+\]/g, '').trim();
+        let cleanDesc = courseData.description ? courseData.description.replace(/\[meta:[^\]]+\]/g, '').trim() : '';
 
         setCourse({
           ...courseData,
@@ -164,12 +164,8 @@ export default function CourseDetails() {
       if (!fetchError && data && data.description) {
          const match = data.description.match(/\[meta:fake_user_count:(\d+)\]/);
          const currentFake = match ? parseInt(match[1]) : 0;
-         let newDesc = data.description;
-         if (match) {
-           newDesc = newDesc.replace(/\[meta:fake_user_count:\d+\]/, `[meta:fake_user_count:${currentFake + 1}]`);
-         } else {
-           newDesc += `\n\n[meta:fake_user_count:1]`;
-         }
+         const cleanDesc = data.description.replace(/\[meta:[^\]]+\]/g, '').trim();
+         const newDesc = `${cleanDesc}\n\n[meta:fake_user_count:${currentFake + 1}]`;
          await supabase.from('courses').update({ description: newDesc }).eq('id', id);
          
          // Update local state immediately for visual feedback
@@ -200,6 +196,23 @@ export default function CourseDetails() {
         alert('Failed to enroll. Please try again.');
       } else {
         setIsEnrolled(true);
+
+        // Send notification for instant free course access
+        try {
+          await supabase.from('notifications').insert([{
+            user_id: session.user.id,
+            title: 'Course Enrolled 🎉',
+            body: `আপনি "${course.title}" কোর্সটিতে ফ্রিতে যুক্ত হয়েছেন! এখন আপনি সকল কন্টেন্ট দেখতে পারবেন।`,
+            type: 'course_approved'
+          }]);
+        } catch (e) {
+          console.error(e);
+        }
+
+        // Trigger full celebration overlay (vibration, screen shake, sprinkles, congratulations text) without redirecting
+        triggerPurchaseCelebration({
+          title: 'Congratulations!'
+        });
       }
     } else {
       setShowPaymentModal(true);

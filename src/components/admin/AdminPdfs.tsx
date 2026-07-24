@@ -170,8 +170,9 @@ export default function AdminPdfs() {
     e.preventDefault();
     setLoading(true);
     
-    const cleanDesc = pdfForm.description.replace(/\[meta:fake_user_count:\d+\]/g, '').replace(/\[meta:affiliate_link:[^\]]+\]/g, '').replace(/\[meta:read_now_link:[^\]]+\]/g, '').trim();
-    const metaString = `\n\n[meta:fake_user_count:${pdfForm.fakeUserCount}]`;
+    const cleanDesc = pdfForm.description ? pdfForm.description.replace(/\[meta:[^\]]+\]/g, '').trim() : '';
+    const fakeNum = parseInt(String(pdfForm.fakeUserCount || '0'));
+    const metaString = (!isNaN(fakeNum) && fakeNum > 0) ? `\n\n[meta:fake_user_count:${fakeNum}]` : '';
     const affiliateString = pdfForm.type === 'affiliate' ? `\n[meta:affiliate_link:${pdfForm.affiliateLink}]` : '';
     const readNowString = pdfForm.type === 'ebook' ? `\n[meta:read_now_link:${pdfForm.pdfLink}]` : '';
     
@@ -652,8 +653,7 @@ export default function AdminPdfs() {
                     const metaMatch = pdf.description?.match(/\[meta:fake_user_count:(\d+)\]/);
                     const affiliateMatch = pdf.description?.match(/\[meta:affiliate_link:([^\]]+)\]/);
                     const readNowMatch = pdf.description?.match(/\[meta:read_now_link:([^\]]+)\]/);
-                    let cleanDesc = pdf.description?.replace(/\[meta:fake_user_count:\d+\]/g, '') || '';
-                    cleanDesc = cleanDesc.replace(/\[meta:affiliate_link:[^\]]+\]/g, '').replace(/\[meta:read_now_link:[^\]]+\]/g, '').trim();
+                    let cleanDesc = pdf.description ? pdf.description.replace(/\[meta:[^\]]+\]/g, '').trim() : '';
 
                     let bookType = 'pdf';
                     if (pdf.categories?.includes('ebook')) bookType = 'ebook';
