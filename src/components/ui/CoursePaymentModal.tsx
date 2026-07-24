@@ -92,14 +92,16 @@ export default function CoursePaymentModal({
         return;
       }
 
+      const parsedAmount = (price !== undefined && price !== null) ? (parseFloat(price.toString()) || 0) : 0;
+
       const { data: inserted, error } = await supabase.from('payments').insert([
         { 
           phone: form.phone || session?.user?.phone || 'N/A', 
           method: method || 'manual', 
           transaction_id: cleanTrx,
-          amount: parseFloat(price.toString()),
-          type: type,
-          course_id: courseId,
+          amount: parsedAmount,
+          type: type || 'course',
+          course_id: courseId || null,
           user_id: session?.user?.id || null,
           status: 'pending'
         }

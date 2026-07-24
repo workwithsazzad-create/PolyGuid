@@ -119,13 +119,25 @@ export default function CourseDetails() {
             
             if (communityData) {
               setHasJoinedCommunity(true);
+            } else {
+              setHasJoinedCommunity(false);
             }
-          } catch(e) { /* ignore relation error until table created */ }
+          } catch(e) {
+            setHasJoinedCommunity(false);
+          }
         } else if (donation && donation.status === 'pending') {
+          setIsEnrolled(false);
           setPurchaseStatus('pending');
+          setHasJoinedCommunity(false);
         } else {
+          setIsEnrolled(false);
           setPurchaseStatus('none');
+          setHasJoinedCommunity(false);
         }
+      } else {
+        setIsEnrolled(false);
+        setPurchaseStatus('none');
+        setHasJoinedCommunity(false);
       }
     } catch (err) {
       console.error('Error fetching course data:', err);
@@ -342,15 +354,16 @@ export default function CourseDetails() {
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         courseId={id || ''}
-        courseTitle={course.title}
-        price={course.price}
+        courseTitle={course.title || ''}
+        price={course.price || 0}
         type={(course.categories?.includes("বই") || course.categories?.includes("Book") || course.affiliateLink) ? 'book' : 'course'}
         onSuccess={(status) => {
-          fetchCourseDetails();
+          fetchCourseData();
           if (status === 'approved') {
             setIsEnrolled(true);
             setPurchaseStatus('approved');
           } else {
+            setIsEnrolled(false);
             setPurchaseStatus('pending');
           }
         }}

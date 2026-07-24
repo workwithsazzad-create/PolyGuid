@@ -76,7 +76,7 @@ export default function PaymentModal({
           student_name: type === 'course' ? (form.name || 'Anonymous Giver') : 'From Profile', 
           polytechnic_name: type === 'course' ? (form.polytechnic || 'Anonymous') : 'From Profile', 
           transaction_id: trxIdClean,
-          amount: parseFloat(form.amount.toString()),
+          amount: form.amount ? (parseFloat(form.amount.toString()) || 0) : 0,
           type: type,
           course_id: courseId || null,
           user_id: session?.user?.id || null,
