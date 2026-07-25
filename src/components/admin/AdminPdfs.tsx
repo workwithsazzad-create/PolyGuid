@@ -426,7 +426,7 @@ export default function AdminPdfs() {
                     <input 
                       required
                       type="text" 
-                      value={pdfForm.title}
+                      value={pdfForm.title || ""}
                       onChange={(e) => setPdfForm({...pdfForm, title: e.target.value})}
                       placeholder="Book Title*"
                       maxLength={50}
@@ -443,7 +443,7 @@ export default function AdminPdfs() {
                       <input 
                         required
                         type="url" 
-                        value={pdfForm.thumbnail}
+                        value={pdfForm.thumbnail || ""}
                         onChange={(e) => setPdfForm({...pdfForm, thumbnail: e.target.value})}
                         placeholder="https://drive.google.com/..."
                         className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 pl-10 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -457,7 +457,7 @@ export default function AdminPdfs() {
                     <input 
                       required
                       type="url" 
-                      value={pdfForm.pdfLink}
+                      value={pdfForm.pdfLink || ""}
                       onChange={(e) => setPdfForm({...pdfForm, pdfLink: e.target.value})}
                       placeholder="https://drive.google.com/file/d/.../view"
                       className="w-full bg-transparent border-2 border-[var(--primary)]/50 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:border-[var(--primary)] shadow-[0_0_15px_rgba(34,197,94,0.1)]"
@@ -471,7 +471,7 @@ export default function AdminPdfs() {
                     <input 
                       required
                       type="url" 
-                      value={pdfForm.affiliateLink}
+                      value={pdfForm.affiliateLink || ""}
                       onChange={(e) => setPdfForm({...pdfForm, affiliateLink: e.target.value})}
                       placeholder="https://rokomari.com/book/..."
                       className="w-full bg-transparent border-2 border-[var(--primary)]/50 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:border-[var(--primary)] shadow-[0_0_15px_rgba(34,197,94,0.1)]"
@@ -485,7 +485,7 @@ export default function AdminPdfs() {
                     <input 
                       required
                       type="url" 
-                      value={pdfForm.pdfLink}
+                      value={pdfForm.pdfLink || ""}
                       onChange={(e) => setPdfForm({...pdfForm, pdfLink: e.target.value})}
                       placeholder="e.g. your-ebook-url.com"
                       className="w-full bg-transparent border-2 border-[var(--primary)]/50 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:border-[var(--primary)] shadow-[0_0_15px_rgba(34,197,94,0.1)]"
@@ -528,7 +528,7 @@ export default function AdminPdfs() {
                     <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Book Description</label>
                     <textarea 
                       rows={4}
-                      value={pdfForm.description}
+                      value={pdfForm.description || ""}
                       onChange={(e) => setPdfForm({...pdfForm, description: e.target.value})}
                       placeholder="Brief description of the book..."
                       className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
@@ -751,7 +751,7 @@ export default function AdminPdfs() {
                   className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-gray-700 dark:text-white text-lg font-bold"
                 >
                   {[...Array(10)].map((_, i) => (
-                    <option key={i+1} value={i+1}>{i+1}</option>
+                    <option key={i+1} value={i+1} className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">{i+1}</option>
                   ))}
                 </select>
               </div>

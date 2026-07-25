@@ -13,7 +13,11 @@ export default function BottomNav() {
   const [searchParams] = useSearchParams();
 
   // Hide bottom nav if we are in a message conversation on mobile
-  const isMessageConversation = location.pathname === '/messages' && (searchParams.has('userId') || searchParams.has('communityId'));
+  const isMessageConversation = location.pathname === '/messages' && (
+    searchParams.has('userId') || 
+    searchParams.has('communityId') || 
+    searchParams.has('action')
+  );
 
   useEffect(() => {
     let unreadChannel: any;

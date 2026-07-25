@@ -104,7 +104,7 @@ export default function CourseDetails() {
           .limit(1)
           .maybeSingle();
 
-        if (enrollment || (donation && donation.status === 'approved')) {
+        if (enrollment) {
           setIsEnrolled(true);
           setPurchaseStatus('approved');
           
@@ -125,13 +125,15 @@ export default function CourseDetails() {
           } catch(e) {
             setHasJoinedCommunity(false);
           }
-        } else if (donation && donation.status === 'pending') {
-          setIsEnrolled(false);
-          setPurchaseStatus('pending');
-          setHasJoinedCommunity(false);
         } else {
           setIsEnrolled(false);
-          setPurchaseStatus('none');
+          if (donation && donation.status === 'pending') {
+            setPurchaseStatus('pending');
+          } else if (donation && donation.status === 'rejected') {
+            setPurchaseStatus('rejected');
+          } else {
+            setPurchaseStatus('none');
+          }
           setHasJoinedCommunity(false);
         }
       } else {

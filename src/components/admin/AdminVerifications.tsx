@@ -726,7 +726,7 @@ export default function AdminVerifications() {
                           setSearchPhone(e.target.value);
                           setSelectedManualUser(null);
                         }}
-                        className="w-full h-14 bg-gray-50 dark:bg-white/5 border-2 border-black/5 hover:border-[#32CD32]/30 focus:border-[#32CD32] rounded-2xl pl-12 pr-12 text-sm font-bold transition-all outline-none"
+                        className="w-full h-14 bg-gray-50 dark:bg-white/5 border-2 border-black/5 hover:border-[#32CD32]/30 focus:border-[#32CD32] rounded-2xl pl-12 pr-12 text-sm text-gray-900 dark:text-white font-bold transition-all outline-none"
                      />
                      {searching && (
                         <div className="absolute right-4 top-4">

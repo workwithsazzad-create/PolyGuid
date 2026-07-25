@@ -137,7 +137,7 @@ export default function AdminPages() {
         <div className="space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Banner Image URL</label>
-            <input type="text" name="home_banner" value={settings.home_banner} onChange={handleChange} className="w-full bg-gray-50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--primary)]" />
+            <input type="text" name="home_banner" value={settings.home_banner || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
           </div>
         </div>
       </div>
@@ -152,15 +152,15 @@ export default function AdminPages() {
         <div className="space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Contact Email</label>
-            <input type="email" name="contact_email" value={settings.contact_email} onChange={handleChange} className="w-full bg-gray-50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--primary)]" />
+            <input type="email" name="contact_email" value={settings.contact_email || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Contact Phone (Call Now Option)</label>
-            <input type="text" name="contact_phone" value={settings.contact_phone} onChange={handleChange} className="w-full bg-gray-50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--primary)]" />
+            <input type="text" name="contact_phone" value={settings.contact_phone || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Contact Address</label>
-            <input type="text" name="contact_address" value={settings.contact_address} onChange={handleChange} className="w-full bg-gray-50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--primary)]" />
+            <input type="text" name="contact_address" value={settings.contact_address || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
           </div>
         </div>
       </div>
@@ -175,15 +175,15 @@ export default function AdminPages() {
         <div className="space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Facebook URL</label>
-            <input type="url" name="social_fb" value={settings.social_fb} onChange={handleChange} className="w-full bg-gray-50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--primary)]" />
+            <input type="url" name="social_fb" value={settings.social_fb || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Instagram URL</label>
-            <input type="url" name="social_ig" value={settings.social_ig} onChange={handleChange} className="w-full bg-gray-50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--primary)]" />
+            <input type="url" name="social_ig" value={settings.social_ig || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">YouTube URL</label>
-            <input type="url" name="social_yt" value={settings.social_yt} onChange={handleChange} className="w-full bg-gray-50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--primary)]" />
+            <input type="url" name="social_yt" value={settings.social_yt || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
           </div>
         </div>
       </div>

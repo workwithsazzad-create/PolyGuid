@@ -236,7 +236,7 @@ export default function VerificationApply() {
                       value={formData.full_name}
                       onChange={e => setFormData({...formData, full_name: e.target.value})}
                       placeholder="আপনার পূর্ণ নাম লিখুন"
-                      className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-transparent outline-none transition-all"
+                      className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-transparent outline-none transition-all"
                     />
                   </div>
 
@@ -250,7 +250,7 @@ export default function VerificationApply() {
                       value={formData.phone_number}
                       onChange={e => setFormData({...formData, phone_number: e.target.value})}
                       placeholder="আপনার সচল ফোন নম্বর লিখুন"
-                      className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-transparent outline-none transition-all"
+                      className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-transparent outline-none transition-all"
                     />
                   </div>
 

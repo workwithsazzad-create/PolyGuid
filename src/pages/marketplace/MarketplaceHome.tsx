@@ -330,8 +330,8 @@ export default function MarketplaceHome() {
                       onChange={e => setDistrict(e.target.value)}
                       className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-[10px] sm:text-xs font-bold outline-none flex-shrink-0"
                     >
-                      <option value="">সকল জেলা</option>
-                      {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                      <option value="" className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">সকল জেলা</option>
+                      {DISTRICTS.map(d => <option key={d} value={d} className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">{d}</option>)}
                     </select>
 
                     <select 
@@ -339,8 +339,8 @@ export default function MarketplaceHome() {
                       onChange={e => setSemester(e.target.value)}
                       className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-[10px] sm:text-xs font-bold outline-none flex-shrink-0"
                     >
-                      <option value="">সকল সেমিস্টার</option>
-                      {SEMESTERS.map(s => <option key={s} value={s}>{s} Semester</option>)}
+                      <option value="" className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">সকল সেমিস্টার</option>
+                      {SEMESTERS.map(s => <option key={s} value={s} className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">{s} Semester</option>)}
                     </select>
 
                     {(district || semester) && (

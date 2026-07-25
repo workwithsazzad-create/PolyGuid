@@ -177,7 +177,7 @@ export default function MarketplacePost() {
                   <select 
                     value={formData.semester}
                     onChange={e => setFormData({ ...formData, semester: e.target.value })}
-                    className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32] appearance-none cursor-pointer"
+                    className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32] appearance-none cursor-pointer"
                   >
                     <option value="" disabled className="text-gray-400">Select Semester</option>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
@@ -205,7 +205,7 @@ export default function MarketplacePost() {
                     setShowDeptDropdown(true);
                   }}
                   onFocus={() => setShowDeptDropdown(true)}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32]"
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32]"
                 />
                 {(showDeptDropdown && deptSearch) && (
                   <div className="absolute top-full left-0 right-0 mt-2 max-h-60 overflow-y-auto bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-20">
@@ -238,24 +238,24 @@ export default function MarketplacePost() {
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Book Name</label>
                 <input 
                   type="text" placeholder="e.g. Engineering Mechanics"
-                  value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32]"
+                  value={formData.title || ""} onChange={e => setFormData({...formData, title: e.target.value})}
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32]"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Price (৳)</label>
                 <input 
                   type="number" placeholder="250"
-                  value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32]"
+                  value={formData.price || ""} onChange={e => setFormData({...formData, price: e.target.value})}
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32]"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Description</label>
                 <textarea 
                   rows={4} placeholder="Describe the book condition..."
-                  value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] resize-none"
+                  value={formData.description || ""} onChange={e => setFormData({...formData, description: e.target.value})}
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32] resize-none"
                 />
               </div>
             </div>
@@ -267,16 +267,16 @@ export default function MarketplacePost() {
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Phone Number</label>
                 <input 
                   type="tel" placeholder="01XXXXXXXXX"
-                  value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32]"
+                  value={formData.phone || ""} onChange={e => setFormData({...formData, phone: e.target.value})}
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32]"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">WhatsApp Number</label>
                 <input 
                   type="tel" placeholder="01XXXXXXXXX (Optional)"
-                  value={formData.whatsapp} onChange={e => setFormData({...formData, whatsapp: e.target.value})}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32]"
+                  value={formData.whatsapp || ""} onChange={e => setFormData({...formData, whatsapp: e.target.value})}
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32]"
                 />
               </div>
               <div className="space-y-2 relative" ref={distInputRef}>
@@ -291,7 +291,7 @@ export default function MarketplacePost() {
                     setShowDistDropdown(true);
                   }}
                   onFocus={() => setShowDistDropdown(true)}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32]"
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32] focus:border-[#32CD32]"
                 />
                 {(showDistDropdown && distSearch) && (
                   <div className="absolute top-full left-0 right-0 mt-2 max-h-60 overflow-y-auto bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-20">
@@ -319,8 +319,8 @@ export default function MarketplacePost() {
                 <label className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Upazila / Thana</label>
                 <input 
                   type="text" placeholder="e.g. Mirpur"
-                  value={formData.upazila} onChange={e => setFormData({...formData, upazila: e.target.value})}
-                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm font-medium focus:ring-2 focus:ring-[#32CD32]"
+                  value={formData.upazila || ""} onChange={e => setFormData({...formData, upazila: e.target.value})}
+                  className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-xl p-3.5 text-sm text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#32CD32]"
                 />
               </div>
             </div>

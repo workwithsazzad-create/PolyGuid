@@ -174,7 +174,7 @@ const ContentModal = ({
                   <input 
                     required
                     type="text" 
-                    value={courseForm.title}
+                    value={courseForm.title || ""}
                     onChange={(e) => setCourseForm({...courseForm, title: e.target.value})}
                     placeholder="Course Title*"
                     maxLength={50}
@@ -191,7 +191,7 @@ const ContentModal = ({
                     <input 
                       required
                       type="url" 
-                      value={courseForm.thumbnail}
+                      value={courseForm.thumbnail || ""}
                       onChange={(e) => setCourseForm({...courseForm, thumbnail: e.target.value})}
                       placeholder="https://drive.google.com/..."
                       className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 pl-10 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -232,7 +232,7 @@ const ContentModal = ({
                   <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Course Description</label>
                   <textarea 
                     rows={4}
-                    value={courseForm.description}
+                    value={courseForm.description || ""}
                     onChange={(e) => setCourseForm({...courseForm, description: e.target.value})}
                     placeholder="Brief description of the course..."
                     className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-sm text-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
@@ -1028,7 +1028,7 @@ export default function AdminCourses() {
                   className="w-full bg-transparent border border-gray-300 dark:border-white/10 rounded-md p-3 text-gray-700 dark:text-white text-lg font-bold"
                 >
                   {[...Array(10)].map((_, i) => (
-                    <option key={i+1} value={i+1}>{i+1}</option>
+                    <option key={i+1} value={i+1} className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">{i+1}</option>
                   ))}
                 </select>
               </div>

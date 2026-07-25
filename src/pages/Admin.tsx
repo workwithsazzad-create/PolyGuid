@@ -131,18 +131,43 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [transactionStatusTab, setTransactionStatusTab] = useState<"pending" | "approved" | "rejected">("pending");
   const [transactionTypeTab, setTransactionTypeTab] = useState<"all" | "course" | "book" | "donation">("all");
+  const [approvedOriginTab, setApprovedOriginTab] = useState<"all" | "auto" | "manual">("all");
+
+  const isManualTx = (t: any) => {
+    return t.method === 'admin_manual' || (t.transaction_id && String(t.transaction_id).startsWith('MANUAL-'));
+  };
 
   const filteredTransactions = transactions.filter((t) => {
     const matchesStatus = t.status === transactionStatusTab;
     const matchesType = transactionTypeTab === "all" || t.type === transactionTypeTab;
+    
+    let matchesOrigin = true;
+    if (transactionStatusTab === "approved") {
+      if (approvedOriginTab === "auto") {
+        matchesOrigin = !isManualTx(t);
+      } else if (approvedOriginTab === "manual") {
+        matchesOrigin = isManualTx(t);
+      }
+    }
+
     const matchesSearch = !searchQuery || 
       t.student_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      t.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.transaction_id?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesType && matchesSearch;
+
+    return matchesStatus && matchesType && matchesOrigin && matchesSearch;
   });
 
   const getStatsForStatus = (status: string) => {
-    const list = transactions.filter(t => t.status === status && (transactionTypeTab === 'all' || t.type === transactionTypeTab));
+    const list = transactions.filter(t => {
+      if (t.status !== status) return false;
+      if (transactionTypeTab !== 'all' && t.type !== transactionTypeTab) return false;
+      if (status === 'approved') {
+        if (approvedOriginTab === 'auto') return !isManualTx(t);
+        if (approvedOriginTab === 'manual') return isManualTx(t);
+      }
+      return true;
+    });
     const count = list.length;
     const amount = list.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
     return { count, amount };
@@ -249,14 +274,43 @@ export default function Admin() {
       .from("payments")
       .select("*, courses(title)")
       .order("created_at", { ascending: false });
+
+    const userIds = new Set<string>();
+    dData?.forEach(d => { if (d.user_id) userIds.add(d.user_id); });
+    pData?.forEach(p => { if (p.user_id) userIds.add(p.user_id); });
+
+    let profileMap = new Map<string, any>();
+    if (userIds.size > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, phone, polytechnic_name")
+        .in("id", Array.from(userIds));
+      if (profiles) {
+        profiles.forEach(pr => profileMap.set(pr.id, pr));
+      }
+    }
       
-    const donationsList = (dData || []).map(d => ({ ...d, _table: 'donations' }));
-    const paymentsList = (pData || []).map(p => ({ 
-      ...p, 
-      _table: 'payments',
-      polytechnic_name: p.method, // Map columns for UI consistency 
-      student_name: p.phone
-    }));
+    const donationsList = (dData || []).map(d => {
+      const prof = d.user_id ? profileMap.get(d.user_id) : null;
+      return { 
+        ...d, 
+        _table: 'donations',
+        student_name: prof?.full_name || d.student_name || d.phone || 'Anonymous',
+        polytechnic_name: prof?.polytechnic_name || d.polytechnic_name || 'N/A',
+        phone: prof?.phone || d.phone || 'N/A'
+      };
+    });
+
+    const paymentsList = (pData || []).map(p => {
+      const prof = p.user_id ? profileMap.get(p.user_id) : null;
+      return { 
+        ...p, 
+        _table: 'payments',
+        student_name: prof?.full_name || (p.method === 'admin_manual' || (p.transaction_id && String(p.transaction_id).startsWith('MANUAL-')) ? 'Admin Manual Access' : p.phone || 'Guest User'),
+        polytechnic_name: prof?.polytechnic_name || p.method || 'N/A',
+        phone: prof?.phone || p.phone || 'N/A'
+      };
+    });
     
     const combined = [...donationsList, ...paymentsList].sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -1053,20 +1107,41 @@ export default function Admin() {
                 <div className="flex flex-col gap-6">
                   {/* Transaction Tabs and Filters */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
-                      {(["pending", "approved", "rejected"] as const).map((status) => (
-                        <button
-                          key={status}
-                          onClick={() => setTransactionStatusTab(status)}
-                          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${
-                            transactionStatusTab === status
-                              ? "bg-[var(--primary)] text-white shadow-md"
-                              : "text-gray-500 hover:text-[var(--text)]"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
+                        {(["pending", "approved", "rejected"] as const).map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => setTransactionStatusTab(status)}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${
+                              transactionStatusTab === status
+                                ? "bg-[var(--primary)] text-white shadow-md"
+                                : "text-gray-500 hover:text-[var(--text)]"
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Origin Sub-filter: auto / manual / all - ONLY shown when Approved is selected */}
+                      {transactionStatusTab === "approved" && (
+                        <div className="flex p-1 bg-purple-500/10 border border-purple-500/20 rounded-xl w-fit transition-all">
+                          {(["all", "auto", "manual"] as const).map((origin) => (
+                            <button
+                              key={origin}
+                              onClick={() => setApprovedOriginTab(origin)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${
+                                approvedOriginTab === origin
+                                  ? "bg-purple-600 text-white shadow-md"
+                                  : "text-purple-400 hover:text-purple-200"
+                              }`}
+                            >
+                              {origin}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -1076,7 +1151,7 @@ export default function Admin() {
                           onClick={() => setTransactionTypeTab(type)}
                           className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border uppercase tracking-widest ${
                             transactionTypeTab === type
-                              ? "bg-[var(--text)] text-[var(--card)] border-[var(--text)]"
+                              ? "bg-gray-900 dark:bg-white text-white dark:text-black border-gray-900 dark:border-white"
                               : "border-black/10 dark:border-white/10 text-gray-500 hover:border-black/30 dark:hover:border-white/30"
                           }`}
                         >
@@ -1129,13 +1204,24 @@ export default function Admin() {
                                 </div>
                               </td>
                               <td className="px-4 py-4">
-                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${
-                                  d.type === 'course' ? 'bg-blue-500/10 text-blue-500' : 
-                                  d.type === 'book' ? 'bg-orange-500/10 text-orange-500' :
-                                  'bg-pink-500/10 text-pink-500'
-                                }`}>
-                                  {d.type === 'course' ? 'Course Fee' : d.type === 'book' ? 'Book Order' : 'Donation'}
-                                </span>
+                                <div className="flex flex-col gap-1 items-start">
+                                  <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${
+                                    d.type === 'course' ? 'bg-blue-500/10 text-blue-500' : 
+                                    d.type === 'book' ? 'bg-orange-500/10 text-orange-500' :
+                                    'bg-pink-500/10 text-pink-500'
+                                  }`}>
+                                    {d.type === 'course' ? 'Course Fee' : d.type === 'book' ? 'Book Order' : 'Donation'}
+                                  </span>
+                                  {isManualTx(d) ? (
+                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                      MANUAL
+                                    </span>
+                                  ) : (
+                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                      AUTO
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-4 py-4">
                                 <div className="text-xs font-black text-[var(--text)]">৳{d.amount}</div>
@@ -1498,7 +1584,7 @@ export default function Admin() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-[var(--card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-center">
+                  <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 flex flex-col justify-center">
                     <div className="flex items-center gap-2 text-blue-400 mb-2">
                       <Database size={18} />
                       <h4 className="font-bold text-sm">স্টোরেজ রিপোর্ট</h4>
@@ -1734,7 +1820,7 @@ export default function Admin() {
                     </label>
                     <input
                       type="text"
-                      className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                      className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-900 dark:text-white"
                       placeholder="e.g. New Feature Update!"
                       id="notify-title"
                     />
@@ -1746,7 +1832,7 @@ export default function Admin() {
                     </label>
                     <textarea
                       rows={3}
-                      className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 resize-none"
+                      className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-900 dark:text-white resize-none"
                       placeholder="Write 1/2 lines of message to push to all users..."
                       id="notify-body"
                     />

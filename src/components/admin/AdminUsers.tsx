@@ -422,8 +422,8 @@ export default function AdminUsers() {
                         onChange={e => setCurrentUser({...currentUser, role: e.target.value})}
                         className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)] appearance-none"
                       >
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
+                        <option value="student" className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">Student</option>
+                        <option value="admin" className="bg-white dark:bg-[#1a1a1a] text-black dark:text-white">Admin</option>
                       </select>
                     </div>
                   </div>

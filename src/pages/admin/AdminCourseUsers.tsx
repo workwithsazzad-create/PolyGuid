@@ -81,27 +81,62 @@ export default function AdminCourseUsers() {
         .select('user_id, created_at')
         .eq('course_id', courseId);
 
+      // Fetch users who have approved payments for this course
+      const { data: approvedPayments } = await supabase
+        .from('payments')
+        .select('id, user_id, phone, created_at')
+        .eq('course_id', courseId)
+        .eq('status', 'approved');
+
       // Fetch users who have approved donations for this course
       const { data: approvedDonations } = await supabase
         .from('donations')
-        .select('user_id, created_at')
+        .select('id, user_id, phone, created_at')
         .eq('course_id', courseId)
         .eq('status', 'approved');
 
       // Combine user IDs and unique them
       const userMap = new Map<string, string>(); // user_id -> created_at
+      const unauthUsers: any[] = [];
       
       enrollmentData?.forEach(e => {
-        userMap.set(e.user_id, e.created_at);
+        if (e.user_id) userMap.set(e.user_id, e.created_at);
       });
       
+      approvedPayments?.forEach(p => {
+        if (p.user_id && !userMap.has(p.user_id)) {
+          userMap.set(p.user_id, p.created_at);
+        } else if (!p.user_id) {
+          unauthUsers.push({
+            user_id: p.id,
+            created_at: p.created_at,
+            profiles: {
+              full_name: 'Guest User (Payment)',
+              phone: p.phone || 'N/A',
+              polytechnic_name: 'N/A'
+            }
+          });
+        }
+      });
+
       approvedDonations?.forEach(d => {
         if (d.user_id && !userMap.has(d.user_id)) {
           userMap.set(d.user_id, d.created_at);
+        } else if (!d.user_id) {
+          unauthUsers.push({
+            user_id: d.id,
+            created_at: d.created_at,
+            profiles: {
+              full_name: 'Guest User (Donation)',
+              phone: d.phone || 'N/A',
+              polytechnic_name: 'N/A'
+            }
+          });
         }
       });
 
       const userIds = Array.from(userMap.keys());
+      let combined = [...unauthUsers];
 
       if (userIds.length > 0) {
         const { data: profileData } = await supabase
@@ -109,15 +144,16 @@ export default function AdminCourseUsers() {
           .select('id, full_name, phone, polytechnic_name')
           .in('id', userIds);
 
-        const combined = userIds.map(uid => ({
+        const authCombined = userIds.map(uid => ({
           user_id: uid,
           created_at: userMap.get(uid),
           profiles: profileData?.find(p => p.id === uid) || null
         }));
-        setEnrolledUsers(combined);
-      } else {
-        setEnrolledUsers([]);
+        
+        combined = [...authCombined, ...combined];
       }
+      
+      setEnrolledUsers(combined);
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
@@ -176,6 +212,29 @@ export default function AdminCourseUsers() {
 
       if (error) throw error;
 
+      // Log manual transaction record in payments
+      try {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('phone, full_name')
+          .eq('id', selectedUserId)
+          .maybeSingle();
+
+        const manualTrxId = `MANUAL-${Date.now().toString(36).toUpperCase()}`;
+        await supabase.from('payments').insert([{
+          phone: userProfile?.phone || userProfile?.full_name || 'Admin Manual',
+          method: 'admin_manual',
+          transaction_id: manualTrxId,
+          amount: 0,
+          type: 'course',
+          course_id: courseId,
+          user_id: selectedUserId,
+          status: 'approved'
+        }]);
+      } catch (logErr) {
+        console.error('Error logging manual payment:', logErr);
+      }
+
       setShowAddModal(false);
       setSelectedUserId(null);
       setUserSearchText('');
@@ -193,8 +252,7 @@ export default function AdminCourseUsers() {
     if (!userToDelete || !courseId) return;
 
     try {
-      // We ONLY delete from enrollments table to "un-enroll" them. 
-      // We DO NOT delete the donation record to keep transaction history as requested.
+      // Remove enrollment record so access is revoked
       const { error } = await supabase
         .from('enrollments')
         .delete()
@@ -205,6 +263,10 @@ export default function AdminCourseUsers() {
 
       if (error) throw error;
       
+      // Also update any payments/donations to rejected so they don't retain access
+      await supabase.from('payments').update({ status: 'rejected' }).match({ course_id: courseId, user_id: userToDelete.id });
+      await supabase.from('donations').update({ status: 'rejected' }).match({ course_id: courseId, user_id: userToDelete.id });
+
       // Update local state to reflect deletion immediately
       setEnrolledUsers(prev => prev.filter(item => item.user_id !== userToDelete.id));
       setUserToDelete(null);
@@ -216,10 +278,10 @@ export default function AdminCourseUsers() {
 
   const filteredUsers = enrolledUsers.filter(item => {
     const profile = item.profiles;
-    if (!profile) return false;
+    
     return (
-      profile.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      profile.phone?.includes(searchQuery)
+      profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profile?.phone?.includes(searchQuery)
     );
   });
 
@@ -276,7 +338,7 @@ export default function AdminCourseUsers() {
               placeholder="Search by name or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-[var(--primary)] outline-none"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border-none rounded-xl focus:ring-2 focus:ring-[var(--primary)] outline-none"
             />
           </div>
         </div>
@@ -365,7 +427,7 @@ export default function AdminCourseUsers() {
                     value={userSearchText}
                     onChange={(e) => handleSearchUser(e.target.value)}
                     placeholder="Enter phone or name..."
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] border-none"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] border-none"
                   />
                   {searchingUser && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">

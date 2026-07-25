@@ -304,11 +304,11 @@ export default function Messages() {
       if (!selectedUser) {
         if (initialCommunityId) {
           const target = convList.find(c => c.id === initialCommunityId && c.isCommunity);
-          if (target) setSelectedUser(target);
+          if (target) selectUser(target);
         } else if (initialUserId || supportAdminId) {
           const selId = supportAdminId || initialUserId;
           const target = convList.find(c => c.id === selId && !c.isCommunity);
-          if (target) setSelectedUser(target);
+          if (target) selectUser(target);
         }
       }
       
