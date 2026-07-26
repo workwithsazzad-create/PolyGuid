@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Login from './pages/Login';
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import AdminCourseUsers from './pages/admin/AdminCourseUsers';
@@ -273,8 +274,11 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-        <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--background)] p-4 select-none">
+        <div className="flex flex-col items-center gap-6 animate-pulse">
+          <Logo imgClassName="h-14 sm:h-16" />
+          <div className="w-8 h-8 border-3 border-[#32CD32] border-t-transparent rounded-full animate-spin"></div>
+        </div>
       </div>
     );
   }
@@ -343,6 +347,7 @@ function AppContent() {
     <Router>
       <ScrollToTop />
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route 
           path="/login" 
           element={<Login session={session} />} 
@@ -375,8 +380,6 @@ function AppContent() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/more" element={<More />} />
           <Route path="/messages" element={<Messages />} />
-          
-          <Route path="/" element={<Navigate to="/home" replace />} />
         </Route>
 
         {/* Info Pages (Public/Standalone) */}
@@ -387,7 +390,7 @@ function AppContent() {
           <Route path="/refund" element={<Refund />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={session ? <Navigate to="/home" replace /> : <Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

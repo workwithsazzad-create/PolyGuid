@@ -1,6 +1,5 @@
 import React from 'react';
 import { cn } from '@/src/lib/utils';
-import { useTheme } from '../ThemeProvider';
 
 interface LogoProps {
   className?: string;
@@ -17,29 +16,36 @@ export default function Logo({
   showText = true,
   theme: themeProp 
 }: LogoProps) {
-  let theme = themeProp;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const themeContext = useTheme();
-    if (!theme) {
-      theme = themeContext.theme as 'light' | 'dark';
-    }
-  } catch (e) {
-    if (!theme) theme = 'dark';
-  }
-
-  // Light mode -> dark logo (/darklogo.png)
-  // Dark mode -> white logo (/whitelogo.png)
-  const logoSrc = theme === 'light' ? '/darklogo.png' : '/whitelogo.png';
+  // Always mount both images in the DOM so browser caches both immediately.
+  // Toggle visibility instantly using CSS classes (block/hidden).
+  const isLight = themeProp === 'light';
+  const isDark = themeProp === 'dark';
 
   return (
     <div className={cn("flex flex-col items-start w-fit select-none", className)}>
-      <div className="flex items-center justify-start">
+      <div className="flex items-center justify-start w-full relative">
+        {/* Dark Logo (shown in light mode) */}
         <img 
-          src={logoSrc} 
+          src="/darklogo.png" 
           alt="PolyGuide Logo" 
           className={cn(
-            "h-20 sm:h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
+            "h-[38px] sm:h-[42px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
+            themeProp 
+              ? (isLight ? "block" : "hidden")
+              : "dark:hidden block",
+            customImgClassName
+          )}
+        />
+
+        {/* White Logo (shown in dark mode) */}
+        <img 
+          src="/whitelogo.png" 
+          alt="PolyGuide Logo" 
+          className={cn(
+            "h-[38px] sm:h-[42px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
+            themeProp 
+              ? (isDark ? "block" : "hidden")
+              : "hidden dark:block",
             customImgClassName
           )}
         />
@@ -48,7 +54,7 @@ export default function Logo({
       {showText && (
         <div 
           className={cn(
-            "w-full flex justify-between font-bold text-[10px] sm:text-[12px] uppercase leading-none whitespace-nowrap text-gray-500 dark:text-gray-400 mt-0.5 px-0 tracking-wider",
+            "w-full flex justify-between font-bold text-[10px] sm:text-[11.5px] uppercase leading-none whitespace-nowrap text-gray-500 dark:text-gray-400 mt-0.5 px-0 tracking-wider",
             customTextClassName
           )}
         >

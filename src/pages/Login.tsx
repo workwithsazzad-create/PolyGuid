@@ -196,8 +196,8 @@ export default function Login({ session }: { session?: any }) {
       />
 
       <div className="flex flex-col items-center relative z-10 w-full mt-[10vh] sm:mt-[12vh]">
-        <Logo theme={theme} className="scale-[1.4] mb-4 origin-top" />
-        <p className="text-gray-500 dark:text-gray-400 text-center text-[11px] sm:text-[13px] mt-16 px-8 sm:px-10 leading-relaxed max-w-sm font-medium">
+        <Logo theme={theme} imgClassName="h-12 sm:h-14" textClassName="text-[11px] sm:text-[12.5px]" className="mb-2" />
+        <p className="text-gray-500 dark:text-gray-400 text-center text-[11px] sm:text-[13px] mt-6 px-8 sm:px-10 leading-relaxed max-w-sm font-medium">
           বাংলাদেশের প্রথম কমিউনিটি বেসড লার্নিং প্ল্যাটফর্ম। আমাদের লক্ষ্য দক্ষ ইঞ্জিনিয়ার তৈরি করা।
         </p>
       </div>
@@ -460,6 +460,18 @@ export default function Login({ session }: { session?: any }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden z-[100] bg-[var(--background)]">
+      {/* Top Bar with Back to Landing Page button */}
+      <div className="absolute top-4 left-4 z-50">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/80 dark:bg-black/60 hover:bg-white dark:hover:bg-black text-xs font-bold text-gray-800 dark:text-gray-100 backdrop-blur-md border border-black/10 dark:border-white/15 transition-all active:scale-95 shadow-md group"
+          title="হোম পেজে যান"
+        >
+          <ArrowRight className="rotate-180 text-[var(--primary)] group-hover:-translate-x-0.5 transition-transform" size={16} />
+          <span>হোমে ফিরুন</span>
+        </button>
+      </div>
+
       {/* Background Grid Accent */}
       <div 
         className="absolute inset-0 opacity-[0.4] dark:opacity-[0.2] pointer-events-none"

@@ -318,8 +318,8 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       "fixed left-0 top-0 h-screen w-60 sm:w-64 glass border-r border-[var(--glass-border)] flex flex-col p-4 sm:p-6 z-50 transition-transform duration-300",
       isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
     )}>
-      <div className="flex items-center justify-between mb-6 sm:mb-8 px-0">
-        <NavLink to="/home" className="flex items-center gap-2 group">
+      <div className="flex items-center justify-between mb-[21px] -mt-[4px] ml-[3px] pt-0 pl-[4px] pr-0 pb-0 h-[65.5px] w-[207px]">
+        <NavLink to="/home" className="flex items-center gap-2 group overflow-hidden">
           <Logo 
             theme={theme} 
             showText={true} 

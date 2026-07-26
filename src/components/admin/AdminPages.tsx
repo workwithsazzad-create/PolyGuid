@@ -7,6 +7,7 @@ import 'react-quill-new/dist/quill.snow.css';
 export default function AdminPages() {
   const [settings, setSettings] = useState({
     home_banner: "",
+    apk_url: "",
     page_about: "",
     page_privacy: "",
     page_terms: "",
@@ -17,6 +18,7 @@ export default function AdminPages() {
     social_fb: "",
     social_ig: "",
     social_yt: "",
+    social_whatsapp: "8801993879904",
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -127,17 +129,22 @@ export default function AdminPages() {
         </div>
       </div>
 
-      {/* Global Banner */}
+      {/* Global Banner & APK Settings */}
       <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-black/5 dark:border-white/10 p-6 flex flex-col gap-6">
         <div>
-          <h2 className="text-lg font-bold">Home Banner</h2>
-          <p className="text-sm text-gray-500">Global banner image URL</p>
+          <h2 className="text-lg font-bold">Home Banner & App Download (APK)</h2>
+          <p className="text-sm text-gray-500">Configure global banner image and App download link</p>
         </div>
         
         <div className="space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Banner Image URL</label>
             <input type="text" name="home_banner" value={settings.home_banner || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Android App Download (APK) URL / Drive Link</label>
+            <input type="text" name="apk_url" placeholder="e.g. https://example.com/polyguide.apk" value={settings.apk_url || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
+            <p className="text-xs text-gray-400">If set, users can download the app from the landing page. If empty, an alert message will be shown.</p>
           </div>
         </div>
       </div>
@@ -184,6 +191,10 @@ export default function AdminPages() {
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">YouTube URL</label>
             <input type="url" name="social_yt" value={settings.social_yt || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">WhatsApp Phone Number / Link</label>
+            <input type="text" name="social_whatsapp" placeholder="8801993879904 or https://wa.me/8801993879904" value={settings.social_whatsapp || ""} onChange={handleChange} className="w-full bg-gray-50 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[var(--primary)]" />
           </div>
         </div>
       </div>

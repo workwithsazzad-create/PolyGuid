@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, MapPin, Phone, Facebook, Youtube, Instagram, Globe } from 'lucide-react';
+import { Mail, MapPin, Phone, Facebook, Youtube, Instagram, Globe, MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/src/lib/supabase';
 
-const Footer = () => {
+interface FooterProps {
+  showMobile?: boolean;
+}
+
+const Footer = ({ showMobile = true }: FooterProps) => {
   const currentYear = new Date().getFullYear();
   const [settings, setSettings] = useState({
     contact_email: "workwithsazzad@gmail.com",
@@ -13,12 +17,13 @@ const Footer = () => {
     social_fb: "#",
     social_ig: "#",
     social_yt: "#",
+    social_whatsapp: "8801993879904",
   });
 
   useEffect(() => {
     const fetchSettings = async () => {
       const { data } = await supabase.from('site_settings').select('key, value').in('key', [
-        'contact_email', 'contact_phone', 'contact_address', 'social_fb', 'social_ig', 'social_yt'
+        'contact_email', 'contact_phone', 'contact_address', 'social_fb', 'social_ig', 'social_yt', 'social_whatsapp'
       ]);
       if (data) {
         const newSettings = { ...settings };
@@ -30,10 +35,16 @@ const Footer = () => {
     };
     fetchSettings();
   }, []);
-  const logoUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7hXz1Z0A1iE_7mZ0z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z/s1600/PolyGuide%20Logo.png";
+
+  const getWaLink = (num: string) => {
+    if (!num || num === "#") return "https://wa.me/8801993879904";
+    if (num.startsWith("http")) return num;
+    const cleanNum = num.replace(/\D/g, "");
+    return `https://wa.me/${cleanNum}`;
+  };
 
   return (
-    <footer className="hidden lg:block w-full bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 pt-12 pb-8 px-4 sm:px-6 lg:px-8">
+    <footer className={`${showMobile ? 'block' : 'hidden lg:block'} w-full bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 pt-12 pb-12 sm:pb-8 px-4 sm:px-6 lg:px-8 relative z-10`}>
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-8 lg:gap-12">
         {/* Brand Section */}
         <div className="flex flex-col gap-5">
@@ -48,17 +59,20 @@ const Footer = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs font-medium">
             বাংলাদেশের প্রথম কমিউনিটি বেসড লার্নিং প্ল্যাটফর্ম। আমাদের লক্ষ্য দক্ষ ইঞ্জিনিয়ার তৈরি করা।
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {[
               { icon: Facebook, link: settings.social_fb, color: 'hover:text-blue-500' },
+              { icon: MessageCircle, link: getWaLink(settings.social_whatsapp), color: 'hover:text-emerald-500' },
               { icon: Instagram, link: settings.social_ig, color: 'hover:text-pink-500' },
               { icon: Youtube, link: settings.social_yt, color: 'hover:text-red-500' },
             ].map((social, i) => (
               <motion.a
                 key={i}
                 href={social.link}
+                target="_blank"
+                rel="noopener noreferrer"
                 whileHover={{ y: -3 }}
-                className={`w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-gray-400 ${social.color} transition-colors`}
+                className={`w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 ${social.color} transition-colors border border-black/5 dark:border-white/10`}
               >
                 <social.icon size={18} />
               </motion.a>
