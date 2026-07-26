@@ -383,10 +383,16 @@ export default function LandingPage() {
       </section>
 
       {/* 3. Analytics Counter Bar */}
-      <section className="max-w-6xl mx-auto w-full px-4 mt-6 sm:mt-10 relative z-30 mb-12">
+      <motion.section 
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-6xl mx-auto w-full px-4 mt-6 sm:mt-10 relative z-30 mb-12"
+      >
         <div className="bg-white/70 dark:bg-black/30 backdrop-blur-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-black/5 dark:border-white/10 shadow-xl grid grid-cols-3 gap-2 sm:gap-6 divide-x divide-black/5 dark:divide-white/10">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center sm:text-left px-1">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center sm:text-left px-1 group cursor-pointer">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
               <PlayCircle className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
@@ -399,8 +405,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center sm:text-left px-1">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center sm:text-left px-1 group cursor-pointer">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
               <Users className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
@@ -413,8 +419,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center sm:text-left px-1">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center sm:text-left px-1 group cursor-pointer">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300">
               <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
@@ -427,11 +433,17 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 4. Action Row: Download App & Get Started */}
-      <section className="max-w-6xl mx-auto w-full px-4 mb-14">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-emerald-900/20 via-black/40 to-green-900/20 border border-[#32CD32]/20 shadow-lg relative overflow-hidden backdrop-blur-md">
+      <motion.section 
+        initial={{ opacity: 0, y: 35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-6xl mx-auto w-full px-4 mb-14"
+      >
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-emerald-900/20 via-black/40 to-green-900/20 border border-[#32CD32]/20 shadow-lg relative overflow-hidden backdrop-blur-md group hover:border-[#32CD32]/40 transition-colors">
           <div className="space-y-1.5 text-center sm:text-left z-10">
             <span className="text-[11px] font-bold uppercase text-[#32CD32] tracking-wider">
               মোবাইল অ্যাপ নামান
@@ -445,37 +457,49 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 shrink-0 z-10 w-full sm:w-auto">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={handleDownloadApp}
-              className="flex-1 sm:flex-none px-6 py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-black dark:hover:bg-gray-100 font-bold text-sm rounded-2xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2.5"
+              className="flex-1 sm:flex-none px-6 py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-black dark:hover:bg-gray-100 font-bold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2.5"
             >
               <Download size={18} className="text-[#32CD32]" />
               <span>Download App (APK)</span>
-            </button>
+            </motion.button>
 
             {userSession ? (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/home")}
-                className="flex-1 sm:flex-none px-6 py-3.5 bg-[#32CD32] hover:bg-[#28a428] text-white font-black text-sm rounded-2xl shadow-lg shadow-[#32CD32]/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none px-6 py-3.5 bg-[#32CD32] hover:bg-[#28a428] text-white font-black text-sm rounded-2xl shadow-lg shadow-[#32CD32]/20 transition-all flex items-center justify-center gap-2"
               >
                 <span>প্রোফাইলে যান</span>
                 <ArrowRight size={18} />
-              </button>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/login")}
-                className="flex-1 sm:flex-none px-6 py-3.5 bg-[#32CD32] hover:bg-[#28a428] text-white font-black text-sm rounded-2xl shadow-lg shadow-[#32CD32]/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none px-6 py-3.5 bg-[#32CD32] hover:bg-[#28a428] text-white font-black text-sm rounded-2xl shadow-lg shadow-[#32CD32]/20 transition-all flex items-center justify-center gap-2"
               >
                 <span>Get Started</span>
                 <ArrowRight size={18} />
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 5. Join Us Social Media Section */}
-      <section className="max-w-6xl mx-auto w-full px-4 mb-16">
+      <motion.section 
+        initial={{ opacity: 0, y: 35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-6xl mx-auto w-full px-4 mb-16"
+      >
         <div className="text-center mb-8">
           <span className="text-xs font-bold text-[#32CD32] uppercase tracking-widest">কমিউনিটি</span>
           <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">
@@ -488,14 +512,16 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
           {/* Facebook */}
-          <a
+          <motion.a
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
             href={socialLinks.facebook !== "#" ? socialLinks.facebook : "https://facebook.com"}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+            className="group flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/20 transition-all"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                 <Facebook size={24} className="fill-white" />
               </div>
               <div>
@@ -503,18 +529,20 @@ export default function LandingPage() {
                 <p className="text-xs text-blue-100 opacity-90">Join Us on Facebook</p>
               </div>
             </div>
-            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-          </a>
+            <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
+          </motion.a>
 
           {/* WhatsApp */}
-          <a
+          <motion.a
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
             href={getWaUrl(socialLinks.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+            className="group flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-xl shadow-emerald-500/20 transition-all"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                 <MessageCircle size={24} className="fill-white" />
               </div>
               <div>
@@ -522,13 +550,19 @@ export default function LandingPage() {
                 <p className="text-xs text-emerald-100 opacity-90">Join Us on WhatsApp</p>
               </div>
             </div>
-            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-          </a>
+            <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
+          </motion.a>
         </div>
-      </section>
+      </motion.section>
 
       {/* 6. Student Reviews Continuous Marquee */}
-      <section className="max-w-7xl mx-auto w-full px-4 mb-20 overflow-hidden">
+      <motion.section 
+        initial={{ opacity: 0, y: 35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-7xl mx-auto w-full px-4 mb-20 overflow-hidden"
+      >
         <div className="flex items-center justify-between mb-8">
           <div>
             <span className="text-xs font-bold text-[#32CD32] uppercase tracking-widest">রিভিউ</span>
@@ -562,7 +596,7 @@ export default function LandingPage() {
             {[...REVIEWS, ...REVIEWS, ...REVIEWS].map((rev, index) => (
               <div
                 key={`${rev.id}-${index}`}
-                className="min-w-[280px] sm:min-w-[340px] max-w-[360px] bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between shrink-0"
+                className="min-w-[280px] sm:min-w-[340px] max-w-[360px] bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-[#32CD32]/30 transition-all flex flex-col justify-between shrink-0"
               >
                 <div className="space-y-3">
                   <div className="flex items-center gap-1">
@@ -599,10 +633,16 @@ export default function LandingPage() {
             ))}
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      {/* 7. Popular Courses Section (Only pinned courses or video courses, centered if <= 3) */}
-      <section className="max-w-7xl mx-auto w-full px-4 mb-20">
+      {/* 7. Popular Courses Section */}
+      <motion.section 
+        initial={{ opacity: 0, y: 35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-7xl mx-auto w-full px-4 mb-20"
+      >
         <div className="flex items-center justify-between mb-8">
           <div>
             <span className="text-xs font-bold text-[#32CD32] uppercase tracking-widest">কোর্সসমূহ</span>
@@ -612,9 +652,9 @@ export default function LandingPage() {
           </div>
           <button
             onClick={() => navigate(userSession ? "/courses" : "/login")}
-            className="text-xs sm:text-sm font-bold text-[#32CD32] hover:underline flex items-center gap-1"
+            className="text-xs sm:text-sm font-bold text-[#32CD32] hover:underline flex items-center gap-1 group"
           >
-            সবগুলো দেখুন <ChevronRight size={16} />
+            সবগুলো দেখুন <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
 
@@ -637,10 +677,12 @@ export default function LandingPage() {
             >
               {popularCoursesList.length > 0 ? (
                 popularCoursesList.map((course) => (
-                  <div
+                  <motion.div
                     key={course.id}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => navigate(userSession ? `/course/${course.id}` : "/login")}
-                    className="w-[220px] sm:w-[260px] shrink-0 snap-start cursor-pointer hover:scale-[1.02] transition-transform"
+                    className="w-[220px] sm:w-[260px] shrink-0 snap-start cursor-pointer transition-all"
                   >
                     <CourseCard
                       id={course.id}
@@ -652,14 +694,14 @@ export default function LandingPage() {
                       classes={course.classes_count || 12}
                       isBook={false}
                     />
-                  </div>
+                  </motion.div>
                 ))
               ) : (
                 [1, 2, 3].map((i) => (
                   <div
                     key={i}
                     onClick={() => navigate("/login")}
-                    className="w-[220px] sm:w-[260px] bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-2xl p-4 border border-black/5 dark:border-white/10 shadow-sm cursor-pointer shrink-0"
+                    className="w-[220px] sm:w-[260px] bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-2xl p-4 border border-black/5 dark:border-white/10 shadow-sm cursor-pointer shrink-0 hover:scale-105 transition-transform"
                   >
                     <div className="aspect-video w-full bg-gray-200 dark:bg-gray-800 rounded-xl mb-3 flex items-center justify-center">
                       <BookOpen className="text-gray-400" size={32} />
@@ -672,10 +714,16 @@ export default function LandingPage() {
             </div>
           );
         })()}
-      </section>
+      </motion.section>
 
       {/* 8. Why PolyGuide is Unique ("পলিগাইড কেন ভিন্নধর্মী ?") */}
-      <section className="max-w-7xl mx-auto w-full px-4 mb-20">
+      <motion.section 
+        initial={{ opacity: 0, y: 35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-7xl mx-auto w-full px-4 mb-20"
+      >
         <div className="text-center mb-12">
           <span className="text-xs font-bold text-[#32CD32] uppercase tracking-widest">বৈশিষ্ট্যসমূহ</span>
           <h2 className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white mt-1">
@@ -704,7 +752,10 @@ export default function LandingPage() {
 
           {/* Right Feature Cards */}
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-5 rounded-2xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm flex gap-4 items-start">
+            <motion.div 
+              whileHover={{ y: -3, scale: 1.02 }}
+              className="p-5 rounded-2xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md hover:border-blue-500/30 transition-all flex gap-4 items-start"
+            >
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
                 <ShoppingBag size={22} />
               </div>
@@ -716,9 +767,12 @@ export default function LandingPage() {
                   পলিগাইডের বুক মার্কেটপ্লেসে শিক্ষার্থীরা খুব সহজেই তাদের পুরনো সেমিস্টারের বই কেনা এবং বিক্রি করতে পারে।
                 </p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="p-5 rounded-2xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm flex gap-4 items-start">
+            <motion.div 
+              whileHover={{ y: -3, scale: 1.02 }}
+              className="p-5 rounded-2xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md hover:border-purple-500/30 transition-all flex gap-4 items-start"
+            >
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
                 <FileCheck size={22} />
               </div>
@@ -730,9 +784,12 @@ export default function LandingPage() {
                   সেমিস্টার পরীক্ষার ফলাফল খুব সহজেই রোল বা রেজি নম্বর দিয়ে মুহূর্তেই দেখার সুবিধা।
                 </p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="p-5 rounded-2xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm flex gap-4 items-start">
+            <motion.div 
+              whileHover={{ y: -3, scale: 1.02 }}
+              className="p-5 rounded-2xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md hover:border-red-500/30 transition-all flex gap-4 items-start"
+            >
               <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
                 <FileText size={22} />
               </div>
@@ -744,9 +801,12 @@ export default function LandingPage() {
                   সকল ডিপার্টমেন্ট ও সেমিস্টারের ই-বুক, সাজেশন, প্রশ্নব্যাংক ও নোট পিডিএফ সম্পূর্ণ ফ্রিতে ড্যাশবোর্ডে সংরক্ষিত।
                 </p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="p-5 rounded-2xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm flex gap-4 items-start">
+            <motion.div 
+              whileHover={{ y: -3, scale: 1.02 }}
+              className="p-5 rounded-2xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md hover:border-[#32CD32]/30 transition-all flex gap-4 items-start"
+            >
               <div className="w-10 h-10 rounded-xl bg-[#32CD32]/10 text-[#32CD32] flex items-center justify-center shrink-0">
                 <GraduationCap size={22} />
               </div>
@@ -758,13 +818,19 @@ export default function LandingPage() {
                   অভিজ্ঞ শিক্ষকদের দ্বারা লাইভ ও রেকর্ড ভিডিও ক্লাস এবং নিজেকে যাচাই করতে অনলাইন কুইজ টেস্ট।
                 </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 9. Words for Students (শিক্ষার্থীদের উদ্দেশ্যে কিছু কথা) */}
-      <section className="max-w-7xl mx-auto w-full px-4 mb-20">
+      <motion.section 
+        initial={{ opacity: 0, y: 35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-7xl mx-auto w-full px-4 mb-20"
+      >
         <div className="bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-3xl p-6 sm:p-10 border border-black/5 dark:border-white/10">
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-3">
@@ -812,10 +878,16 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 10. Donation Section */}
-      <section className="max-w-7xl mx-auto w-full px-4 mb-20">
+      <motion.section 
+        initial={{ opacity: 0, y: 35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-7xl mx-auto w-full px-4 mb-20"
+      >
         <div className="flex flex-col sm:flex-row gap-4 items-stretch">
           <div className="flex-1 p-4 flex items-center justify-between overflow-hidden bg-white/70 dark:bg-black/30 backdrop-blur-md rounded-2xl shadow-sm min-h-[70px] border border-black/5 dark:border-white/10">
             <div className="flex items-center gap-4 z-10 w-full">
@@ -877,14 +949,16 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => setShowDonateModal(true)}
-            className="shrink-0 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold px-6 py-4 rounded-2xl shadow-md shadow-red-500/20 transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 text-xs sm:text-sm whitespace-nowrap"
+            className="shrink-0 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold px-6 py-4 rounded-2xl shadow-md shadow-red-500/20 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
           >
             <Heart className="w-4 h-4 fill-white" /> Donate Now
-          </button>
+          </motion.button>
         </div>
-      </section>
+      </motion.section>
 
       {/* 11. Donate Payment Modal */}
       <PaymentModal
