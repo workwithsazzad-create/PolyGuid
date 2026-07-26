@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { cn } from '@/src/lib/utils';
-import { GraduationCap } from 'lucide-react';
+import darkLogo from '@/src/assets/darklogo.png';
+import whiteLogo from '@/src/assets/whitelogo.png';
 
 interface LogoProps {
   className?: string;
@@ -17,82 +18,37 @@ export default function Logo({
   showText = true,
   theme: themeProp 
 }: LogoProps) {
-  const [darkError, setDarkError] = useState(false);
-  const [whiteError, setWhiteError] = useState(false);
-
   const isLight = themeProp === 'light';
   const isDark = themeProp === 'dark';
-
-  const showFallback = darkError && whiteError;
 
   return (
     <div className={cn("flex flex-col items-start w-fit select-none group", className)}>
       <div className="flex items-center justify-start w-full relative">
-        {showFallback ? (
-          <div className="flex items-center gap-2 py-0.5">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#32CD32] text-white flex items-center justify-center shadow-md shadow-[#32CD32]/20 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <span className="text-xl sm:text-2xl font-black tracking-tight font-sans">
-              <span className="text-[#32CD32]">P</span>
-              <span className="text-gray-900 dark:text-white">oly</span>
-              <span className="text-[#32CD32]">G</span>
-              <span className="text-gray-900 dark:text-white">uide</span>
-            </span>
-          </div>
-        ) : (
-          <>
-            {/* Dark Logo (shown in light mode) */}
-            {!darkError ? (
-              <img 
-                src="/darklogo.png" 
-                alt="PolyGuide Logo" 
-                onError={() => setDarkError(true)}
-                className={cn(
-                  "h-[38px] sm:h-[42px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
-                  themeProp 
-                    ? (isLight ? "block" : "hidden")
-                    : "dark:hidden block",
-                  customImgClassName
-                )}
-              />
-            ) : (
-              <div className={cn("items-center gap-2 py-0.5", themeProp ? (isLight ? "flex" : "hidden") : "dark:hidden flex")}>
-                <div className="w-8 h-8 rounded-lg bg-[#32CD32] text-white flex items-center justify-center shadow-sm">
-                  <GraduationCap size={20} />
-                </div>
-                <span className="text-xl font-black text-gray-900">
-                  <span className="text-[#32CD32]">P</span>oly<span className="text-[#32CD32]">G</span>uide
-                </span>
-              </div>
-            )}
+        {/* Dark Logo (shown in light mode) */}
+        <img 
+          src={darkLogo} 
+          alt="PolyGuide Logo" 
+          className={cn(
+            "h-[38px] sm:h-[42px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
+            themeProp 
+              ? (isLight ? "block" : "hidden")
+              : "dark:hidden block",
+            customImgClassName
+          )}
+        />
 
-            {/* White Logo (shown in dark mode) */}
-            {!whiteError ? (
-              <img 
-                src="/whitelogo.png" 
-                alt="PolyGuide Logo" 
-                onError={() => setWhiteError(true)}
-                className={cn(
-                  "h-[38px] sm:h-[42px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
-                  themeProp 
-                    ? (isDark ? "block" : "hidden")
-                    : "hidden dark:block",
-                  customImgClassName
-                )}
-              />
-            ) : (
-              <div className={cn("items-center gap-2 py-0.5", themeProp ? (isDark ? "flex" : "hidden") : "hidden dark:flex")}>
-                <div className="w-8 h-8 rounded-lg bg-[#32CD32] text-white flex items-center justify-center shadow-sm">
-                  <GraduationCap size={20} />
-                </div>
-                <span className="text-xl font-black text-white">
-                  <span className="text-[#32CD32]">P</span>oly<span className="text-[#32CD32]">G</span>uide
-                </span>
-              </div>
-            )}
-          </>
-        )}
+        {/* White Logo (shown in dark mode) */}
+        <img 
+          src={whiteLogo} 
+          alt="PolyGuide Logo" 
+          className={cn(
+            "h-[38px] sm:h-[42px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
+            themeProp 
+              ? (isDark ? "block" : "hidden")
+              : "hidden dark:block",
+            customImgClassName
+          )}
+        />
       </div>
 
       {showText && (

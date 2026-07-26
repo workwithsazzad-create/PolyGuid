@@ -28,6 +28,7 @@ import Logo from "@/src/components/ui/Logo";
 import Footer from "@/src/components/Footer";
 import CourseCard from "@/src/components/ui/CourseCard";
 import PaymentModal from "@/src/components/ui/PaymentModal";
+import heroImg from "@/src/assets/hero.png";
 
 const AnimatedCounter = ({
   value,
@@ -743,7 +744,7 @@ export default function LandingPage() {
               className="relative p-6 sm:p-8 rounded-3xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-xl shadow-[#32CD32]/10 flex items-center justify-center max-w-[220px] sm:max-w-[260px] w-full mx-auto"
             >
               <img
-                src="/hero.png"
+                src={heroImg}
                 alt="PolyGuide Logo"
                 className="w-full h-auto object-contain drop-shadow-md"
               />
