@@ -10,7 +10,7 @@ export default function Privacy() {
 
   useEffect(() => {
     supabase.from('site_settings').select('value').eq('key', 'page_privacy').maybeSingle()
-      .then(({ data }) => setContent(data?.value || ''));
+      .then(({ data }) => setContent((data?.value || '').replace(/PolyGuid/gi, 'PolyGuide')));
   }, []);
 
   return (

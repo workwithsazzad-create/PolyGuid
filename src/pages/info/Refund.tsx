@@ -9,7 +9,7 @@ export default function Refund() {
 
   useEffect(() => {
     supabase.from('site_settings').select('value').eq('key', 'page_refund').maybeSingle()
-      .then(({ data }) => setContent(data?.value || ''));
+      .then(({ data }) => setContent((data?.value || '').replace(/PolyGuid/gi, 'PolyGuide')));
   }, []);
 
   return (

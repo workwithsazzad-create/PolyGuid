@@ -92,7 +92,7 @@ export default function AdminVerifications() {
         const { error: notifError } = await supabase.from('notifications').insert([{
           user_id: userId,
           title: 'Account Verified! ✅',
-          body: 'অভিনন্দন! আপনার অ্যাকাউন্টের ভেরিফিকেশন সফল হয়েছে। এখন আপনার নামের পাশে ব্লু-ব্যাজ দেখা যাবে। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!',
+          body: 'অভিনন্দন! আপনার অ্যাকাউন্টের ভেরিফিকেশন সফল হয়েছে। এখন আপনার নামের পাশে ব্লু-ব্যাজ দেখা যাবে। PolyGuide এর সাথে থাকার জন্য ধন্যবাদ!',
           type: 'verification_approved'
         }]);
 
@@ -273,7 +273,7 @@ export default function AdminVerifications() {
         await supabase.from('notifications').insert([{
           user_id: userId,
           title: 'Account Verified! ✅',
-          body: 'অভিনন্দন! আপনার অ্যাকাউন্টের ভেরিফিকেশন সফল হয়েছে। এখন আপনার নামের পাশে ব্লু-ব্যাজ দেখা যাবে। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!',
+          body: 'অভিনন্দন! আপনার অ্যাকাউন্টের ভেরিফিকেশন সফল হয়েছে। এখন আপনার নামের পাশে ব্লু-ব্যাজ দেখা যাবে। PolyGuide এর সাথে থাকার জন্য ধন্যবাদ!',
           type: 'verification_approved'
         }]);
         

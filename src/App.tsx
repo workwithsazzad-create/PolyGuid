@@ -92,7 +92,7 @@ function AppLayout({ isAdmin }: { isAdmin: boolean }) {
             <span className="text-[#32CD32]">P</span>
             <span className="text-gray-900 dark:text-white">oly</span>
             <span className="text-[#32CD32]">G</span>
-            <span className="text-gray-900 dark:text-white">uid</span>
+            <span className="text-gray-900 dark:text-white">uide</span>
           </span>
         </div>
       </div>
@@ -140,7 +140,7 @@ function InfoLayout() {
             <span className="text-[#32CD32]">P</span>
             <span className="text-[var(--text)]">oly</span>
             <span className="text-[#32CD32]">G</span>
-            <span className="text-[var(--text)]">uid</span>
+            <span className="text-[var(--text)]">uide</span>
           </span>
         </Link>
       </header>
@@ -332,7 +332,7 @@ function AppContent() {
           </div>
           
           <p className="mt-8 text-[10px] text-gray-400 px-6">
-            যদি পারমিশন না আসে, তবে ফোনের Settings {'>'} Apps {'>'} PolyGuid {'>'} Notifications-এ গিয়ে ম্যানুয়ালি অন করুন।
+            যদি পারমিশন না আসে, তবে ফোনের Settings {'>'} Apps {'>'} PolyGuide {'>'} Notifications-এ গিয়ে ম্যানুয়ালি অন করুন।
           </p>
         </div>
       </div>

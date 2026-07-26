@@ -278,7 +278,7 @@ export default function MarketplaceHome() {
                 {/* Polyguid Books Section */}
                 <div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
-                    <h2 className="text-lg sm:text-xl font-bold text-[var(--text)]">Polyguid থেকে প্রকাশিত</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-[var(--text)]">PolyGuide থেকে প্রকাশিত</h2>
                     <div className="flex gap-2">
                        {['all', 'pdf', 'hardcopy'].map((type) => (
                          <button

@@ -139,7 +139,7 @@ export async function runSupabaseAutoVerification(): Promise<VerificationResult>
               await supabase.from('notifications').insert([{
                 user_id: pending.user_id,
                 title: 'Course Approved 🎉',
-                body: 'আপনার কেনা কোর্সটি অ্যাপ্রুভ হয়েছে। এখন আপনি এর কন্টেন্ট দেখতে পারবেন। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!',
+                body: 'আপনার কেনা কোর্সটি অ্যাপ্রুভ হয়েছে। এখন আপনি এর কন্টেন্ট দেখতে পারবেন। PolyGuide এর সাথে থাকার জন্য ধন্যবাদ!',
                 type: 'course_approved'
               }]);
             } catch (e) {

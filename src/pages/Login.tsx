@@ -73,14 +73,22 @@ export default function Login({ session }: { session?: any }) {
     setLoading(true);
     setError(null);
 
-    const dummyEmail = `${phone.replace(/\+/g, '')}@polyguid.com`;
+    const dummyEmailPrimary = `${phone.replace(/\+/g, '')}@polyguide.com`;
+    const dummyEmailFallback = `${phone.replace(/\+/g, '')}@polyguid.com`;
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: dummyEmail,
+      let { error: authError } = await supabase.auth.signInWithPassword({
+        email: dummyEmailPrimary,
         password,
       });
-      if (authError) throw authError;
+      if (authError) {
+        // Fallback for older accounts registered with @polyguid.com
+        const resFallback = await supabase.auth.signInWithPassword({
+          email: dummyEmailFallback,
+          password,
+        });
+        if (resFallback.error) throw authError;
+      }
     } catch (err: any) {
       setError('ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।');
     } finally {
@@ -112,7 +120,7 @@ export default function Login({ session }: { session?: any }) {
     setLoading(true);
     setError(null);
 
-    const dummyEmail = `${phone.replace(/\+/g, '')}@polyguid.com`;
+    const dummyEmail = `${phone.replace(/\+/g, '')}@polyguide.com`;
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -188,8 +196,8 @@ export default function Login({ session }: { session?: any }) {
       />
 
       <div className="flex flex-col items-center relative z-10 w-full mt-[10vh] sm:mt-[12vh]">
-        <Logo theme={theme} className="scale-[1.2] mb-4" />
-        <p className="text-gray-500 dark:text-gray-400 text-center text-[11px] sm:text-[13px] mt-10 px-8 sm:px-10 leading-relaxed max-w-sm font-medium">
+        <Logo theme={theme} className="scale-[1.4] mb-4 origin-top" />
+        <p className="text-gray-500 dark:text-gray-400 text-center text-[11px] sm:text-[13px] mt-16 px-8 sm:px-10 leading-relaxed max-w-sm font-medium">
           বাংলাদেশের প্রথম কমিউনিটি বেসড লার্নিং প্ল্যাটফর্ম। আমাদের লক্ষ্য দক্ষ ইঞ্জিনিয়ার তৈরি করা।
         </p>
       </div>

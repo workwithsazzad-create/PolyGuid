@@ -103,7 +103,7 @@ export default function PaymentModal({
           await supabase.from('notifications').insert([{
             user_id: session.user.id,
             title: 'Donation Approved ❤️',
-            body: 'আপনার ডোনেশনটি সফলভাবে গৃহীত হয়েছে। PolyGuid এর পাশে থাকার জন্য ধন্যবাদ!',
+            body: 'আপনার ডোনেশনটি সফলভাবে গৃহীত হয়েছে। PolyGuide এর পাশে থাকার জন্য ধন্যবাদ!',
             type: 'donation_approved'
           }]);
         } else {
@@ -187,7 +187,7 @@ export default function PaymentModal({
                 </div>
                 
                 <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white text-center mb-2 leading-tight">
-                  PolyGuid -এ ডোনেট করুন
+                  PolyGuide -এ ডোনেট করুন
                 </h2>
                 
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 text-center mb-6 leading-relaxed max-w-xs sm:max-w-sm">
@@ -290,7 +290,7 @@ export default function PaymentModal({
                       <Heart size={20} className="fill-emerald-600 dark:fill-emerald-400" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 dark:text-white text-base">PolyGuid ডোনেশন</h3>
+                      <h3 className="font-bold text-gray-900 dark:text-white text-base">PolyGuide ডোনেশন</h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">ডোনেশন প্রদান</p>
                     </div>
                     <span className="ml-auto text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 font-mono bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800/40 shrink-0">

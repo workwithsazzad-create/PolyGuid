@@ -476,7 +476,7 @@ export default function Home() {
           <div className="flex flex-col min-w-0">
             <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight flex items-center gap-1.5">
               {getGreeting()}, {profile?.full_name || "শিক্ষার্থী"}
-              {(profile?.is_verified || profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuid')) && (
+              {(profile?.is_verified || profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuide')) && (
                 <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-[1.125rem] h-[1.125rem] shrink-0" size={16} />
               )}
             </h2>
@@ -840,14 +840,14 @@ export default function Home() {
             </div>
             <div className="space-y-4 text-base text-gray-600 dark:text-gray-400 leading-relaxed text-justify font-medium">
               <p>
-                PolyGuid (পলিগাইড)-এর পক্ষ থেকে তোমাদের সবাইকে জানাই আন্তরিক
+                PolyGuide (পলিগাইড)-এর পক্ষ থেকে তোমাদের সবাইকে জানাই আন্তরিক
                 অভিনন্দন। আমরা বিশ্বাস করি, আজকের পলিটেকনিক শিক্ষার্থীরাই আগামী
                 দিনের দক্ষ প্রকৌশলী হিসেবে দেশকে এগিয়ে নিয়ে যাবে। তোমাদের এই
                 কঠিন ও পরিশ্রমী শিক্ষাসফরকে কিছুটা সহজ এবং ডিজিটাল করার লক্ষ্যেই
                 আমাদের এই বিশেষ প্ল্যাটফর্মের যাত্রা শুরু।
               </p>
               <p>
-                PolyGuid এমন একটি প্ল্যাটফর্ম যেখানে তোমরা তোমাদের প্রয়োজনীয় সকল
+                PolyGuide এমন একটি প্ল্যাটফর্ম যেখানে তোমরা তোমাদের প্রয়োজনীয় সকল
                 স্টাডি ম্যাটেরিয়ালস, নোটস এবং বুক-পিডিএফ ফাইল এক জায়গায় খুঁজে
                 পাবে। আমাদের মূল লক্ষ্য হলো দেশের প্রতিটি প্রান্তের পলিটেকনিক
                 শিক্ষার্থীদের জন্য মানসম্মত শিক্ষা উপকরণ সরবরাহ করা। আমাদের এই
@@ -860,7 +860,7 @@ export default function Home() {
               </p>
               <p>
                 আমরা অত্যন্ত সততা এবং পেশাদারিত্বের সাথে তোমাদের জানাতে চাই যে,
-                Polyguid কোনো প্রকার ‘পাইরেসি’ বা নীতিবহির্ভূত কাজে বিশ্বাস করে
+                PolyGuide কোনো প্রকার ‘পাইরেসি’ বা নীতিবহির্ভূত কাজে বিশ্বাস করে
                 না। আমরা অন্য কোনো ব্যক্তি বা প্রতিষ্ঠানের বিশেষায়িত পেইড কোর্স
                 বা প্রিমিয়াম কন্টেন্ট অবৈধভাবে শেয়ার করি না। আমাদের প্ল্যাটফর্মে
                 যে সকল ফ্রি ম্যাটেরিয়াল দেওয়া হয়, তা মূলত ইন্টারনেটে পাবলিকলি
@@ -873,7 +873,7 @@ export default function Home() {
               </p>
               <p>
                 আমাদের একমাত্র লক্ষ্য হলো একটি সুস্থ এবং সহযোগিতামূলক শিক্ষা
-                ব্যবস্থা গড়ে তোলা। আমরা চাই প্রতিটি শিক্ষার্থী যেন Polyguid-কে
+                ব্যবস্থা গড়ে তোলা। আমরা চাই প্রতিটি শিক্ষার্থী যেন PolyGuide-কে
                 তাদের একজন বিশ্বস্ত এবং নির্ভরযোগ্য 'লার্নিং পার্টনার' হিসেবে
                 পাশে পায়। তোমাদের সাফল্যের প্রতিটি ধাপে আমরা আমাদের সর্বোচ্চ
                 সহযোগিতা নিয়ে পাশে থাকতে প্রতিশ্রুতিবদ্ধ।
@@ -937,7 +937,7 @@ export default function Home() {
                   ) : (
                     <motion.div className="absolute w-full">
                       <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                        Be the first to support PolyGuid!
+                        Be the first to support PolyGuide!
                       </p>
                     </motion.div>
                   )}

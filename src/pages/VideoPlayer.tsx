@@ -1,10 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ChevronLeft, Send, Trash2, User, MessageSquare, X, BadgeCheck, Star, BookmarkCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  ChevronLeft, Send, Trash2, User, MessageSquare, X, BadgeCheck, Star, BookmarkCheck,
+  Play, Pause, Volume2, VolumeX, Maximize, Minimize, RotateCcw, RotateCw, ShieldAlert,
+  Settings
+} from 'lucide-react';
 import GlassmorphicCard from '../components/ui/GlassmorphicCard';
 import { supabase } from '../lib/supabase';
-import { getEmbedUrl } from '../lib/utils';
+import { 
+  extractYouTubeId, 
+  getProtectedYouTubeEmbedUrl, 
+  obfuscateVideoUrl, 
+  attachVideoProtectionListeners 
+} from '../lib/videoProtection';
+
+declare global {
+  interface Window {
+    onYouTubeIframeAPIReady?: () => void;
+    YT?: any;
+  }
+}
+
+function formatTime(seconds: number): string {
+  if (isNaN(seconds) || seconds < 0) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
 
 export default function VideoPlayer() {
   const { contentId } = useParams();
@@ -21,10 +44,44 @@ export default function VideoPlayer() {
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Player state
+  const [protectedUrl, setProtectedUrl] = useState<string>('');
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
+  const [volume, setVolume] = useState<number>(() => {
+    const saved = localStorage.getItem('polyguide_player_volume');
+    return saved !== null ? Number(saved) : 80;
+  });
+  const [isMuted, setIsMuted] = useState<boolean>(() => {
+    const saved = localStorage.getItem('polyguide_player_muted');
+    return saved === 'true';
+  });
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const [quality, setQuality] = useState<string>('auto');
+  const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [showControls, setShowControls] = useState<boolean>(true);
+  const [showSpeedMenu, setShowSpeedMenu] = useState<boolean>(false);
+  const [showQualityMenu, setShowQualityMenu] = useState<boolean>(false);
+  const [centerAnimation, setCenterAnimation] = useState<'play' | 'pause' | null>(null);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const controlsTimeoutRef = useRef<any>(null);
+  const progressIntervalRef = useRef<any>(null);
+
   useEffect(() => {
     fetchContentAndComments();
     checkUser();
   }, [contentId]);
+
+  // Anti-inspection protection
+  useEffect(() => {
+    const cleanup = attachVideoProtectionListeners(containerRef.current);
+    return () => cleanup();
+  }, [containerRef.current]);
 
   const checkUser = async () => {
     try {
@@ -43,7 +100,6 @@ export default function VideoPlayer() {
           if (profile.role === 'admin') setIsAdmin(true);
         }
 
-        // Check if already saved
         const { data: saved } = await supabase
           .from('saved_items')
           .select('id')
@@ -56,6 +112,285 @@ export default function VideoPlayer() {
     } catch (e) {
       console.error('checkUser fetch error:', e);
     }
+  };
+
+  const fetchContentAndComments = async () => {
+    if (!contentId) return;
+    
+    // Fast path: fetch content immediately
+    supabase
+      .from('course_content')
+      .select('*')
+      .eq('id', contentId)
+      .single()
+      .then(({ data: contentData }) => {
+        if (contentData) {
+          setContent(contentData);
+          const embedUrl = getProtectedYouTubeEmbedUrl(contentData.url);
+          setProtectedUrl(embedUrl);
+        }
+      });
+
+    // Parallel background path: fetch comments
+    supabase
+      .from('comments')
+      .select('*')
+      .eq('content_id', contentId)
+      .order('created_at', { ascending: false })
+      .then(async ({ data: commentsData }) => {
+        if (commentsData && commentsData.length > 0) {
+          const userIds = [...new Set(commentsData.map(c => c.user_id))];
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, polytechnic_name, role, is_verified')
+            .in('id', userIds);
+            
+          const profilesMap: any = {};
+          profilesData?.forEach(p => { profilesMap[p.id] = p; });
+          
+          const mergedComments = commentsData.map(c => ({
+            ...c,
+            profiles: profilesMap[c.user_id]
+          }));
+          setComments(mergedComments);
+        } else {
+          setComments([]);
+        }
+      });
+  };
+
+  // Quality Options
+  const QUALITY_OPTIONS = [
+    { label: 'Auto', value: 'auto' },
+    { label: '1080p', value: 'hd1080' },
+    { label: '720p', value: 'hd720' },
+    { label: '480p', value: 'large' },
+    { label: '360p', value: 'medium' },
+    { label: '240p', value: 'small' },
+  ];
+
+  // Initialize YouTube IFrame API
+  useEffect(() => {
+    if (!protectedUrl) return;
+
+    const videoId = extractYouTubeId(content?.url || '');
+    if (!videoId) return;
+
+    const initPlayer = () => {
+      if (window.YT && window.YT.Player && iframeRef.current) {
+        try {
+          ytPlayerRef.current = new window.YT.Player(iframeRef.current, {
+            events: {
+              onReady: (event: any) => {
+                setDuration(event.target.getDuration() || 0);
+                // Apply stored volume & mute immediately on ready
+                try {
+                  const savedVol = localStorage.getItem('polyguide_player_volume');
+                  const savedMuted = localStorage.getItem('polyguide_player_muted');
+                  const initVol = savedVol !== null ? Number(savedVol) : volume;
+                  const initMuted = savedMuted === 'true';
+                  event.target.setVolume(initVol);
+                  if (initMuted) {
+                    event.target.mute();
+                  } else {
+                    event.target.unMute();
+                  }
+                } catch (e) {}
+
+                // Autoplay video immediately
+                try {
+                  event.target.playVideo();
+                  setIsPlaying(true);
+                } catch (e) {}
+              },
+              onStateChange: (event: any) => {
+                // YT.PlayerState.PLAYING = 1, PAUSED = 2, ENDED = 0
+                if (event.data === 1) setIsPlaying(true);
+                else if (event.data === 2 || event.data === 0) setIsPlaying(false);
+              }
+            }
+          });
+        } catch (e) {
+          console.warn('YT Player init fallback to postMessage:', e);
+        }
+      }
+    };
+
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+      window.onYouTubeIframeAPIReady = () => initPlayer();
+    } else {
+      initPlayer();
+    }
+
+    // Interval to poll current play time smoothly
+    progressIntervalRef.current = setInterval(() => {
+      if (!isScrubbing && ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
+        try {
+          const curr = ytPlayerRef.current.getCurrentTime() || 0;
+          const dur = ytPlayerRef.current.getDuration() || 0;
+          setCurrentTime(curr);
+          if (dur > 0) setDuration(dur);
+        } catch (e) {}
+      }
+    }, 250);
+
+    return () => {
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    };
+  }, [protectedUrl, content, isScrubbing]);
+
+  // PostMessage Command Fallback Helper
+  const sendPostMessageCommand = (func: string, args: any[] = []) => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func, args }),
+        '*'
+      );
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (isPlaying) {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
+        ytPlayerRef.current.pauseVideo();
+      } else {
+        sendPostMessageCommand('pauseVideo');
+      }
+      setIsPlaying(false);
+      triggerCenterAnimation('pause');
+    } else {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+        ytPlayerRef.current.playVideo();
+      } else {
+        sendPostMessageCommand('playVideo');
+      }
+      setIsPlaying(true);
+      triggerCenterAnimation('play');
+    }
+  };
+
+  const triggerCenterAnimation = (type: 'play' | 'pause') => {
+    setCenterAnimation(type);
+    setTimeout(() => setCenterAnimation(null), 600);
+  };
+
+  const handleSeek = (newTime: number) => {
+    setCurrentTime(newTime);
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
+      ytPlayerRef.current.seekTo(newTime, true);
+    } else {
+      sendPostMessageCommand('seekTo', [newTime, true]);
+    }
+  };
+
+  const handleVolumeChange = (newVol: number) => {
+    setVolume(newVol);
+    const muted = newVol === 0;
+    setIsMuted(muted);
+    try {
+      localStorage.setItem('polyguide_player_volume', String(newVol));
+      localStorage.setItem('polyguide_player_muted', String(muted));
+    } catch (e) {}
+
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.setVolume === 'function') {
+      ytPlayerRef.current.setVolume(newVol);
+      if (muted) ytPlayerRef.current.mute();
+      else ytPlayerRef.current.unMute();
+    } else {
+      sendPostMessageCommand('setVolume', [newVol]);
+      if (muted) sendPostMessageCommand('mute');
+      else sendPostMessageCommand('unMute');
+    }
+  };
+
+  const toggleMute = () => {
+    const nextMute = !isMuted;
+    setIsMuted(nextMute);
+    try {
+      localStorage.setItem('polyguide_player_muted', String(nextMute));
+    } catch (e) {}
+
+    if (nextMute) {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.mute === 'function') {
+        ytPlayerRef.current.mute();
+      } else {
+        sendPostMessageCommand('mute');
+      }
+    } else {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.unMute === 'function') {
+        ytPlayerRef.current.unMute();
+      } else {
+        sendPostMessageCommand('unMute');
+      }
+    }
+  };
+
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackRate(speed);
+    setShowSpeedMenu(false);
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.setPlaybackRate === 'function') {
+      ytPlayerRef.current.setPlaybackRate(speed);
+    } else {
+      sendPostMessageCommand('setPlaybackRate', [speed]);
+    }
+  };
+
+  const handleQualityChange = (qValue: string) => {
+    setQuality(qValue);
+    setShowQualityMenu(false);
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.setPlaybackQuality === 'function') {
+      ytPlayerRef.current.setPlaybackQuality(qValue);
+    } else {
+      sendPostMessageCommand('setPlaybackQuality', [qValue]);
+    }
+  };
+
+  const skipSeconds = (seconds: number) => {
+    const target = Math.max(0, Math.min(duration, currentTime + seconds));
+    handleSeek(target);
+  };
+
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen?.().catch(e => console.error(e));
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.().catch(e => console.error(e));
+      setIsFullscreen(false);
+    }
+  };
+
+  // Keyboard controls inside video container
+  const handleKeyDownControls = (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'k') {
+      e.preventDefault();
+      togglePlayPause();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      skipSeconds(5);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      skipSeconds(-5);
+    } else if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      toggleFullscreen();
+    } else if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      toggleMute();
+    }
+  };
+
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (isPlaying) setShowControls(false);
+    }, 3000);
   };
 
   const toggleSave = async () => {
@@ -86,49 +421,6 @@ export default function VideoPlayer() {
     }
   };
 
-  const fetchContentAndComments = async () => {
-    if (!contentId) return;
-    
-    try {
-      // Content
-      const { data: contentData } = await supabase
-        .from('course_content')
-        .select('*')
-        .eq('id', contentId)
-        .single();
-      
-      if (contentData) setContent(contentData);
-
-      // Comments without join (fixes PGRST200 foreign key error)
-      const { data: commentsData } = await supabase
-        .from('comments')
-        .select('*')
-        .eq('content_id', contentId)
-        .order('created_at', { ascending: false });
-      
-      if (commentsData && commentsData.length > 0) {
-        const userIds = [...new Set(commentsData.map(c => c.user_id))];
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url, polytechnic_name, role, is_verified')
-          .in('id', userIds);
-          
-        const profilesMap: any = {};
-        profilesData?.forEach(p => { profilesMap[p.id] = p; });
-        
-        const mergedComments = commentsData.map(c => ({
-          ...c,
-          profiles: profilesMap[c.user_id]
-        }));
-        setComments(mergedComments);
-      } else {
-        setComments([]);
-      }
-    } catch (e) {
-      console.error('fetchContentAndComments error:', e);
-    }
-  };
-
   const handleAddComment = async (e: React.FormEvent, parentId: string | null = null) => {
     if (e) e.preventDefault();
     const text = parentId ? replyText : newComment;
@@ -140,7 +432,7 @@ export default function VideoPlayer() {
         content_id: contentId,
         user_id: user.id,
         text: text,
-        parent_id: parentId // Assuming parent_id exists or will be added
+        parent_id: parentId
       }])
       .select('*');
 
@@ -152,7 +444,6 @@ export default function VideoPlayer() {
         ...data[0],
         profiles: currentUserProfile
       };
-      // Prepend to show at top immediately
       setComments(prev => [newCommentData, ...prev]);
       if (parentId) {
         setReplyText('');
@@ -164,34 +455,13 @@ export default function VideoPlayer() {
   };
 
   const handleDeleteComment = async (id: string) => {
-    // Attempt to delete replies first to avoid FK constraint errors if cascade is missing
-    const { error: replyError } = await supabase
-      .from('comments')
-      .delete()
-      .eq('parent_id', id);
+    await supabase.from('comments').delete().eq('parent_id', id);
+    const { data, error } = await supabase.from('comments').delete().eq('id', id).select();
 
-    if (replyError) {
-      console.warn('Could not cleanly delete replies:', replyError);
-    }
-
-    // Use .select() to verify if the row was actually deleted
-    const { data, error: commentError } = await supabase
-      .from('comments')
-      .delete()
-      .eq('id', id)
-      .select();
-
-    if (commentError) {
-      console.error('Error deleting comment:', commentError);
-      return;
-    } 
-    
-    if (!data || data.length === 0) {
-      console.error('Delete failed: Database blocked the action (0 rows deleted). Please ensure RLS policies are correct and you have permission.');
+    if (error || !data || data.length === 0) {
+      console.error('Error deleting comment');
       return;
     }
-
-    // Success, update UI
     setComments(prev => prev.filter(c => c.id !== id && c.parent_id !== id));
   };
 
@@ -203,7 +473,7 @@ export default function VideoPlayer() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col gap-4 sm:gap-6 max-w-5xl mx-auto pb-12 px-2 sm:px-0"
+      className="flex flex-col gap-4 sm:gap-6 max-w-5xl mx-auto pb-12 px-2 sm:px-0 select-none"
     >
       <button 
         onClick={() => navigate(-1)}
@@ -213,17 +483,207 @@ export default function VideoPlayer() {
       </button>
 
       <div className="flex flex-col gap-4">
-        {/* Video Player */}
-        <div className="w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10">
-          <iframe
-            src={getEmbedUrl(content.url, content.source)}
-            className="w-full h-full border-none"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            title={content.title}
+        {/* Secure Protected Video Player Box */}
+        <div 
+          ref={containerRef}
+          tabIndex={0}
+          onKeyDown={handleKeyDownControls}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => isPlaying && setShowControls(false)}
+          className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10 group focus:outline-none"
+        >
+          {/* Underlying YouTube Embed with controls disabled */}
+          {protectedUrl ? (
+            <iframe
+              ref={iframeRef}
+              id="yt-player-iframe"
+              src={protectedUrl}
+              className="w-full h-full border-none pointer-events-none scale-[1.01]"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              title={content.title}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
+              Video URL Protected
+            </div>
+          )}
+
+          {/* Transparent Interactive Click Shield - Blocks all direct access to YouTube native UI */}
+          <div 
+            onClick={togglePlayPause}
+            onDoubleClick={toggleFullscreen}
+            className="absolute inset-0 z-10 cursor-pointer bg-transparent"
+            title="Click to Play/Pause • Double click for Fullscreen"
           />
+
+          {/* Center Play/Pause Animated Indicator */}
+          <AnimatePresence>
+            {centerAnimation && (
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                exit={{ scale: 1.5, opacity: 0 }}
+                className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+              >
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black/70 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 shadow-2xl">
+                  {centerAnimation === 'play' ? <Play size={36} className="ml-1 fill-white" /> : <Pause size={36} className="fill-white" />}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Custom High Quality Video Controls (Bottom Bar) */}
+          <div 
+            className={`absolute bottom-0 left-0 right-0 z-30 transition-opacity duration-300 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-8 pb-3 px-3 sm:px-5 flex flex-col gap-2 ${
+              showControls || !isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Scrubbable Progress Bar */}
+            <div className="relative w-full h-2 group/scrubber flex items-center cursor-pointer">
+              <input
+                type="range"
+                min={0}
+                max={duration || 100}
+                value={currentTime}
+                onMouseDown={() => setIsScrubbing(true)}
+                onTouchStart={() => setIsScrubbing(true)}
+                onMouseUp={() => setIsScrubbing(false)}
+                onTouchEnd={() => setIsScrubbing(false)}
+                onChange={(e) => handleSeek(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-white/20 hover:h-2.5 rounded-lg appearance-none cursor-pointer accent-[#32CD32] transition-all"
+              />
+            </div>
+
+            {/* Bottom Controls Row */}
+            <div className="flex items-center justify-between text-white text-xs sm:text-sm font-medium pt-1">
+              {/* Left Controls */}
+              <div className="flex items-center gap-2 sm:gap-4">
+                {/* Play / Pause Toggle */}
+                <button 
+                  onClick={togglePlayPause}
+                  className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors text-white"
+                  title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+                >
+                  {isPlaying ? <Pause size={20} className="fill-white" /> : <Play size={20} className="ml-0.5 fill-white" />}
+                </button>
+
+                {/* Rewind / Forward 10s */}
+                <button 
+                  onClick={() => skipSeconds(-10)}
+                  className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-gray-300 hover:text-white hidden sm:block"
+                  title="Rewind 10s"
+                >
+                  <RotateCcw size={16} />
+                </button>
+                <button 
+                  onClick={() => skipSeconds(10)}
+                  className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-gray-300 hover:text-white hidden sm:block"
+                  title="Forward 10s"
+                >
+                  <RotateCw size={16} />
+                </button>
+
+                {/* Volume Control */}
+                <div className="flex items-center gap-1.5 group/vol">
+                  <button onClick={toggleMute} className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-gray-300 hover:text-white">
+                    {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={isMuted ? 0 : volume}
+                    onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                    className="w-12 sm:w-16 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-[#32CD32]"
+                  />
+                </div>
+
+                {/* Time Display */}
+                <span className="font-mono text-[11px] sm:text-xs text-gray-300 ml-1">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              </div>
+
+              {/* Right Controls */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Playback Speed Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowSpeedMenu(!showSpeedMenu);
+                      setShowQualityMenu(false);
+                    }}
+                    className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-[11px] font-bold text-gray-200 transition-colors"
+                  >
+                    {playbackRate}x
+                  </button>
+
+                  {showSpeedMenu && (
+                    <div className="absolute bottom-full right-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl py-1 w-24 flex flex-col text-xs z-50 overflow-hidden">
+                      {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
+                        <button
+                          key={speed}
+                          onClick={() => handleSpeedChange(speed)}
+                          className={`px-3 py-1.5 text-left hover:bg-white/10 transition-colors ${
+                            playbackRate === speed ? 'text-[#32CD32] font-bold bg-white/5' : 'text-gray-300'
+                          }`}
+                        >
+                          {speed === 1 ? 'Normal' : `${speed}x`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Quality Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowQualityMenu(!showQualityMenu);
+                      setShowSpeedMenu(false);
+                    }}
+                    className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-[11px] font-bold text-gray-200 transition-colors flex items-center gap-1"
+                    title="Video Quality"
+                  >
+                    <Settings size={12} className="text-gray-300" />
+                    <span>{QUALITY_OPTIONS.find(q => q.value === quality)?.label || 'Auto'}</span>
+                  </button>
+
+                  {showQualityMenu && (
+                    <div className="absolute bottom-full right-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl py-1 w-28 flex flex-col text-xs z-50 overflow-hidden">
+                      <div className="px-3 py-1 text-[10px] font-bold text-gray-400 border-b border-white/10 uppercase tracking-wider">
+                        Quality
+                      </div>
+                      {QUALITY_OPTIONS.map((q) => (
+                        <button
+                          key={q.value}
+                          onClick={() => handleQualityChange(q.value)}
+                          className={`px-3 py-1.5 text-left hover:bg-white/10 transition-colors ${
+                            quality === q.value ? 'text-[#32CD32] font-bold bg-white/5' : 'text-gray-300'
+                          }`}
+                        >
+                          {q.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Fullscreen Toggle */}
+                <button 
+                  onClick={toggleFullscreen}
+                  className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors text-gray-300 hover:text-white"
+                  title="Toggle Fullscreen (F)"
+                >
+                  {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         
+        {/* Title and Save Bar */}
         <div className="flex flex-col gap-1 sm:gap-2 px-2">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-lg sm:text-2xl font-black text-[var(--text)] line-clamp-2 md:line-clamp-none">{content.title}</h1>
@@ -255,7 +715,7 @@ export default function VideoPlayer() {
         
         <form onSubmit={handleAddComment} className="flex gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 text-white shadow-lg">
-            <User size={16} sm:size={20} />
+            <User size={16} />
           </div>
           <div className="flex-1 flex flex-col gap-2">
             <input
@@ -489,4 +949,3 @@ export default function VideoPlayer() {
     </motion.div>
   );
 }
-

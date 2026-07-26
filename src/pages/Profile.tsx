@@ -55,7 +55,7 @@ export default function Profile() {
         let phoneNum = data.phone || '';
         
         // Auto-extract phone from placeholder email if needed
-        if (!phoneNum && user.email?.endsWith('@polyguid.com')) {
+        if (!phoneNum && (user.email?.endsWith('@polyguid.com') || user.email?.endsWith('@polyguide.com'))) {
           const extracted = user.email.split('@')[0];
           if (/^\d+$/.test(extracted)) {
             phoneNum = extracted;

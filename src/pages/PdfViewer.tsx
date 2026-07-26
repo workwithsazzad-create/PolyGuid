@@ -111,7 +111,7 @@ export default function PdfViewer() {
               {content.title}
             </h1>
             <p className="text-[8px] md:text-xs text-gray-400 font-bold uppercase tracking-tight">
-              PolyGuid PDF Viewer
+              PolyGuide PDF Viewer
             </p>
           </div>
         </div>

@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/src/lib/supabase';
-import { logoDarkB64, logoLightB64 } from '@/src/components/ui/logo-data';
 import ResultCertificate from '@/src/components/ResultCertificate';
 
 interface SemesterResult {
@@ -142,7 +141,7 @@ export default function ResultViewer() {
       
       const link = document.createElement("a");
       link.href = image;
-      link.download = `PolyGuid_Result_${result.roll_no}.jpg`;
+      link.download = `PolyGuide_Result_${result.roll_no}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -400,7 +399,7 @@ export default function ResultViewer() {
 
               <div className="mt-10 pt-8 border-t border-black/5 dark:border-white/5 text-center px-4">
                  <p className="text-[10px] text-gray-400 font-medium leading-relaxed max-w-lg mx-auto">
-                  Powered by PolyGuid. This result is formatted for easier viewing. For official purposes, refer to transcipts issued by BTEB.
+                  Powered by PolyGuide. This result is formatted for easier viewing. For official purposes, refer to transcipts issued by BTEB.
                 </p>
               </div>
             </div>
@@ -456,7 +455,7 @@ export default function ResultViewer() {
               <div className="p-4 border-t border-gray-100 dark:border-white/10 flex justify-center gap-3">
                 <a
                   href={downloadImage}
-                  download={`PolyGuid_Result_${result?.roll_no || 'info'}.jpg`}
+                  download={`PolyGuide_Result_${result?.roll_no || 'info'}.jpg`}
                   className="flex items-center gap-2 px-6 py-2.5 bg-[#32CD32] hover:bg-[#2eaa2e] text-white rounded-xl font-bold transition-colors"
                 >
                   <Download size={18} /> Download Image

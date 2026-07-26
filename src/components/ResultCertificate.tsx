@@ -86,7 +86,7 @@ const ResultCertificate = forwardRef<HTMLDivElement, Props>(({ result }, ref) =>
 
       {/* Footer */}
       <div style={{ marginTop: '40px', textAlign: 'center', fontSize: '10px', color: '#999' }}>
-        Powered by PolyGuid. This result is formatted for easier viewing. For official purposes, refer to transcipts issued by BTEB.
+        Powered by PolyGuide. This result is formatted for easier viewing. For official purposes, refer to transcipts issued by BTEB.
       </div>
     </div>
   );

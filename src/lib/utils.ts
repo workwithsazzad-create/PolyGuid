@@ -35,7 +35,7 @@ export function getEmbedUrl(url: string, source: string = 'youtube') {
     const match = url.match(regExp);
     const videoId = (match && match[2].length === 11) ? match[2] : null;
     if (videoId) {
-      return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&showinfo=0`;
+      return `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&controls=0&rel=0&modestbranding=1&disablekb=1&fs=0&playsinline=1&iv_load_policy=3&showinfo=0`;
     }
   }
 

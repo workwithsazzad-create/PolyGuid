@@ -353,7 +353,7 @@ export default function Admin() {
                      window.location.hostname.includes('run.app') || 
                      window.location.hostname.includes('ais-dev-')));
       
-      const baseUrl = isWeb ? '' : 'https://polyguid.vercel.app';
+      const baseUrl = isWeb ? '' : 'https://polyguide.vercel.app';
       const res = await fetch(`${baseUrl}/api/webhook-logs`);
       const data = await res.json();
       setWebhookLogs(data.logs || []);
@@ -413,7 +413,7 @@ export default function Admin() {
           await supabase.from('notifications').insert([{
             user_id: tx.user_id,
             title: `${tx.type === 'donation' ? 'Donation' : (tx.type === 'book' || tx.type === 'pdf' ? 'Book' : 'Course')} Approved 🎉`,
-            body: `আপনার কেনা ${tx.type === 'book' || tx.type === 'pdf' ? 'বই' : (tx.type === 'course' ? 'কোর্সটি' : 'ডোনেশন')} অ্যাপ্রুভ হয়েছে। এখন আপনি এর কন্টেন্ট দেখতে পারবেন। PolyGuid এর সাথে থাকার জন্য ধন্যবাদ!`,
+            body: `আপনার কেনা ${tx.type === 'book' || tx.type === 'pdf' ? 'বই' : (tx.type === 'course' ? 'কোর্সটি' : 'ডোনেশন')} অ্যাপ্রুভ হয়েছে। এখন আপনি এর কন্টেন্ট দেখতে পারবেন। PolyGuide এর সাথে থাকার জন্য ধন্যবাদ!`,
             type: 'course_approved'
           }]);
         } else if (tx.type === 'donation' && tx.user_id) {
@@ -421,7 +421,7 @@ export default function Admin() {
           await supabase.from('notifications').insert([{
             user_id: tx.user_id,
             title: 'Donation Approved 🎉',
-            body: 'অভিনন্দন! আপনার ডোনেশনটি অ্যাপ্রুভ হয়েছে এবং আমাদের ওয়েবসাইটে আপনার প্রোফাইলটি ফিচার করা হয়েছে। PolyGuid কে সাপোর্ট করার জন্য ধন্যবাদ!',
+            body: 'অভিনন্দন! আপনার ডোনেশনটি অ্যাপ্রুভ হয়েছে এবং আমাদের ওয়েবসাইটে আপনার প্রোফাইলটি ফিচার করা হয়েছে। PolyGuide কে সাপোর্ট করার জন্য ধন্যবাদ!',
             type: 'donation_approved'
           }]);
         }

@@ -168,7 +168,7 @@ export default function More() {
                 <div>
                   <h3 className="font-semibold text-lg flex items-center gap-1.5">
                     {profile?.full_name || 'Student Name'}
-                    {(profile?.is_verified || profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuid')) && (
+                    {(profile?.is_verified || profile?.role === 'admin' || profile?.phone === '01993879904' || profile?.full_name?.includes('PolyGuide')) && (
                       <BadgeCheck className="text-blue-500 fill-blue-500 text-white dark:text-[#1a1a1a] rounded-full w-5 h-5 shrink-0" size={18} />
                     )}
                   </h3>

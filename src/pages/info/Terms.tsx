@@ -9,7 +9,7 @@ export default function Terms() {
 
   useEffect(() => {
     supabase.from('site_settings').select('value').eq('key', 'page_terms').maybeSingle()
-      .then(({ data }) => setContent(data?.value || ''));
+      .then(({ data }) => setContent((data?.value || '').replace(/PolyGuid/gi, 'PolyGuide')));
   }, []);
 
   return (

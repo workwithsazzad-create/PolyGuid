@@ -54,7 +54,7 @@ export default function NoticeBoard() {
                      window.location.hostname.includes('run.app') || 
                      window.location.hostname.includes('ais-dev-')));
       
-      const baseUrl = isWeb ? '' : 'https://polyguid.vercel.app';
+      const baseUrl = isWeb ? '' : 'https://polyguide.vercel.app';
       
       console.log('Fetching notices from:', `${baseUrl}/api/bteb-notices`);
         
@@ -280,16 +280,6 @@ export default function NoticeBoard() {
             </div>
           </GlassmorphicCard>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Logo({ theme, size, showText, className }: any) {
-  return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <div className="w-8 h-8 bg-[#32CD32] rounded-lg flex items-center justify-center text-white font-bold">
-        P
       </div>
     </div>
   );

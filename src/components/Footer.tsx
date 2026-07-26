@@ -30,7 +30,7 @@ const Footer = () => {
     };
     fetchSettings();
   }, []);
-  const logoUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7hXz1Z0A1iE_7mZ0z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z/s1600/PolyGuid%20Logo.png";
+  const logoUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7hXz1Z0A1iE_7mZ0z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z/s1600/PolyGuide%20Logo.png";
 
   return (
     <footer className="hidden lg:block w-full bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 pt-12 pb-8 px-4 sm:px-6 lg:px-8">
@@ -42,7 +42,7 @@ const Footer = () => {
               <span className="text-[#32CD32]">P</span>
               <span className="text-[var(--text)]">oly</span>
               <span className="text-[#32CD32]">G</span>
-              <span className="text-[var(--text)]">uid</span>
+              <span className="text-[var(--text)]">uide</span>
             </span>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs font-medium">

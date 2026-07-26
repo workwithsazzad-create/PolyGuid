@@ -55,7 +55,7 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
                        window.location.hostname.includes('run.app') || 
                        window.location.hostname.includes('ais-dev-')));
         
-        const baseUrl = isWeb ? '' : 'https://polyguid.vercel.app';
+        const baseUrl = isWeb ? '' : 'https://polyguide.vercel.app';
           
         const response = await fetch(`${baseUrl}/api/bteb-notices`);
         if (response.ok) {
@@ -318,14 +318,12 @@ export default function Sidebar({ isAdmin = false, isOpen = false, onClose }: Si
       "fixed left-0 top-0 h-screen w-60 sm:w-64 glass border-r border-[var(--glass-border)] flex flex-col p-4 sm:p-6 z-50 transition-transform duration-300",
       isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
     )}>
-      <div className="flex items-center justify-between mb-6 sm:mb-8 px-3 sm:px-4 min-h-[100px]">
+      <div className="flex items-center justify-between mb-6 sm:mb-8 px-0">
         <NavLink to="/home" className="flex items-center gap-2 group">
           <Logo 
             theme={theme} 
             showText={true} 
-            className="scale-100 origin-left"
-            imgClassName="ml-[-18px] mr-[3px] mt-[-13px] pl-0"
-            textClassName="mt-[-10px] pl-[4px] sm:pl-[6px]"
+            className="origin-left"
           />
         </NavLink>
         <button 

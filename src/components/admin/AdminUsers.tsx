@@ -134,7 +134,7 @@ export default function AdminUsers() {
         // We'll simulate creating the profile, but they'd need to sign up for auth.
         // For a real manual add, you'd need an admin Edge Function.
         
-        const dummyEmail = `${currentUser.phone?.replace(/\+/g, '')}@polyguid.com`;
+        const dummyEmail = `${currentUser.phone?.replace(/\+/g, '')}@polyguide.com`;
         
         // Try creating Auth user (might fail if already logged in as admin)
         const { data: authData, error: authError } = await supabase.auth.signUp({
