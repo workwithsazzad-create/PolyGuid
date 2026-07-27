@@ -177,7 +177,7 @@ export default function More() {
               </div>
               <button 
                 onClick={() => navigate('/profile')}
-                className="p-2 text-[var(--primary)] bg-[var(--primary)]/10 rounded-full hover:bg-[var(--primary)]/20 transition"
+                className="p-2 text-[#32CD32] bg-green-500/10 dark:bg-green-500/20 rounded-full hover:bg-green-500/30 transition"
               >
                 <Edit2 size={18} />
               </button>
@@ -314,14 +314,27 @@ export default function More() {
   );
 }
 
+const badgeClasses: Record<string, string> = {
+  'bg-blue-500': 'bg-blue-500 text-white',
+  'bg-orange-500': 'bg-orange-500 text-white',
+  'bg-blue-400': 'bg-blue-400 text-white',
+  'bg-emerald-500': 'bg-emerald-500 text-white',
+  'bg-purple-500': 'bg-purple-500 text-white',
+  'bg-amber-500': 'bg-amber-500 text-white',
+  'bg-cyan-500': 'bg-cyan-500 text-white',
+  'bg-red-500': 'bg-red-500 text-white',
+  'bg-gray-400': 'bg-gray-400 text-white',
+};
+
 function MenuOption({ icon: Icon, label, onClick, color }: { icon: any, label: string, onClick: () => void, color: string }) {
+  const bgClass = badgeClasses[color] || `${color} text-white`;
   return (
     <button 
       onClick={onClick}
       className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 transition"
     >
       <div className="flex items-center gap-4">
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white ${color}`}>
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center ${bgClass}`}>
           <Icon size={18} />
         </div>
         <span className="font-medium text-gray-800 dark:text-gray-200">{label}</span>

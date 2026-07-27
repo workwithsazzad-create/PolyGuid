@@ -227,7 +227,7 @@ export default function BottomNav() {
           className={({ isActive }) => cn(
             "relative flex flex-col items-center justify-center w-16 h-full transition-all duration-200",
             isActive 
-              ? "text-[var(--primary)]" 
+              ? "text-[#32CD32]" 
               : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-300"
           )}
         >
@@ -235,13 +235,13 @@ export default function BottomNav() {
             <>
               <div className={cn(
                 "p-1.5 rounded-full transition-all duration-300",
-                isActive ? "bg-[var(--primary)]/10 -translate-y-1" : ""
+                isActive ? "bg-green-500/10 dark:bg-green-500/20 -translate-y-1" : ""
               )}>
-                <item.icon size={22} className={cn(isActive ? "stroke-[2.5px]" : "stroke-2")} />
+                <item.icon size={22} className={cn(isActive ? "stroke-[2.5px] text-[#32CD32]" : "stroke-2")} />
               </div>
               <span className={cn(
                 "text-[10px] sm:text-xs font-medium transition-all duration-300 absolute bottom-1.5",
-                isActive ? "opacity-100 translate-y-0" : "opacity-70 translate-y-1"
+                isActive ? "opacity-100 translate-y-0 text-[#32CD32]" : "opacity-70 translate-y-1"
               )}>
                 {item.name}
               </span>

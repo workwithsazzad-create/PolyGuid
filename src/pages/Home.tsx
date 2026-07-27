@@ -464,32 +464,32 @@ export default function Home() {
             {
               name: "Marketplace",
               icon: BookOpen,
-              color: "text-blue-600",
-              bgColor: "bg-blue-50 dark:bg-blue-900/20",
+              color: "text-blue-600 dark:text-blue-400",
+              bgColor: "bg-blue-50 dark:bg-blue-950/40",
               shadowColor: "shadow-blue-500/20",
               route: "/marketplace",
             },
             {
               name: "Check Result",
               icon: FileCheck,
-              color: "text-purple-600",
-              bgColor: "bg-purple-50 dark:bg-purple-900/20",
+              color: "text-purple-600 dark:text-purple-400",
+              bgColor: "bg-purple-50 dark:bg-purple-950/40",
               shadowColor: "shadow-purple-500/20",
               route: "/results",
             },
             {
               name: "Free Books",
               icon: FileText,
-              color: "text-red-500",
-              bgColor: "bg-red-50 dark:bg-red-900/20",
+              color: "text-red-500 dark:text-red-400",
+              bgColor: "bg-red-50 dark:bg-red-950/40",
               shadowColor: "shadow-red-500/20",
               route: "/books-pdf?type=ebook",
             },
             {
               name: "Book List",
               icon: List,
-              color: "text-orange-500",
-              bgColor: "bg-orange-50 dark:bg-orange-900/20",
+              color: "text-orange-500 dark:text-orange-400",
+              bgColor: "bg-orange-50 dark:bg-orange-950/40",
               shadowColor: "shadow-orange-500/20",
               route: "/book-list",
             },
@@ -500,9 +500,9 @@ export default function Home() {
               className="flex flex-col items-center gap-1.5 text-center cursor-pointer group"
             >
               <div
-                className={`w-[48px] h-[48px] rounded-full flex justify-center items-center ${item.bgColor} shadow-lg ${item.shadowColor} active:scale-95 transition-all duration-300 border border-white/40 dark:border-white/5`}
+                className={`w-[48px] h-[48px] rounded-full flex justify-center items-center ${item.bgColor} shadow-md ${item.shadowColor} active:scale-95 transition-all duration-300 border border-white/60 dark:border-white/10`}
               >
-                <item.icon size={20} className={`${item.color}`} />
+                <item.icon size={20} className={item.color} />
               </div>
               <span className="text-[9px] font-bold text-gray-700 dark:text-gray-300 leading-tight">
                 {item.name}

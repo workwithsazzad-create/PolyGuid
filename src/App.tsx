@@ -46,6 +46,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { prefetchHomeData } from './services/dataService';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { PushNotificationService } from './services/pushNotificationService';
 
 // Scroll to top on route change
@@ -161,6 +162,13 @@ function AppContent() {
   useEffect(() => {
     let isMounted = true;
     
+    // Hide Capacitor Native Splash Screen immediately if on native app
+    if (Capacitor.isNativePlatform()) {
+      try {
+        SplashScreen.hide();
+      } catch (e) {}
+    }
+    
     // Capacitor Hardware Back Button Support
     try {
       CapacitorApp.addListener('backButton', ({ canGoBack }) => {
@@ -272,13 +280,12 @@ function AppContent() {
     }
   };
 
+  const isNativeApp = Capacitor.isNativePlatform();
+
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--background)] p-4 select-none">
-        <div className="flex flex-col items-center gap-6 animate-pulse">
-          <Logo imgClassName="h-14 sm:h-16" />
-          <div className="w-8 h-8 border-3 border-[#32CD32] border-t-transparent rounded-full animate-spin"></div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)] p-4 select-none">
+        <div className="w-10 h-10 border-4 border-[#32CD32] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -347,7 +354,14 @@ function AppContent() {
     <Router>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route 
+          path="/" 
+          element={
+            session 
+              ? <Navigate to="/home" replace /> 
+              : (isNativeApp ? <Navigate to="/login" replace /> : <LandingPage />)
+          } 
+        />
         <Route 
           path="/login" 
           element={<Login session={session} />} 
@@ -390,7 +404,14 @@ function AppContent() {
           <Route path="/refund" element={<Refund />} />
         </Route>
 
-        <Route path="*" element={session ? <Navigate to="/home" replace /> : <Navigate to="/" replace />} />
+        <Route 
+          path="*" 
+          element={
+            session 
+              ? <Navigate to="/home" replace /> 
+              : (isNativeApp ? <Navigate to="/login" replace /> : <Navigate to="/" replace />)
+          } 
+        />
       </Routes>
     </Router>
   );
