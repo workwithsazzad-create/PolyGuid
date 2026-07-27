@@ -183,9 +183,9 @@ export default function Dashboard() {
                 <p className="hidden sm:block text-xs sm:text-sm text-gray-500 font-medium">Access your bookmarked videos.</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-red-500 text-white rounded-lg font-bold text-[10px] sm:text-xs shadow-md shadow-red-500/20 group-hover:bg-red-600 transition-colors shrink-0">
-              <span>View All</span>
-              <ChevronRight size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded-lg font-bold text-[10px] sm:text-xs shadow-md shadow-red-500/30 group-hover:bg-red-700 transition-colors shrink-0 z-10" style={{ backgroundColor: '#dc2626', color: '#ffffff' }}>
+              <span className="text-white">View All</span>
+              <ChevronRight size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5 text-white" />
             </div>
           </div>
         </GlassmorphicCard>
@@ -208,9 +208,9 @@ export default function Dashboard() {
                 <p className="hidden sm:block text-xs sm:text-sm text-gray-500 font-medium">Access your bookmarked notes.</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg font-bold text-[10px] sm:text-xs shadow-md shadow-blue-500/20 group-hover:bg-blue-600 transition-colors shrink-0">
-              <span>View All</span>
-              <ChevronRight size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg font-bold text-[10px] sm:text-xs shadow-md shadow-blue-500/30 group-hover:bg-blue-700 transition-colors shrink-0 z-10" style={{ backgroundColor: '#2563eb', color: '#ffffff' }}>
+              <span className="text-white">View All</span>
+              <ChevronRight size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5 text-white" />
             </div>
           </div>
         </GlassmorphicCard>

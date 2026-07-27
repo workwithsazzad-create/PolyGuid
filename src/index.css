@@ -8,6 +8,8 @@
 }
 
 :root {
+  color-scheme: light;
+  forced-color-adjust: none;
   --background: #f8fafc;
   --text: #111827;
   --primary: #32CD32;
@@ -18,12 +20,18 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #1a1a1a;
   --text: #ffffff;
   --grid-color: rgba(50, 205, 50, 0.15);
   --glass-bg: rgba(0, 0, 0, 0.4);
   --glass-border: rgba(255, 255, 255, 0.1);
   --scrollbar-track: #1a1a1a;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -33,6 +41,8 @@ body {
   position: relative;
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body::before {
@@ -66,12 +76,10 @@ body::after {
 
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   transition: background 0.3s ease, border-color 0.3s ease;
-  transform: translateZ(0); /* Fixes backdrop-filter rendering glitch in Chrome and Safari */
-  backface-visibility: hidden;
 }
 
 /* Custom Scrollbar */
