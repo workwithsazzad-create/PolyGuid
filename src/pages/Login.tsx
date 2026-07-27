@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotificationService } from '@/src/services/pushNotificationService';
 import { 
@@ -175,26 +176,6 @@ export default function Login({ session }: { session?: any }) {
       exit={{ opacity: 0 }}
       className="flex flex-col items-center justify-start h-screen py-10 relative overflow-hidden"
     >
-      {/* Moving Background Elements - Only for Welcome Screen */}
-      <motion.div 
-        animate={{ 
-          y: [0, -20, 0],
-          x: [0, 10, 0],
-          scale: [1, 1.1, 1]
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/4 left-1/4 w-64 h-64 bg-[var(--primary)]/10 blur-[100px] rounded-full pointer-events-none" 
-      />
-      <motion.div 
-        animate={{ 
-          y: [0, 20, 0],
-          x: [0, -10, 0],
-          scale: [1, 1.2, 1]
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-        className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" 
-      />
-
       <div className="flex flex-col items-center relative z-10 w-full mt-[10vh] sm:mt-[12vh]">
         <Logo theme={theme} imgClassName="h-12 sm:h-14" textClassName="text-[11px] sm:text-[12.5px]" className="mb-2" />
         <p className="text-gray-500 dark:text-gray-400 text-center text-[11px] sm:text-[13px] mt-6 px-8 sm:px-10 leading-relaxed max-w-sm font-medium">
@@ -460,17 +441,19 @@ export default function Login({ session }: { session?: any }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden z-[100] bg-[var(--background)]">
-      {/* Top Bar with Back to Landing Page button */}
-      <div className="absolute top-4 left-4 z-50">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/80 dark:bg-black/60 hover:bg-white dark:hover:bg-black text-xs font-bold text-gray-800 dark:text-gray-100 backdrop-blur-md border border-black/10 dark:border-white/15 transition-all active:scale-95 shadow-md group"
-          title="হোম পেজে যান"
-        >
-          <ArrowRight className="rotate-180 text-[var(--primary)] group-hover:-translate-x-0.5 transition-transform" size={16} />
-          <span>হোমে ফিরুন</span>
-        </button>
-      </div>
+      {/* Top Bar with Back to Landing Page button (Only visible on web / desktop) */}
+      {Capacitor.getPlatform() === 'web' && (
+        <div className="absolute top-4 left-4 z-50 hidden md:block">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/80 dark:bg-black/60 hover:bg-white dark:hover:bg-black text-xs font-bold text-gray-800 dark:text-gray-100 backdrop-blur-md border border-black/10 dark:border-white/15 transition-all active:scale-95 shadow-md group"
+            title="হোম পেজে যান"
+          >
+            <ArrowRight className="rotate-180 text-[var(--primary)] group-hover:-translate-x-0.5 transition-transform" size={16} />
+            <span>হোমে ফিরুন</span>
+          </button>
+        </div>
+      )}
 
       {/* Background Grid Accent */}
       <div 
