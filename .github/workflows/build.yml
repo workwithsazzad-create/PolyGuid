@@ -34,10 +34,10 @@ jobs:
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.ec.aoo",
-            "appName": "PolyGuid",
+            "appName": "PolyGuide",
             "webDir": "dist",
             "server": {
-              "url": "https://polyguid.vercel.app",
+              "url": "https://polyguide.vercel.app",
               "androidScheme": "https",
               "cleartext": true
             }

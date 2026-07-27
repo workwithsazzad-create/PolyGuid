@@ -1,0 +1,10 @@
+{
+  "appId": "com.ec.aoo",
+  "appName": "PolyGuide",
+  "webDir": "dist",
+  "server": {
+    "url": "https://polyguide.vercel.app",
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}
