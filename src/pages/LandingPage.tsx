@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/src/lib/supabase";
 import { getDirectLink } from "@/src/lib/utils";
 import Logo from "@/src/components/ui/Logo";
+import PolyGuideIcon from "@/src/components/ui/PolyGuideIcon";
 import Footer from "@/src/components/Footer";
 import CourseCard from "@/src/components/ui/CourseCard";
 import PaymentModal from "@/src/components/ui/PaymentModal";
@@ -108,7 +109,7 @@ export default function LandingPage() {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [bannerUrl, setBannerUrl] = useState<string>("");
-  const [apkUrl, setApkUrl] = useState<string>("");
+  const [apkUrl, setApkUrl] = useState<string>("https://polyguide.vercel.app/login");
   const [courses, setCourses] = useState<any[]>([]);
   const [stats, setStats] = useState({
     courses: 20,
@@ -279,11 +280,8 @@ export default function LandingPage() {
   }, [isLoading]);
 
   const handleDownloadApp = () => {
-    if (apkUrl && apkUrl.trim() !== "") {
-      window.open(apkUrl, "_blank");
-    } else {
-      setShowApkErrorModal(true);
-    }
+    const targetUrl = (apkUrl && apkUrl.trim() !== "") ? apkUrl : "https://polyguide.vercel.app/login";
+    window.open(targetUrl, "_blank");
   };
 
   const getWaUrl = (val: string) => {
@@ -736,17 +734,20 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left Animated PolyGuide Logo Card (Compact & Floating) */}
-          <div className="lg:col-span-5 flex justify-center">
+          {/* Left Animated PolyGuide Logo (Large with Soft Faded Glow) */}
+          <div className="lg:col-span-5 flex justify-center items-center">
             <motion.div
               animate={{ y: [0, -10, 0], scale: [1, 1.02, 1] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              className="relative p-6 sm:p-8 rounded-3xl bg-white/70 dark:bg-black/30 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-xl shadow-[#32CD32]/10 flex items-center justify-center max-w-[220px] sm:max-w-[260px] w-full mx-auto"
+              className="relative p-6 sm:p-10 rounded-3xl bg-white/30 dark:bg-black/20 backdrop-blur-xl border border-black/5 dark:border-white/5 shadow-2xl shadow-[#32CD32]/15 flex items-center justify-center w-full max-w-[300px] sm:max-w-[360px] aspect-square mx-auto group"
             >
-              <img
-                src={heroImg}
-                alt="PolyGuide Logo"
-                className="w-full h-auto object-contain drop-shadow-md"
+              {/* Soft Faded Blur Ambient Background Glow */}
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-[#32CD32]/15 via-emerald-500/5 to-[#32CD32]/20 blur-xl pointer-events-none" />
+
+              <img 
+                src={heroImg} 
+                alt="PolyGuide Logo" 
+                className="w-52 h-52 sm:w-64 sm:h-64 object-contain drop-shadow-2xl relative z-10 transition-transform duration-300 group-hover:scale-105" 
               />
             </motion.div>
           </div>
