@@ -37,7 +37,7 @@ jobs:
             "appName": "PolyGuide",
             "webDir": "dist",
             "server": {
-              "url": "https://polyguide.vercel.app",
+              "url": "https://polyguide.vercel.app/login",
               "androidScheme": "https",
               "cleartext": true
             }
@@ -49,13 +49,30 @@ jobs:
 
       - name: Setup App Icon (If available)
         run: |
-          if [ -f "public/hero.png" ]; then
-            npm install -g @capacitor/assets
-            # Rename for capacitor-assets
+          # Copy uploaded logo file to standard asset paths
+          if [ -f "Max_a_ebar_name_sara_sudu_.png" ]; then
+            cp "Max_a_ebar_name_sara_sudu_.png" "public/hero.png"
+            cp "Max_a_ebar_name_sara_sudu_.png" "public/icon.png"
+            cp "Max_a_ebar_name_sara_sudu_.png" "public/logo.png"
+            cp "Max_a_ebar_name_sara_sudu_.png" "src/assets/hero.png"
+            cp "Max_a_ebar_name_sara_sudu_.png" "src/assets/icon.png"
+            cp "Max_a_ebar_name_sara_sudu_.png" "src/assets/logo.png"
+          fi
+
+          if [ -f "public/hero.png" ] || [ -f "Max_a_ebar_name_sara_sudu_.png" ]; then
             mkdir -p assets
-            cp "public/hero.png" assets/icon.png
-            cp "public/hero.png" assets/splash.png || true
-            npx capacitor-assets generate --android || true
+            SOURCE_IMG="public/hero.png"
+            if [ -f "Max_a_ebar_name_sara_sudu_.png" ]; then
+              SOURCE_IMG="Max_a_ebar_name_sara_sudu_.png"
+            fi
+            cp "$SOURCE_IMG" assets/icon.png
+            cp "$SOURCE_IMG" assets/icon-only.png
+            cp "$SOURCE_IMG" assets/icon-foreground.png
+            cp "$SOURCE_IMG" assets/splash.png
+            cp "$SOURCE_IMG" assets/splash-dark.png
+
+            npm install --save-dev @capacitor/assets
+            npx --yes @capacitor/assets generate --android || true
           fi
 
       - name: Setup Firebase Google Services

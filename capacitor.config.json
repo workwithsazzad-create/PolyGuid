@@ -3,7 +3,7 @@
   "appName": "PolyGuide",
   "webDir": "dist",
   "server": {
-    "url": "https://polyguide.vercel.app",
+    "url": "https://polyguide.vercel.app/login",
     "androidScheme": "https",
     "cleartext": true
   }
